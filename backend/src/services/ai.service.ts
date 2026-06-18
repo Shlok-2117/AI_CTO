@@ -1,74 +1,57 @@
-// Each Groq model has its own independent TPM bucket — rotating avoids hitting any single limit.
-const GROQ_MODELS = [
-  'llama-3.1-8b-instant',
-  'llama-3.3-70b-versatile',
-  'meta-llama/llama-4-scout-17b-16e-instruct',
-  'openai/gpt-oss-20b',
-  'qwen/qwen3-32b',
-]
-
-async function callGroq(prompt: string, systemPrompt: string, modelId: string): Promise<string> {
+async function callGroq(prompt: string, systemPrompt: string, model: string): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error('GROQ_API_KEY not set')
 
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 30000)
+  console.log(`[AI] Calling Groq model: ${model}`)
 
-  try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: modelId,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 2000,
-        temperature: 0,
-        response_format: { type: 'json_object' }
-      }),
-      signal: controller.signal
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 4096,
+      temperature: 0,
+      response_format: { type: 'json_object' }
     })
+  })
 
-    clearTimeout(timeout)
-
-    if (!response.ok) {
-      const err = await response.text()
-      throw new Error(`Groq ${modelId} HTTP ${response.status}: ${err.slice(0, 200)}`)
-    }
-
-    const data = await response.json() as any
-    const text = data.choices?.[0]?.message?.content
-    if (!text) throw new Error(`Groq ${modelId} returned empty content`)
-
-    console.log(`[AI] Groq ${modelId} success, length: ${text.length}`)
-    return text.replace(/```json\n?|```\n?/g, '').trim()
-
-  } catch (e: any) {
-    clearTimeout(timeout)
-    if (e.name === 'AbortError') throw new Error(`Groq ${modelId} timeout after 30s`)
-    throw e
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(`Groq ${model} HTTP ${response.status}: ${err}`)
   }
+
+  const data = await response.json() as any
+  const text = data.choices?.[0]?.message?.content
+  if (!text) throw new Error(`Groq ${model} empty response`)
+
+  return text.replace(/```json\n?|```\n?/g, '').trim()
 }
 
 export async function callAI(prompt: string, systemPrompt: string): Promise<string> {
-  let lastError = ''
+  const groqModels = [
+    'llama-3.1-8b-instant',
+    'llama-3.3-70b-versatile',
+    'llama-4-scout-17b-16e-instruct',
+    'qwen-qwq-32b'
+  ]
 
-  for (const modelId of GROQ_MODELS) {
+  for (const model of groqModels) {
     try {
-      console.log(`[AI] Trying Groq ${modelId}...`)
-      const result = await callGroq(prompt, systemPrompt, modelId)
-      console.log(`[AI] Success: Groq ${modelId}`)
+      console.log(`[AI] Trying Groq: ${model}`)
+      const result = await callGroq(prompt, systemPrompt, model)
+      console.log(`[AI] Success: ${model}`)
       return result
     } catch (e: any) {
-      lastError = e.message
-      console.log(`[AI] Failed Groq ${modelId}:`, e.message.slice(0, 150))
+      console.log(`[AI] Groq ${model} failed:`, e.message.slice(0, 150))
     }
   }
 
-  throw new Error(`All AI providers failed. Last: ${lastError}`)
+  throw new Error('All Groq models failed')
 }
