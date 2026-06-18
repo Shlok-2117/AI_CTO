@@ -41,6 +41,16 @@ app.get('/', (_req: Request, res: Response) => {
   res.json({ message: 'AI CTO API', status: 'running', version: '1.0.0' })
 })
 
+app.get('/test-ai', async (_req: Request, res: Response) => {
+  const hasGroq = !!process.env.GROQ_API_KEY
+  const hasOpenRouter = !!process.env.OPENROUTER_API_KEY
+  res.json({
+    groq_key_present: hasGroq,
+    openrouter_key_present: hasOpenRouter,
+    node_env: process.env.NODE_ENV
+  })
+})
+
 app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
