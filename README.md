@@ -2,7 +2,7 @@
 
 > Type a startup idea. Get complete system architecture in seconds.
 
-**Live Demo:** [Coming soon]  
+**Live Demo:** https://ai-cto-two.vercel.app  
 **Built by:** Shlok Gohel
 
 ---
@@ -25,7 +25,7 @@ Given *"Design a food delivery app like Swiggy"*, AI CTO produces:
 
 ## Screenshots
 
-> Add screenshots here after taking them
+> Coming soon — add screenshots here
 
 ---
 
@@ -159,7 +159,7 @@ DELETE /api/history/:id        Delete generation
 - Built JWT authentication with refresh token rotation, bcrypt password hashing, and httpOnly cookie security
 - Generated Mermaid diagrams (architecture, ER, sequence) and Puppeteer PDF export producing professional 6-section CTO reports
 
-Live: [your-app.vercel.app] · GitHub: [github.com/Shlok-2117/AI_CTO](https://github.com/Shlok-2117/AI_CTO)
+Live: https://ai-cto-two.vercel.app | GitHub: github.com/Shlok-2117/AI_CTO
 
 ---
 
