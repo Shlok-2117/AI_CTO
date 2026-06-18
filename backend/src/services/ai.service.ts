@@ -1,25 +1,44 @@
 import fetch from 'node-fetch'
 
-const FREE_MODELS = [
-  'meta-llama/llama-3.2-3b-instruct:free',
-  'meta-llama/llama-3.1-8b-instruct:free',
-  'mistralai/mistral-7b-instruct:free',
-  'microsoft/phi-3-mini-128k-instruct:free',
-  'google/gemma-2-9b-it:free',
-  'qwen/qwen-2-7b-instruct:free',
-  'huggingfaceh4/zephyr-7b-beta:free',
-  'openchat/openchat-7b:free',
-  'gryphe/mythomist-7b:free',
-  'undi95/toppy-m-7b:free',
-]
+async function callGemini(prompt: string, systemPrompt: string): Promise<string> {
+  if (!process.env.GEMINI_API_KEY) throw new Error('No Gemini API key')
 
-async function callModel(model: string, prompt: string, systemPrompt: string): Promise<string> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0,
+          maxOutputTokens: 8192,
+          responseMimeType: 'application/json'
+        }
+      })
+    }
+  )
+
+  const data = await response.json() as any
+
+  if (data.error) {
+    throw new Error(`Gemini error: ${data.error.message}`)
+  }
+
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+  if (!text) throw new Error('Gemini returned empty response')
+
+  return text.replace(/```json\n?|```\n?/g, '').trim()
+}
+
+async function callOpenRouter(prompt: string, systemPrompt: string, model: string): Promise<string> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'HTTP-Referer': 'http://localhost:3000',
+      'HTTP-Referer': 'https://ai-cto-two.vercel.app',
       'X-Title': 'AI CTO'
     },
     body: JSON.stringify({
@@ -28,41 +47,43 @@ async function callModel(model: string, prompt: string, systemPrompt: string): P
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt }
       ],
-      max_tokens: 8192,
-      temperature: 0.7
+      max_tokens: 4096,
+      temperature: 0
     })
   })
 
   const data = await response.json() as any
+  if (data.error) throw new Error(`OpenRouter ${model}: ${data.error.message}`)
 
-  if (!response.ok) {
-    throw new Error(`${response.status}: ${data?.error?.message || 'Provider error'}`)
-  }
+  const text = data.choices?.[0]?.message?.content
+  if (!text) throw new Error(`${model} returned empty`)
 
-  const content = data.choices?.[0]?.message?.content
-  if (!content) {
-    console.error('Empty response from', model, JSON.stringify(data))
-    throw new Error('Empty response')
-  }
-
-  return content
+  return text.replace(/```json\n?|```\n?/g, '').trim()
 }
 
 export async function callAI(prompt: string, systemPrompt: string): Promise<string> {
-  let lastError: Error = new Error('No models tried')
+  const providers = [
+    { name: 'Gemini Flash', fn: () => callGemini(prompt, systemPrompt) },
+    { name: 'llama-3.1-8b', fn: () => callOpenRouter(prompt, systemPrompt, 'meta-llama/llama-3.1-8b-instruct:free') },
+    { name: 'mistral-7b', fn: () => callOpenRouter(prompt, systemPrompt, 'mistralai/mistral-7b-instruct:free') },
+    { name: 'gemma-2-9b', fn: () => callOpenRouter(prompt, systemPrompt, 'google/gemma-2-9b-it:free') },
+    { name: 'qwen-2-7b', fn: () => callOpenRouter(prompt, systemPrompt, 'qwen/qwen-2-7b-instruct:free') },
+    { name: 'phi-3-mini', fn: () => callOpenRouter(prompt, systemPrompt, 'microsoft/phi-3-mini-128k-instruct:free') },
+  ]
 
-  for (const model of FREE_MODELS) {
+  let lastError = ''
+
+  for (const provider of providers) {
     try {
-      console.log(`Trying model: ${model}`)
-      const text = await callModel(model, prompt, systemPrompt)
-      console.log(`Success with: ${model}`)
-      const cleaned = text.replace(/```json|```/g, '').trim()
-      return cleaned
+      console.log(`Trying ${provider.name}...`)
+      const result = await provider.fn()
+      console.log(`Success with ${provider.name}`)
+      return result
     } catch (e: any) {
-      console.error(`Model ${model} failed:`, e.message)
-      lastError = e
+      lastError = e.message
+      console.error(`${provider.name} failed:`, e.message)
     }
   }
 
-  throw new Error(`All AI models failed. Last error: ${lastError.message}`)
+  throw new Error(`All AI providers failed. Last error: ${lastError}`)
 }
