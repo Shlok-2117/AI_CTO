@@ -1,12 +1,16 @@
 import fetch from 'node-fetch'
 
 const FREE_MODELS = [
-  'google/gemma-4-31b-it:free',
-  'google/gemma-4-26b-a4b-it:free',
-  'openai/gpt-oss-20b:free',
+  'meta-llama/llama-3.2-3b-instruct:free',
+  'meta-llama/llama-3.1-8b-instruct:free',
   'mistralai/mistral-7b-instruct:free',
   'microsoft/phi-3-mini-128k-instruct:free',
-  'meta-llama/llama-3.2-3b-instruct:free',
+  'google/gemma-2-9b-it:free',
+  'qwen/qwen-2-7b-instruct:free',
+  'huggingfaceh4/zephyr-7b-beta:free',
+  'openchat/openchat-7b:free',
+  'gryphe/mythomist-7b:free',
+  'undi95/toppy-m-7b:free',
 ]
 
 async function callModel(model: string, prompt: string, systemPrompt: string): Promise<string> {
