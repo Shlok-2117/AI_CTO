@@ -58,8 +58,10 @@ export async function callAI(prompt: string, systemPrompt: string): Promise<stri
   const groqModels = [
     'llama-3.1-8b-instant',
     'llama-3.3-70b-versatile',
-    'llama-4-scout-17b-16e-instruct',
-    'qwen-qwq-32b'
+    'meta-llama/llama-4-scout-17b-16e-instruct',
+    'openai/gpt-oss-20b',
+    'qwen/qwen3-32b',
+    'qwen/qwen3.6-27b',
   ]
 
   for (const model of groqModels) {
