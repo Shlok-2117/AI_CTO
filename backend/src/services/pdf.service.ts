@@ -1,23 +1,24 @@
-import puppeteer from 'puppeteer'
-import { existsSync } from 'fs'
-
-const CHROME_CANDIDATES = [
-  process.env.CHROME_EXECUTABLE_PATH,
-  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-  process.env.LOCALAPPDATA ? `${process.env.LOCALAPPDATA}\\Google\\Chrome\\Application\\chrome.exe` : undefined,
-  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-  '/usr/bin/google-chrome',
-  '/usr/bin/google-chrome-stable',
-  '/usr/bin/chromium-browser',
-  '/usr/bin/chromium',
-].filter((p): p is string => typeof p === 'string' && existsSync(p))
+import puppeteerCore from 'puppeteer-core'
+import chromium from '@sparticuz/chromium'
 
 export async function generatePDF(data: any): Promise<Buffer> {
-  const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: CHROME_CANDIDATES[0],
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
-  })
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  let browser
+
+  if (isProduction) {
+    browser = await puppeteerCore.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    })
+  } else {
+    const puppeteer = await import('puppeteer')
+    browser = await puppeteer.default.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    })
+  }
 
   const page = await browser.newPage()
   await page.setContent(buildHTML(data), { waitUntil: 'load' })
