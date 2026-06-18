@@ -1,0 +1,38 @@
+﻿# Dependencies
+node_modules/
+
+# Environment variables - NEVER commit
+.env
+.env.local
+.env.production
+
+# Next.js
+.next/
+out/
+
+# Build outputs
+dist/
+build/
+
+# Database
+dev.db
+*.db
+
+# Logs and debug files
+*.log
+dev-log.txt
+backend/dev-log.txt
+backend/dev-log2.txt
+frontend/dev-log.txt
+
+# Test artifacts
+token.txt
+gen-test-output.json
+gen-test-output-2.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
