@@ -586,83 +586,244 @@ export default function DashboardPage() {
                 {/* Cost Tab */}
                 {activeTab === 3 && (
                   <div className="space-y-4">
-                    {cost?.tiers ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {Object.entries(cost.tiers).map(([tier, data]: [string, any], i) => (
-                          <motion.div
-                            key={tier}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className={`glass-card border transition-all ${i === 1 ? 'border-violet-500/30 relative' : 'border-white/5'}`}
-                          >
-                            {i === 1 && <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-full text-white font-semibold">Recommended</div>}
-                            <div className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-2">{tier}</div>
-                            <div className="text-2xl font-black gradient-text mb-3">{data.monthly || data.total || '$—'}</div>
-                            {data.services && Object.entries(data.services).map(([svc, cost]: [string, any]) => (
-                              <div key={svc} className="flex justify-between text-xs py-1 border-b border-white/3 last:border-0">
-                                <span className="text-white/30">{svc}</span>
-                                <span className="text-white/50 font-mono">{cost}</span>
-                              </div>
-                            ))}
-                          </motion.div>
-                        ))}
+                    {!result.result?.cost ? (
+                      <div className="hud-panel rounded-lg p-8 text-center">
+                        <p className="text-sm font-mono" style={{color: 'rgba(248,250,252,0.3)'}}>
+                          Cost data not available for this generation.
+                        </p>
                       </div>
                     ) : (
-                      <div className="glass-card border border-white/5">
-                        <pre className="text-xs text-white/40 whitespace-pre-wrap font-mono">{JSON.stringify(cost, null, 2)}</pre>
-                      </div>
-                    )}
-                    {cost?.savingTips && (
-                      <div className="glass-card border border-amber-500/15">
-                        <p className="text-xs font-semibold text-amber-400 uppercase tracking-widest mb-3">Cost Saving Tips</p>
-                        <ul className="space-y-2">
-                          {cost.savingTips.map((tip: string, i: number) => (
-                            <li key={i} className="text-sm text-white/40 flex gap-2">
-                              <span className="text-amber-400 flex-shrink-0">→</span>{tip}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      <>
+                        {result.result.cost.tiers && (
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {Object.entries(result.result.cost.tiers).map(([tier, data]: [string, any], i) => (
+                              <div key={tier} className="hud-panel hud-corners rounded-lg p-6 text-center">
+                                <div className="text-[10px] font-mono tracking-[0.2em] mb-3 uppercase"
+                                  style={{color: 'rgba(0,212,255,0.5)'}}>
+                                  {tier} SCALE
+                                </div>
+                                <div className="text-3xl font-black mb-1 text-jarvis">
+                                  {typeof data.monthly_usd === 'number' ? `$${data.monthly_usd}` : (data.monthly || data.total || '—')}
+                                  <span className="text-sm font-normal" style={{color: 'rgba(248,250,252,0.3)'}}>/mo</span>
+                                </div>
+                                {data.description && (
+                                  <div className="text-xs font-mono mt-1" style={{color: 'rgba(248,250,252,0.2)'}}>
+                                    {data.description}
+                                  </div>
+                                )}
+                                {data.services && Array.isArray(data.services) && data.services.length > 0 && (
+                                  <div className="mt-4 space-y-1">
+                                    {data.services.slice(0, 4).map((svc: any, si: number) => (
+                                      <div key={si} className="flex justify-between text-[10px] font-mono py-1"
+                                        style={{borderBottom: '1px solid rgba(0,212,255,0.06)', color: 'rgba(248,250,252,0.3)'}}>
+                                        <span>{svc.name || svc.type || svc.service || String(svc)}</span>
+                                        <span style={{color: '#00D4FF'}}>
+                                          {svc.cost_usd !== undefined ? `$${svc.cost_usd}/mo` : svc.cost || ''}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {data.services && !Array.isArray(data.services) && (
+                                  <div className="mt-4 space-y-1">
+                                    {Object.entries(data.services).slice(0, 4).map(([svcName, svcCost]: [string, any]) => (
+                                      <div key={svcName} className="flex justify-between text-[10px] font-mono py-1"
+                                        style={{borderBottom: '1px solid rgba(0,212,255,0.06)', color: 'rgba(248,250,252,0.3)'}}>
+                                        <span>{svcName}</span>
+                                        <span style={{color: '#00D4FF'}}>{String(svcCost)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {result.result.cost.breakdown && typeof result.result.cost.breakdown === 'object' && (
+                          <div className="hud-panel rounded-lg p-6">
+                            <div className="text-[10px] font-mono tracking-widest mb-4"
+                              style={{color: 'rgba(0,212,255,0.5)'}}>COST BREAKDOWN</div>
+                            <div className="space-y-3">
+                              {Object.entries(result.result.cost.breakdown).map(([key, val]: [string, any]) => {
+                                const pct = typeof val === 'number' ? val : parseInt(String(val)) || 0
+                                return (
+                                  <div key={key}>
+                                    <div className="flex justify-between text-xs font-mono mb-1">
+                                      <span className="uppercase" style={{color: 'rgba(248,250,252,0.4)'}}>{key}</span>
+                                      <span style={{color: '#00D4FF'}}>{pct}%</span>
+                                    </div>
+                                    <div className="h-px rounded-full overflow-hidden" style={{background: 'rgba(0,212,255,0.08)'}}>
+                                      <div className="h-full rounded-full"
+                                        style={{
+                                          width: `${Math.min(pct, 100)}%`,
+                                          background: 'linear-gradient(90deg, #00D4FF, #38BDF8)',
+                                          boxShadow: '0 0 8px rgba(0,212,255,0.4)'
+                                        }} />
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {(result.result.cost.cost_saving_tips || result.result.cost.savingTips) && (
+                          <div className="hud-panel rounded-lg p-6">
+                            <div className="text-[10px] font-mono tracking-widest mb-4"
+                              style={{color: 'rgba(0,212,255,0.5)'}}>OPTIMIZATION TIPS</div>
+                            <ul className="space-y-2">
+                              {(result.result.cost.cost_saving_tips || result.result.cost.savingTips || []).map((tip: string, i: number) => (
+                                <li key={i} className="flex items-start gap-3 text-sm"
+                                  style={{color: 'rgba(248,250,252,0.4)'}}>
+                                  <span style={{color: '#00D4FF', flexShrink: 0}}>↓</span>
+                                  {tip}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {result.result.cost.free_tier_eligible && result.result.cost.free_tier_eligible.length > 0 && (
+                          <div className="hud-panel rounded-lg p-6">
+                            <div className="text-[10px] font-mono tracking-widest mb-4"
+                              style={{color: 'rgba(245,158,11,0.6)'}}>FREE TIER ELIGIBLE</div>
+                            <div className="flex flex-wrap gap-2">
+                              {result.result.cost.free_tier_eligible.map((service: string, i: number) => (
+                                <span key={i} className="text-xs font-mono px-3 py-1 rounded"
+                                  style={{
+                                    background: 'rgba(245,158,11,0.08)',
+                                    border: '1px solid rgba(245,158,11,0.2)',
+                                    color: '#F59E0B'
+                                  }}>
+                                  {service}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
 
                 {/* Security Tab */}
                 {activeTab === 4 && (
-                  <div className="space-y-3">
-                    {security?.items ? (
-                      security.items.map((item: any, i: number) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.03 }}
-                          className={`glass-card border transition-all ${
-                            item.severity === 'critical' || item.risk === 'critical' ? 'border-red-500/20 bg-red-500/3' :
-                            item.severity === 'high' || item.risk === 'high' ? 'border-orange-500/20 bg-orange-500/3' :
-                            item.severity === 'medium' || item.risk === 'medium' ? 'border-yellow-500/20 bg-yellow-500/3' :
-                            'border-white/5'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded font-semibold uppercase tracking-wider ${
-                              (item.severity || item.risk) === 'critical' ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
-                              (item.severity || item.risk) === 'high' ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20' :
-                              (item.severity || item.risk) === 'medium' ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20' :
-                              'bg-green-500/15 text-green-400 border border-green-500/20'
-                            }`}>{item.severity || item.risk || 'low'}</span>
+                  <div className="space-y-4">
+                    {!result.result?.security ? (
+                      <div className="hud-panel rounded-lg p-8 text-center">
+                        <p className="text-sm font-mono" style={{color: 'rgba(248,250,252,0.3)'}}>
+                          Security data not available for this generation.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="hud-panel rounded-lg p-6">
+                          <div className="flex items-center gap-4 mb-4 flex-wrap">
+                            <div className="text-[10px] font-mono tracking-widest"
+                              style={{color: 'rgba(0,212,255,0.5)'}}>THREAT ASSESSMENT</div>
+                            {result.result.security.risk_score && (
+                              <span className="text-sm font-bold px-3 py-1 rounded font-mono"
+                                style={{
+                                  background: result.result.security.risk_score === 'Critical' ? 'rgba(248,113,113,0.1)' :
+                                    result.result.security.risk_score === 'High' ? 'rgba(251,146,60,0.1)' :
+                                    result.result.security.risk_score === 'Medium' ? 'rgba(245,158,11,0.1)' :
+                                    'rgba(74,222,128,0.1)',
+                                  border: `1px solid ${
+                                    result.result.security.risk_score === 'Critical' ? 'rgba(248,113,113,0.3)' :
+                                    result.result.security.risk_score === 'High' ? 'rgba(251,146,60,0.3)' :
+                                    result.result.security.risk_score === 'Medium' ? 'rgba(245,158,11,0.3)' :
+                                    'rgba(74,222,128,0.3)'
+                                  }`,
+                                  color: result.result.security.risk_score === 'Critical' ? '#F87171' :
+                                    result.result.security.risk_score === 'High' ? '#FB923C' :
+                                    result.result.security.risk_score === 'Medium' ? '#F59E0B' :
+                                    '#4ADE80'
+                                }}>
+                                RISK: {result.result.security.risk_score?.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          {result.result.security.top_3_risks && result.result.security.top_3_risks.length > 0 && (
                             <div>
-                              <h3 className="text-sm font-semibold text-white">{item.title || item.check}</h3>
-                              <p className="text-xs text-white/30 mt-1">{item.description || item.recommendation}</p>
+                              <div className="text-[10px] font-mono mb-2" style={{color: 'rgba(248,113,113,0.5)'}}>
+                                TOP VULNERABILITIES
+                              </div>
+                              <ul className="space-y-2">
+                                {result.result.security.top_3_risks.map((risk: string, i: number) => (
+                                  <li key={i} className="flex items-start gap-3 text-xs font-mono"
+                                    style={{color: 'rgba(248,113,113,0.6)'}}>
+                                    <span style={{flexShrink: 0}}>▸</span>
+                                    {risk}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+
+                        {result.result.security.checklist && typeof result.result.security.checklist === 'object' &&
+                         !Array.isArray(result.result.security.checklist) &&
+                          Object.entries(result.result.security.checklist).map(([category, items]: [string, any]) =>
+                            Array.isArray(items) && items.length > 0 && (
+                              <div key={category} className="hud-panel rounded-lg p-6">
+                                <div className="text-[10px] font-mono tracking-widest mb-4 uppercase"
+                                  style={{color: 'rgba(0,212,255,0.5)'}}>
+                                  {category.replace(/_/g, ' ')}
+                                </div>
+                                <ul className="space-y-2">
+                                  {items.map((item: any, i: number) => {
+                                    const priority = item?.priority || item?.severity || 'medium'
+                                    const label = typeof item === 'string' ? item : item.item || item.description || item.check || JSON.stringify(item)
+                                    return (
+                                      <li key={i} className="flex items-start gap-3 text-sm">
+                                        <span className="text-[10px] font-mono px-2 py-0.5 rounded flex-shrink-0 mt-0.5 uppercase"
+                                          style={{
+                                            background: priority === 'critical' ? 'rgba(248,113,113,0.1)' :
+                                              priority === 'high' ? 'rgba(251,146,60,0.1)' :
+                                              'rgba(245,158,11,0.1)',
+                                            border: `1px solid ${
+                                              priority === 'critical' ? 'rgba(248,113,113,0.3)' :
+                                              priority === 'high' ? 'rgba(251,146,60,0.3)' :
+                                              'rgba(245,158,11,0.3)'
+                                            }`,
+                                            color: priority === 'critical' ? '#F87171' :
+                                              priority === 'high' ? '#FB923C' :
+                                              '#F59E0B'
+                                          }}>
+                                          {priority}
+                                        </span>
+                                        <span style={{color: 'rgba(248,250,252,0.4)', lineHeight: 1.5}}>{label}</span>
+                                      </li>
+                                    )
+                                  })}
+                                </ul>
+                              </div>
+                            )
+                          )
+                        }
+
+                        {/* Flat items array fallback */}
+                        {Array.isArray(result.result.security.items) && result.result.security.items.map((item: any, i: number) => (
+                          <div key={i} className="hud-panel rounded-lg p-4 flex items-start gap-3">
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded flex-shrink-0 mt-0.5 uppercase"
+                              style={{
+                                background: (item.severity || item.risk) === 'critical' ? 'rgba(248,113,113,0.1)' :
+                                  (item.severity || item.risk) === 'high' ? 'rgba(251,146,60,0.1)' :
+                                  'rgba(245,158,11,0.1)',
+                                border: `1px solid rgba(0,212,255,0.15)`,
+                                color: (item.severity || item.risk) === 'critical' ? '#F87171' :
+                                  (item.severity || item.risk) === 'high' ? '#FB923C' : '#F59E0B'
+                              }}>
+                              {item.severity || item.risk || 'med'}
+                            </span>
+                            <div>
+                              <div className="text-sm font-semibold" style={{color: '#F8FAFC'}}>{item.title || item.check}</div>
+                              <div className="text-xs mt-1" style={{color: 'rgba(248,250,252,0.3)'}}>{item.description || item.recommendation}</div>
                             </div>
                           </div>
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="glass-card border border-white/5">
-                        <pre className="text-xs text-white/40 whitespace-pre-wrap font-mono">{JSON.stringify(security, null, 2)}</pre>
-                      </div>
+                        ))}
+                      </>
                     )}
                   </div>
                 )}

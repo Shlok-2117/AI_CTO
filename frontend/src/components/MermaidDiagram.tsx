@@ -8,81 +8,141 @@ interface Props {
 
 export default function MermaidDiagram({ diagram, title }: Props) {
   const ref = useRef<HTMLDivElement>(null)
-  const [error, setError] = useState('')
-  const [loaded, setLoaded] = useState(false)
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'fallback'>('loading')
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
-    if (!diagram || !ref.current) return
+    if (!diagram) { setStatus('fallback'); return }
 
-    const existingScript = document.getElementById('mermaid-script')
+    const cleanDiagram = diagram
+      .replace(/\\n/g, '\n')
+      .replace(/```mermaid\n?/gi, '')
+      .replace(/```\n?/g, '')
+      .trim()
 
-    function renderDiagram() {
-      const win = window as any
-      if (!win.mermaid) {
-        setError('Mermaid not loaded')
-        return
-      }
+    if (!cleanDiagram) { setStatus('fallback'); return }
 
-      win.mermaid.initialize({
+    function render(mermaid: any) {
+      mermaid.initialize({
         startOnLoad: false,
         theme: 'dark',
         securityLevel: 'loose',
-        darkMode: true,
-        background: 'transparent',
+        themeVariables: {
+          darkMode: true,
+          background: '#030712',
+          primaryColor: '#0B1120',
+          primaryTextColor: '#F8FAFC',
+          primaryBorderColor: '#00D4FF',
+          lineColor: '#00D4FF',
+          secondaryColor: '#0B1120',
+          tertiaryColor: '#0B1120',
+        },
+        er: { diagramPadding: 20, layoutDirection: 'TB', minEntityWidth: 100 },
+        flowchart: { curve: 'basis' },
       })
 
-      const id = 'mermaid-' + Math.random().toString(36).slice(2, 8)
-
-      win.mermaid.render(id, diagram)
+      const id = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)
+      mermaid.render(id, cleanDiagram)
         .then(({ svg }: { svg: string }) => {
           if (ref.current) {
             ref.current.innerHTML = svg
-            setLoaded(true)
+            const svgEl = ref.current.querySelector('svg')
+            if (svgEl) {
+              svgEl.style.maxWidth = '100%'
+              svgEl.style.background = 'transparent'
+            }
           }
+          setStatus('success')
         })
-        .catch((e: any) => {
-          console.error('Mermaid render error:', e)
-          if (ref.current) {
-            ref.current.innerHTML = `<pre style="color:#a78bfa;font-size:11px;white-space:pre-wrap;padding:8px">${diagram}</pre>`
-          }
+        .catch((err: any) => {
+          console.error('Mermaid render error:', err)
+          setErrorMsg(err?.message || 'Parse error')
+          setStatus('fallback')
         })
     }
 
-    if (existingScript && (window as any).mermaid) {
-      renderDiagram()
-    } else {
-      const script = document.createElement('script')
-      script.id = 'mermaid-script'
-      script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js'
-      script.onload = () => {
-        setTimeout(renderDiagram, 100)
-      }
-      script.onerror = () => {
-        setError('Failed to load diagram library')
-        if (ref.current) {
-          ref.current.innerHTML = `<pre style="color:#a78bfa;font-size:11px;white-space:pre-wrap;padding:8px">${diagram}</pre>`
-        }
-      }
-      document.head.appendChild(script)
+    const win = window as any
+    if (win.mermaid) { render(win.mermaid); return }
+
+    const existing = document.getElementById('mermaid-cdn') as HTMLScriptElement | null
+    if (existing) {
+      const wait = () => { if (win.mermaid) render(win.mermaid); else setTimeout(wait, 100) }
+      setTimeout(wait, 100)
+      return
     }
+
+    const script = document.createElement('script')
+    script.id = 'mermaid-cdn'
+    script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js'
+    script.onload = () => setTimeout(() => { if (win.mermaid) render(win.mermaid) }, 200)
+    script.onerror = () => { setStatus('error'); setErrorMsg('Failed to load Mermaid from CDN') }
+    document.head.appendChild(script)
   }, [diagram])
+
+  const cleanForDisplay = diagram?.replace(/\\n/g, '\n') || ''
+  const liveUrl = `https://mermaid.live/edit#${typeof window !== 'undefined' ? btoa(unescape(encodeURIComponent(cleanForDisplay))) : ''}`
 
   return (
     <div>
-      <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">{title}</h3>
-      {!loaded && !error && (
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-          <div className="w-3 h-3 border border-gray-600 border-t-violet-400 rounded-full animate-spin"></div>
-          Rendering diagram...
+      {title && (
+        <div className="text-[10px] font-mono tracking-widest mb-4 uppercase"
+          style={{color: 'rgba(0,212,255,0.5)'}}>
+          {title}
         </div>
       )}
-      {error && (
-        <p className="text-xs text-red-400 mb-2">{error}</p>
+
+      {status === 'loading' && (
+        <div className="flex items-center gap-3 p-4 rounded"
+          style={{background: 'rgba(0,212,255,0.02)', border: '1px solid rgba(0,212,255,0.08)'}}>
+          <div className="w-3 h-3 rounded-full animate-spin"
+            style={{border: '2px solid rgba(0,212,255,0.2)', borderTopColor: '#00D4FF'}} />
+          <span className="text-xs font-mono" style={{color: 'rgba(0,212,255,0.5)'}}>
+            RENDERING DIAGRAM...
+          </span>
+        </div>
       )}
+
+      {status === 'error' && (
+        <div className="p-4 rounded" style={{background: 'rgba(248,113,113,0.05)', border: '1px solid rgba(248,113,113,0.15)'}}>
+          <p className="text-xs font-mono mb-2" style={{color: 'rgba(248,113,113,0.6)'}}>
+            RENDER ERROR: {errorMsg}
+          </p>
+          <pre className="text-xs font-mono whitespace-pre-wrap" style={{color: 'rgba(0,212,255,0.4)', maxHeight: 200, overflow: 'auto'}}>
+            {cleanForDisplay}
+          </pre>
+        </div>
+      )}
+
+      {status === 'fallback' && (
+        <div className="p-4 rounded" style={{background: 'rgba(0,212,255,0.02)', border: '1px solid rgba(0,212,255,0.08)'}}>
+          <div className="text-[9px] font-mono mb-2" style={{color: 'rgba(0,212,255,0.3)'}}>
+            MERMAID SYNTAX — PASTE AT mermaid.live TO RENDER
+          </div>
+          <pre className="text-xs font-mono whitespace-pre-wrap overflow-auto" style={{color: 'rgba(0,212,255,0.5)', maxHeight: 300}}>
+            {cleanForDisplay}
+          </pre>
+          <a
+            href={liveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mt-3 text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 rounded"
+            style={{color: '#00D4FF', border: '1px solid rgba(0,212,255,0.2)', background: 'rgba(0,212,255,0.05)'}}
+          >
+            ↗ OPEN IN MERMAID LIVE
+          </a>
+        </div>
+      )}
+
       <div
         ref={ref}
-        className="bg-gray-950 rounded-xl p-4 overflow-auto min-h-48"
-        style={{ maxWidth: '100%' }}
+        className={status === 'success' ? 'block' : 'hidden'}
+        style={{
+          background: 'rgba(0,0,0,0.2)',
+          borderRadius: 8,
+          padding: 16,
+          border: '1px solid rgba(0,212,255,0.08)',
+          overflowX: 'auto'
+        }}
       />
     </div>
   )
