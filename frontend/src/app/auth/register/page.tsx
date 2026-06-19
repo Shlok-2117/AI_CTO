@@ -1,127 +1,246 @@
 'use client'
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { Cpu, Loader2, Eye, EyeOff } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Cpu, Loader2, Eye, EyeOff, ArrowRight, CheckCircle, XCircle, Mail, Lock, User } from 'lucide-react'
+
+function getPasswordStrength(password: string) {
+  const checks = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+  }
+  const score = Object.values(checks).filter(Boolean).length
+  const levels = ['', 'Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong']
+  const colors = ['', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500']
+  const textColors = ['', 'text-red-400', 'text-orange-400', 'text-yellow-400', 'text-blue-400', 'text-green-400']
+  return { checks, score, level: levels[score], color: colors[score], textColor: textColors[score] }
+}
+
+const PARTICLES = Array.from({ length: 15 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  size: Math.random() * 3 + 1,
+  duration: Math.random() * 10 + 5,
+  delay: Math.random() * 5,
+}))
 
 export default function RegisterPage() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPass, setShowPass] = useState(false)
+  const [focused, setFocused] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = e.currentTarget
-    const name = (form.elements.namedItem('name') as HTMLInputElement).value.trim()
-    const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim()
-    const password = (form.elements.namedItem('password') as HTMLInputElement).value
+  useEffect(() => setMounted(true), [])
+  const strength = useMemo(() => getPasswordStrength(password), [password])
 
-    if (!email || !password) { setError('Email and password are required'); return }
+  async function handleRegister() {
+    if (!email || !password) { setError('Please fill all fields'); return }
     if (password.length < 6) { setError('Password must be at least 6 characters'); return }
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`${API_URL}/api/auth/register`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ email, password, name })
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Registration failed'); return }
+      if (!res.ok) { setError(data.error || 'Registration failed'); setLoading(false); return }
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
       window.location.href = '/dashboard'
     } catch {
-      setError('Cannot connect to server. Is the backend running on port 5000?')
-    } finally {
+      setError('Cannot connect to server.')
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-violet-950 to-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-violet-500 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
-            <Cpu className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-2xl font-bold text-white tracking-tight">AI CTO</span>
-        </div>
+    <div className="page-bg min-h-screen flex items-center justify-center p-4 text-white relative overflow-hidden">
+      {mounted && PARTICLES.map(p => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full bg-violet-500/20 pointer-events-none"
+          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size }}
+          animate={{ y: [-20, 20, -20], opacity: [0.1, 0.4, 0.1] }}
+          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity }}
+        />
+      ))}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-indigo-600/5 blur-3xl pointer-events-none" />
 
-        {/* Card */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
-          <h1 className="text-2xl font-bold text-white mb-1">Create account</h1>
-          <p className="text-slate-400 text-sm mb-6">Free forever — no credit card needed</p>
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl px-4 py-3 mb-5 flex items-start gap-2">
-              <span className="mt-0.5">⚠</span>
-              <span>{error}</span>
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+        className="w-full max-w-md relative z-10"
+      >
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex items-center justify-center mb-8"
+        >
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-2xl shadow-violet-500/30 group-hover:scale-105 transition-all">
+              <Cpu className="w-5 h-5 text-white" />
             </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                Your name
-              </label>
-              <input
-                name="name"
-                type="text"
-                autoComplete="name"
-                placeholder="Shlok"
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all text-sm"
-              />
+              <div className="font-black text-lg tracking-tight">AI CTO</div>
+              <div className="text-xs text-white/20 -mt-0.5">Architecture Generator</div>
             </div>
+          </Link>
+        </motion.div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                Email address
-              </label>
-              <input
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all text-sm"
-              />
+        <div className="relative">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600/20 via-violet-600/20 to-indigo-600/20 rounded-3xl blur-xl" />
+          <div className="relative glass rounded-2xl p-8 border border-white/8">
+            <div className="mb-8">
+              <h1 className="text-2xl font-black tracking-tight mb-1">Create account</h1>
+              <p className="text-white/30 text-sm">Start generating architectures for free</p>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                Password <span className="normal-case font-normal">(min 6 chars)</span>
-              </label>
-              <div className="relative">
-                <input
-                  name="password"
-                  type={showPass ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  placeholder="Create a password"
-                  className="w-full px-4 py-3 pr-11 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all text-sm"
-                />
-                <button type="button" onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="bg-red-500/8 border border-red-500/15 text-red-400 text-sm rounded-xl px-4 py-3 mb-6 flex items-center gap-2"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+                  {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <button
+              onClick={() => alert('Google Sign In — coming soon!')}
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-white/8 bg-white/3 hover:bg-white/6 hover:border-white/15 transition-all duration-300 text-sm font-medium text-white/70 hover:text-white mb-6 group"
+            >
+              <svg className="w-4 h-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
+            </button>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/8" />
+              <span className="text-xs text-white/20 font-medium">or</span>
+              <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/8" />
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-2 block">Name</label>
+                <div className={`relative transition-all duration-300 ${focused === 'name' ? 'drop-shadow-[0_0_12px_rgba(124,58,237,0.3)]' : ''}`}>
+                  <User className="absolute left-3.5 top-3.5 w-4 h-4 text-white/20 pointer-events-none" />
+                  <input type="text" value={name} onChange={e => setName(e.target.value)}
+                    onFocus={() => setFocused('name')} onBlur={() => setFocused(null)}
+                    placeholder="Your name" className="input pl-10" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-2 block">Email</label>
+                <div className={`relative transition-all duration-300 ${focused === 'email' ? 'drop-shadow-[0_0_12px_rgba(124,58,237,0.3)]' : ''}`}>
+                  <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-white/20 pointer-events-none" />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                    onFocus={() => setFocused('email')} onBlur={() => setFocused(null)}
+                    placeholder="you@example.com" className="input pl-10" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-2 block">Password</label>
+                <div className={`relative transition-all duration-300 ${focused === 'pass' ? 'drop-shadow-[0_0_12px_rgba(124,58,237,0.3)]' : ''}`}>
+                  <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-white/20 pointer-events-none" />
+                  <input type={showPass ? 'text' : 'password'} value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    onFocus={() => setFocused('pass')} onBlur={() => setFocused(null)}
+                    placeholder="Create a strong password" className="input pl-10 pr-10"
+                    onKeyDown={e => e.key === 'Enter' && handleRegister()} />
+                  <button onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-3 text-white/20 hover:text-white/60 transition-colors p-0.5">
+                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                <AnimatePresence>
+                  {password.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-3 overflow-hidden"
+                    >
+                      <div className="flex gap-1.5 mb-2">
+                        {[1,2,3,4,5].map(i => (
+                          <motion.div
+                            key={i}
+                            className={`h-1 flex-1 rounded-full transition-all duration-500 ${i <= strength.score ? strength.color : 'bg-white/8'}`}
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ delay: i * 0.05 }}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`text-xs font-semibold ${strength.textColor}`}>{strength.level}</span>
+                        <span className="text-xs text-white/20">{strength.score}/5</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {([
+                          ['8+ characters', strength.checks.length],
+                          ['Uppercase', strength.checks.uppercase],
+                          ['Lowercase', strength.checks.lowercase],
+                          ['Number', strength.checks.number],
+                        ] as [string, boolean][]).map(([label, passed]) => (
+                          <div key={label} className="flex items-center gap-1.5 text-xs">
+                            {passed
+                              ? <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
+                              : <XCircle className="w-3 h-3 text-white/15 flex-shrink-0" />}
+                            <span className={passed ? 'text-white/50' : 'text-white/20'}>{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
-            <button type="submit" disabled={loading}
-              className="w-full py-3 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-violet-500/20 mt-2">
-              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</> : 'Create account →'}
-            </button>
-          </form>
+            <motion.button
+              onClick={handleRegister}
+              disabled={loading}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              className="btn-primary w-full mt-6"
+            >
+              {loading
+                ? <><Loader2 className="w-4 h-4 animate-spin" /><span>Creating account...</span></>
+                : <><span>Create account</span><ArrowRight className="w-4 h-4" /></>
+              }
+            </motion.button>
 
-          <p className="text-center text-sm text-slate-500 mt-6">
-            Already have an account?{' '}
-            <Link href="/auth/login" className="text-violet-400 hover:text-violet-300 font-semibold transition-colors">
-              Sign in
-            </Link>
-          </p>
+            <p className="text-center text-sm text-white/20 mt-6">
+              Already have an account?{' '}
+              <Link href="/auth/login" className="text-violet-400 hover:text-violet-300 transition-colors font-medium">
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
