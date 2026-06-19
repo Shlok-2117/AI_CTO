@@ -1,5 +1,5 @@
 const cache = new Map<string, { data: any; timestamp: number }>()
-const TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+const TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days — blueprints are expensive to generate
 
 export function cacheKey(problem: string): string {
   return problem.trim().toLowerCase().replace(/\s+/g, ' ')
