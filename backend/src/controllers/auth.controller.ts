@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { PrismaClient } from '@prisma/client'
+import { sendWelcomeEmail } from '../services/email.service'
 
 const prisma = new PrismaClient()
 
@@ -42,6 +43,9 @@ export async function register(req: Request, res: Response) {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       sameSite: 'lax'
     })
+    sendWelcomeEmail(user.email, user.name || undefined).catch(e =>
+      console.error('Welcome email failed:', e.message)
+    )
     return res.status(201).json({
       token,
       user: { id: user.id, email: user.email, name: user.name }
