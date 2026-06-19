@@ -1,331 +1,341 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { Cpu, Zap, Database, Code, Shield, DollarSign, ArrowRight, GitBranch, Star, Menu, X, Terminal, Layers, Globe } from 'lucide-react'
-import { GridBackground } from '@/components/ui/GridBackground'
-import { FloatingOrb } from '@/components/ui/FloatingOrb'
-import { Marquee } from '@/components/ui/Marquee'
-
-const MARQUEE_ITEMS = [
-  'System Architecture', 'Database Schema', 'API Design', 'Cost Estimation',
-  'Security Audit', 'ER Diagrams', 'Sequence Diagrams', 'Scaling Strategy',
-  'Tech Stack', 'Infrastructure', 'Microservices', 'Cloud Architecture'
-]
+import { motion, useScroll, useTransform } from 'framer-motion'
+import { ArrowRight, Cpu, Database, Code, DollarSign, Shield, GitBranch, Zap, Activity, Layers, Terminal } from 'lucide-react'
+import { JarvisNav } from '@/components/jarvis/JarvisNav'
+import { HudOrb } from '@/components/jarvis/HudOrb'
+import { BootScreen } from '@/components/jarvis/BootScreen'
 
 const FEATURES = [
-  { icon: Cpu, title: 'System Architecture', desc: 'Services, tech stack, communication patterns, and infrastructure — all generated automatically.', color: 'from-violet-500/10 to-violet-500/5', border: 'border-violet-500/20', iconColor: 'text-violet-400' },
-  { icon: Database, title: 'Database Schema', desc: 'Complete PostgreSQL schema with tables, indexes, relationships, and normalization.', color: 'from-blue-500/10 to-blue-500/5', border: 'border-blue-500/20', iconColor: 'text-blue-400' },
-  { icon: Code, title: 'API Design', desc: 'Full REST API specification with endpoints, auth, request/response shapes.', color: 'from-emerald-500/10 to-emerald-500/5', border: 'border-emerald-500/20', iconColor: 'text-emerald-400' },
-  { icon: DollarSign, title: 'Cost Estimation', desc: 'AWS pricing for 3 scale tiers with per-service breakdown and saving tips.', color: 'from-amber-500/10 to-amber-500/5', border: 'border-amber-500/20', iconColor: 'text-amber-400' },
-  { icon: Shield, title: 'Security Audit', desc: 'OWASP checklist, risk scoring, and prioritized vulnerability assessment.', color: 'from-red-500/10 to-red-500/5', border: 'border-red-500/20', iconColor: 'text-red-400' },
-  { icon: GitBranch, title: 'Diagram Export', desc: 'Architecture, ER, and sequence diagrams rendered from Mermaid syntax.', color: 'from-pink-500/10 to-pink-500/5', border: 'border-pink-500/20', iconColor: 'text-pink-400' },
+  { icon: Cpu, id: '01', title: 'Architecture Agent', desc: 'Generates complete system architecture with services, communication patterns, and infrastructure recommendations.', color: '#00D4FF', border: 'rgba(0,212,255,0.15)' },
+  { icon: Database, id: '02', title: 'Database Agent', desc: 'Designs normalized PostgreSQL schema with tables, indexes, foreign keys, and SQL preview.', color: '#38BDF8', border: 'rgba(56,189,248,0.15)' },
+  { icon: Code, id: '03', title: 'API Design Agent', desc: 'Creates complete REST API spec with endpoints, auth strategy, and request/response shapes.', color: '#818CF8', border: 'rgba(129,140,248,0.15)' },
+  { icon: DollarSign, id: '04', title: 'Cost Estimator', desc: 'Estimates monthly AWS costs across small, medium, and large scale tiers with saving tips.', color: '#F59E0B', border: 'rgba(245,158,11,0.15)' },
+  { icon: Shield, id: '05', title: 'Security Agent', desc: 'Runs OWASP security audit with risk scoring and prioritized vulnerability checklist.', color: '#F87171', border: 'rgba(248,113,113,0.15)' },
+  { icon: GitBranch, id: '06', title: 'Diagram Agent', desc: 'Renders architecture, ER, and sequence diagrams automatically from Mermaid syntax.', color: '#A78BFA', border: 'rgba(167,139,250,0.15)' },
+]
+
+const MARQUEE_ITEMS = [
+  '▸ SYSTEM ARCHITECTURE', '▸ DATABASE SCHEMA', '▸ API DESIGN', '▸ COST ESTIMATION',
+  '▸ SECURITY AUDIT', '▸ ER DIAGRAMS', '▸ SEQUENCE DIAGRAMS', '▸ SCALING STRATEGY',
+  '▸ TECH STACK', '▸ INFRASTRUCTURE', '▸ MICROSERVICES', '▸ CLOUD PLANNING'
 ]
 
 const STATS = [
-  { value: '6', label: 'AI Agents', icon: Layers },
-  { value: '<60s', label: 'Per Generation', icon: Zap },
-  { value: '100%', label: 'Free Forever', icon: Star },
-  { value: '∞', label: 'Ideas Supported', icon: Globe },
-]
-
-const EXAMPLES = [
-  '"Design a food delivery app like Swiggy"',
-  '"Build a fintech platform like Razorpay"',
-  '"Create a real-time chat app like Slack"',
-  '"Design an e-commerce marketplace"',
+  { value: '6', label: 'AI AGENTS', sub: 'specialized' },
+  { value: '<60s', label: 'GENERATION', sub: 'per blueprint' },
+  { value: '100%', label: 'FREE TIER', sub: 'forever' },
+  { value: '∞', label: 'IDEAS', sub: 'supported' },
 ]
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.23, 1, 0.32, 1] as any } }
+  hidden: { opacity: 0, y: 40, filter: 'blur(8px)' },
+  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.8, ease: [0.23, 1, 0.32, 1] as [number, number, number, number] } }
 }
 
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } }
-}
+const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }
 
 export default function LandingPage() {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [currentExample, setCurrentExample] = useState(0)
-  const [scrolled, setScrolled] = useState(false)
+  const [booted, setBooted] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [currentStat, setCurrentStat] = useState(0)
+  const { scrollY } = useScroll()
+  const heroY = useTransform(scrollY, [0, 500], [0, -100])
+  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0])
 
   useEffect(() => {
-    const t = setInterval(() => setCurrentExample(p => (p + 1) % EXAMPLES.length), 3000)
+    setMounted(true)
+    if (typeof window !== 'undefined' && sessionStorage.getItem('jarvis_booted')) {
+      setBooted(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    const t = setInterval(() => setCurrentStat(p => (p + 1) % STATS.length), 2000)
     return () => clearInterval(t)
   }, [])
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  const handleBootComplete = useCallback(() => setBooted(true), [])
+
+  if (!mounted) return null
 
   return (
-    <div className="page-bg text-white overflow-x-hidden">
+    <>
+      {!booted && <BootScreen onComplete={handleBootComplete} />}
 
-      {/* Navbar */}
-      <motion.nav
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'glass border-b border-white/5' : ''}`}
-      >
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-content-center shadow-lg shadow-violet-500/25 group-hover:shadow-violet-500/40 transition-shadow">
-              <Cpu className="w-4 h-4 text-white m-auto" />
-            </div>
-            <span className="font-bold text-lg tracking-tight">AI CTO</span>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/auth/login" className="text-sm text-white/40 hover:text-white transition-colors duration-200">Sign in</Link>
-            <Link href="/auth/register" className="btn-primary text-sm py-2 px-5">Get started free</Link>
-          </div>
-
-          <button className="md:hidden text-white/60 hover:text-white" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-
-        {menuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="md:hidden glass border-t border-white/5 px-6 py-4 flex flex-col gap-4"
-          >
-            <Link href="/auth/login" className="text-sm text-white/60 hover:text-white">Sign in</Link>
-            <Link href="/auth/register" className="btn-primary text-sm text-center py-2.5">Get started free</Link>
-          </motion.div>
-        )}
-      </motion.nav>
-
-      {/* Hero */}
-      <section className="relative pt-36 pb-24 px-6 text-center overflow-hidden">
-        <GridBackground />
-        <FloatingOrb className="w-96 h-96 bg-violet-600 top-0 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-        <FloatingOrb className="w-64 h-64 bg-indigo-600 top-1/2 right-0 translate-x-1/2" />
-
+      {booted && (
         <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="visible"
-          className="max-w-5xl mx-auto relative z-10"
+          className="page-jarvis text-white overflow-x-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
         >
-          <motion.div variants={fadeUp} className="inline-flex items-center gap-2 glass px-4 py-2 rounded-full text-xs font-medium text-violet-300 mb-8 border border-violet-500/20">
-            <div className="glow-dot" />
-            6 specialized AI agents working in sequence
-          </motion.div>
+          <div className="scan-line" />
+          <div className="fixed inset-0 hud-grid pointer-events-none opacity-40" />
 
-          <motion.h1 variants={fadeUp} className="text-6xl sm:text-8xl font-black mb-6 leading-[0.9] tracking-tight">
-            Your AI<br />
-            <span className="gradient-text">Chief Technology</span><br />
-            Officer
-          </motion.h1>
+          <JarvisNav />
 
-          <motion.p variants={fadeUp} className="text-lg text-white/40 mb-10 max-w-xl mx-auto leading-relaxed">
-            Type any startup idea. Get complete system architecture, database schema,
-            API design, cost estimates, and security audit — in under 60 seconds.
-          </motion.p>
-
-          <motion.div variants={fadeUp} className="glass border-beam rounded-2xl p-5 max-w-2xl mx-auto mb-10 text-left border border-white/5">
-            <div className="flex items-center gap-2 mb-3">
-              <Terminal className="w-3.5 h-3.5 text-violet-400" />
-              <span className="text-xs text-white/30 font-mono">ai-cto generate</span>
-              <span className="ml-auto flex gap-1">
-                {(['#ff5f57', '#febc2e', '#28c840'] as const).map((bg, i) => (
-                  <span key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: bg }} />
-                ))}
-              </span>
+          {/* HERO */}
+          <motion.section
+            style={{ y: heroY, opacity: heroOpacity }}
+            className="relative min-h-screen flex items-center justify-center px-6 pt-20 overflow-hidden"
+          >
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+              <HudOrb size={500} />
             </div>
-            <motion.p
-              key={currentExample}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-white/60 text-sm font-mono min-h-5"
+            <div
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
+              style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.04) 0%, transparent 70%)' }}
+            />
+
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              animate="visible"
+              className="relative z-10 text-center max-w-5xl mx-auto"
             >
-              {EXAMPLES[currentExample]}
-            </motion.p>
-          </motion.div>
+              <motion.div variants={fadeUp} className="inline-flex items-center gap-3 mb-10">
+                <div
+                  className="flex items-center gap-2 px-4 py-2 rounded-full"
+                  style={{ background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.2)' }}
+                >
+                  <div className="status-online" />
+                  <span className="text-[10px] font-mono tracking-[0.2em]" style={{ color: '#00D4FF' }}>
+                    JARVIS SYSTEM ONLINE · 6 AGENTS READY
+                  </span>
+                </div>
+              </motion.div>
 
-          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/auth/register" className="btn-primary text-sm">
-              Start generating for free <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link href="/auth/login" className="btn-secondary text-sm">
-              Sign in to your account
-            </Link>
-          </motion.div>
+              <motion.div variants={fadeUp} className="mb-4">
+                <div className="text-xs font-mono tracking-[0.4em] mb-4" style={{ color: 'rgba(0,212,255,0.5)' }}>
+                  INITIALIZING...
+                </div>
+                <h1 className="font-black leading-[0.85] tracking-tighter">
+                  <span className="block text-6xl sm:text-8xl lg:text-9xl" style={{ color: '#F8FAFC' }}>Your AI</span>
+                  <span className="block text-6xl sm:text-8xl lg:text-9xl text-jarvis animate-flicker">CTO</span>
+                  <span className="block text-xl sm:text-2xl lg:text-3xl font-light mt-4" style={{ color: 'rgba(248,250,252,0.4)', letterSpacing: '0.1em' }}>
+                    THINKS AT THE SPEED OF ARCHITECTURE
+                  </span>
+                </h1>
+              </motion.div>
 
-          <motion.p variants={fadeUp} className="text-xs text-white/20 mt-5">
-            No credit card required · 100% free · Open source
-          </motion.p>
-        </motion.div>
-      </section>
+              <motion.p variants={fadeUp} className="text-base sm:text-lg max-w-xl mx-auto mb-10 leading-relaxed" style={{ color: 'rgba(248,250,252,0.35)' }}>
+                Describe any startup idea. Six specialized AI agents generate your complete
+                technical blueprint — architecture, database, APIs, costs, security, and diagrams.
+              </motion.p>
 
-      {/* Marquee */}
-      <div className="border-y border-white/5 py-1">
-        <Marquee items={MARQUEE_ITEMS} />
-      </div>
+              <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Link href="/auth/register" className="btn-jarvis">
+                  <Zap className="w-4 h-4" />
+                  INITIALIZE SYSTEM
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link href="/auth/login" className="btn-amber">
+                  SIGN IN
+                </Link>
+              </motion.div>
 
-      {/* Stats */}
-      <section className="py-20 px-6">
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6"
-        >
-          {STATS.map(({ value, label, icon: Icon }) => (
-            <motion.div key={label} variants={fadeUp} className="glass-card text-center group">
-              <Icon className="w-5 h-5 text-violet-400 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-              <div className="text-3xl font-black gradient-text mb-1">{value}</div>
-              <div className="text-xs text-white/30 font-medium uppercase tracking-widest">{label}</div>
+              <motion.p variants={fadeUp} className="text-xs font-mono mt-6" style={{ color: 'rgba(248,250,252,0.15)' }}>
+                NO CREDIT CARD · 100% FREE · OPEN SOURCE
+              </motion.p>
             </motion.div>
-          ))}
-        </motion.div>
-      </section>
 
-      {/* Features Bento Grid */}
-      <section className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <p className="text-xs text-violet-400 font-semibold uppercase tracking-widest mb-4">Everything you need</p>
-            <h2 className="text-4xl sm:text-5xl font-black mb-4 tracking-tight">
-              A complete technical<br />blueprint in one click
-            </h2>
-            <p className="text-white/30 max-w-lg mx-auto">
-              6 AI agents work in sequence — each one uses the previous output as context for deeper accuracy.
-            </p>
-          </motion.div>
+            <motion.div
+              animate={{ y: [0, 8, 0], opacity: [0.3, 0.6, 0.3] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+            >
+              <div className="text-[9px] font-mono tracking-[0.3em]" style={{ color: 'rgba(0,212,255,0.4)' }}>SCROLL</div>
+              <div className="w-px h-8" style={{ background: 'linear-gradient(to bottom, rgba(0,212,255,0.4), transparent)' }} />
+            </motion.div>
+          </motion.section>
 
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-          >
-            {FEATURES.map(({ icon: Icon, title, desc, color, border, iconColor }, i) => (
+          {/* MARQUEE */}
+          <div className="border-y overflow-hidden" style={{ borderColor: 'rgba(0,212,255,0.08)', background: 'rgba(0,212,255,0.02)' }}>
+            <div className="flex animate-marquee whitespace-nowrap py-3">
+              {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+                <span key={i} className="text-[10px] font-mono flex-shrink-0 px-6" style={{ color: 'rgba(0,212,255,0.35)' }}>
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* STATS */}
+          <section className="py-20 px-6">
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4"
+            >
+              {STATS.map((stat, i) => (
+                <motion.div
+                  key={stat.label}
+                  variants={fadeUp}
+                  className="hud-panel hud-corners rounded-lg p-6 text-center"
+                  style={{ borderColor: i === currentStat ? 'rgba(0,212,255,0.3)' : 'rgba(0,212,255,0.12)' }}
+                >
+                  <div className="text-4xl font-black mb-1 text-jarvis">{stat.value}</div>
+                  <div className="text-[10px] font-mono tracking-widest mb-1" style={{ color: 'rgba(0,212,255,0.6)' }}>
+                    {stat.label}
+                  </div>
+                  <div className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>{stat.sub}</div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </section>
+
+          {/* FEATURES */}
+          <section className="py-20 px-6">
+            <div className="max-w-6xl mx-auto">
+              <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16">
+                <div className="text-[10px] font-mono tracking-[0.4em] mb-3" style={{ color: 'rgba(0,212,255,0.5)' }}>
+                  AGENT MODULES
+                </div>
+                <h2 className="text-4xl sm:text-5xl font-black tracking-tight">
+                  Six specialized<br />
+                  <span className="text-jarvis">intelligence cores</span>
+                </h2>
+              </motion.div>
+
               <motion.div
-                key={title}
-                variants={fadeUp}
-                className={`glass-card border ${border} bg-gradient-to-br ${color} group cursor-default`}
+                variants={stagger}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
               >
-                <div className="flex items-start gap-4">
-                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 group-hover:scale-110 transition-transform">
-                    <Icon className={`w-5 h-5 ${iconColor}`} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white text-sm mb-1">{title}</h3>
-                    <p className="text-xs text-white/30 leading-relaxed">{desc}</p>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-white/5">
-                  <div className="flex items-center gap-1.5 text-xs text-white/20">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    Agent {i + 1} of 6
-                  </div>
-                </div>
+                {FEATURES.map((f) => (
+                  <motion.div
+                    key={f.id}
+                    variants={fadeUp}
+                    className="hud-panel hud-corners rounded-lg p-6 group cursor-default border-beam-cyan"
+                    whileHover={{ y: -4 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="text-[10px] font-mono mb-2" style={{ color: 'rgba(248,250,252,0.2)' }}>
+                          MODULE.{f.id}
+                        </div>
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center"
+                          style={{ background: `${f.color}18`, border: `1px solid ${f.border}` }}
+                        >
+                          <f.icon className="w-5 h-5" style={{ color: f.color }} />
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm mb-2" style={{ color: '#F8FAFC' }}>{f.title}</h3>
+                        <p className="text-xs leading-relaxed" style={{ color: 'rgba(248,250,252,0.3)' }}>{f.desc}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 flex items-center gap-2" style={{ borderTop: '1px solid rgba(0,212,255,0.06)' }}>
+                      <div className="status-online" style={{ width: 5, height: 5 }} />
+                      <span className="text-[9px] font-mono" style={{ color: f.color, opacity: 0.7 }}>AGENT ONLINE</span>
+                    </div>
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+            </div>
+          </section>
 
-      {/* How it works */}
-      <section className="py-20 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-950/10 to-transparent pointer-events-none" />
-        <div className="max-w-3xl mx-auto relative">
-          <motion.div
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl font-black mb-4">From idea to blueprint<br />in 3 steps</h2>
-          </motion.div>
-
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="space-y-4"
-          >
-            {[
-              { step: '01', title: 'Describe your idea', desc: 'Type any startup concept in plain English — no technical jargon needed.', icon: Terminal },
-              { step: '02', title: '6 agents analyze it', desc: 'Architecture → Database → API → Cost → Security → Diagrams, each building on the last.', icon: Layers },
-              { step: '03', title: 'Download your blueprint', desc: 'Get a complete technical report with diagrams, schemas, and PDF export.', icon: GitBranch },
-            ].map(({ step, title, desc, icon: Icon }) => (
-              <motion.div key={step} variants={fadeUp} className="glass-card border border-white/5 flex gap-6 items-start">
-                <div className="text-5xl font-black text-white/5 flex-shrink-0 w-16">{step}</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Icon className="w-4 h-4 text-violet-400" />
-                    <h3 className="font-semibold text-white">{title}</h3>
-                  </div>
-                  <p className="text-sm text-white/30">{desc}</p>
-                </div>
+          {/* HOW IT WORKS */}
+          <section className="py-20 px-6">
+            <div className="max-w-4xl mx-auto">
+              <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mb-16">
+                <div className="text-[10px] font-mono tracking-[0.4em] mb-3" style={{ color: 'rgba(0,212,255,0.5)' }}>MISSION PROTOCOL</div>
+                <h2 className="text-4xl font-black">Three steps to<br /><span className="text-jarvis">full deployment</span></h2>
               </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
 
-      {/* CTA */}
-      <section className="py-24 px-6">
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center"
-        >
-          <div className="glass-card border-beam border border-violet-500/20 relative overflow-hidden">
-            <FloatingOrb className="w-64 h-64 bg-violet-600 -top-32 left-1/2 -translate-x-1/2" />
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 glass px-3 py-1.5 rounded-full text-xs text-violet-300 mb-6 border border-violet-500/20">
-                <Star className="w-3 h-3" /> Free forever
+              <motion.div variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-4">
+                {[
+                  { num: 'MISSION 01', title: 'State your objective', desc: 'Describe any startup idea in plain English. No technical jargon. No templates. Just your vision.', icon: Terminal },
+                  { num: 'MISSION 02', title: 'Agents engage', desc: 'All 6 AI agents activate in sequence. Each one uses the previous output as context for deeper accuracy.', icon: Activity },
+                  { num: 'MISSION 03', title: 'Blueprint delivered', desc: 'Download your complete technical blueprint — architecture diagrams, schemas, APIs, costs, security audit, and PDF report.', icon: Layers },
+                ].map((step, i) => (
+                  <motion.div key={step.num} variants={fadeUp} className="hud-panel rounded-lg p-6 flex items-start gap-6">
+                    <div className="flex-shrink-0">
+                      <div className="text-[9px] font-mono tracking-[0.2em] mb-1" style={{ color: 'rgba(0,212,255,0.4)' }}>{step.num}</div>
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center"
+                        style={{ background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.15)' }}
+                      >
+                        <step.icon className="w-5 h-5" style={{ color: '#00D4FF' }} />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold mb-2">{step.title}</h3>
+                      <p className="text-sm leading-relaxed" style={{ color: 'rgba(248,250,252,0.35)' }}>{step.desc}</p>
+                    </div>
+                    <div className="flex-shrink-0 text-5xl font-black" style={{ color: 'rgba(0,212,255,0.05)' }}>
+                      {String(i + 1).padStart(2, '0')}
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+          </section>
+
+          {/* CTA */}
+          <section className="py-24 px-6">
+            <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="max-w-3xl mx-auto text-center">
+              <div className="hud-panel rounded-2xl p-12 border-beam-cyan relative overflow-hidden">
+                <div
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full pointer-events-none"
+                  style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%)' }}
+                />
+                <div className="relative z-10">
+                  <div className="text-[10px] font-mono tracking-[0.4em] mb-6" style={{ color: 'rgba(0,212,255,0.5)' }}>
+                    SYSTEM READY
+                  </div>
+                  <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
+                    Ready to think<br /><span className="text-jarvis">like a CTO?</span>
+                  </h2>
+                  <p className="mb-10 leading-relaxed" style={{ color: 'rgba(248,250,252,0.3)' }}>
+                    Initialize your access. Design complete systems in under 60 seconds.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link href="/auth/register" className="btn-jarvis">
+                      <Zap className="w-4 h-4" />
+                      INITIALIZE FREE ACCESS
+                    </Link>
+                    <Link href="/auth/login" className="btn-amber">
+                      SIGN IN
+                    </Link>
+                  </div>
+                </div>
               </div>
-              <h2 className="text-4xl font-black mb-4 tracking-tight">Ready to build smarter?</h2>
-              <p className="text-white/30 mb-8 leading-relaxed">
-                Join developers who design complete systems in seconds, not days.
-              </p>
-              <Link href="/auth/register" className="btn-primary">
-                Get started for free <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-      </section>
+            </motion.div>
+          </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-10 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center">
-              <Cpu className="w-3 h-3 text-white" />
+          {/* FOOTER */}
+          <footer className="px-6 py-10" style={{ borderTop: '1px solid rgba(0,212,255,0.08)' }}>
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-6 h-6 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)' }}
+                >
+                  <Cpu className="w-3 h-3" style={{ color: '#00D4FF' }} />
+                </div>
+                <div>
+                  <div className="text-xs font-mono tracking-widest" style={{ color: 'rgba(0,212,255,0.6)' }}>AI CTO</div>
+                  <div className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>BUILT BY SHLOK GOHEL</div>
+                </div>
+              </div>
+              <div className="flex gap-8 text-[10px] font-mono tracking-widest" style={{ color: 'rgba(248,250,252,0.2)' }}>
+                <Link href="/auth/login" className="hover:text-cyan-400 transition-colors">SIGN IN</Link>
+                <Link href="/auth/register" className="hover:text-cyan-400 transition-colors">REGISTER</Link>
+                <a href="https://github.com/Shlok-2117/AI_CTO" target="_blank" rel="noreferrer" className="hover:text-cyan-400 transition-colors">GITHUB</a>
+              </div>
             </div>
-            <span className="text-sm text-white/30">AI CTO · Built by Shlok Gohel</span>
-          </div>
-          <div className="flex gap-8 text-sm text-white/20">
-            <Link href="/auth/login" className="hover:text-white/60 transition-colors">Sign in</Link>
-            <Link href="/auth/register" className="hover:text-white/60 transition-colors">Register</Link>
-            <a href="https://github.com/Shlok-2117/AI_CTO" target="_blank" rel="noreferrer" className="hover:text-white/60 transition-colors">GitHub</a>
-          </div>
-        </div>
-      </footer>
-    </div>
+          </footer>
+        </motion.div>
+      )}
+    </>
   )
 }
