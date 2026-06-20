@@ -6,18 +6,106 @@ import {
   Cpu, Loader2, LogOut, History, CheckCircle, Database, Code,
   DollarSign, Shield, GitBranch, Download, Activity,
   Layers, Users, Cloud, Target, Brain, TrendingUp, Award,
-  AlertTriangle, ChevronRight, Zap, Lock
+  AlertTriangle, ChevronRight, Zap, Lock, RefreshCw
 } from 'lucide-react'
 import Link from 'next/link'
 import MermaidDiagram from '@/components/MermaidDiagram'
 
 const EXAMPLE_CATEGORIES = [
-  { category: 'Food & Delivery', examples: ['Design a food delivery app like Swiggy', 'Build a grocery delivery platform like Blinkit', 'Create a meal kit subscription service'] },
-  { category: 'Fintech', examples: ['Build a payment platform like Razorpay', 'Design a stock trading app like Zerodha', 'Create a crypto exchange platform'] },
-  { category: 'Social & Chat', examples: ['Create a real-time chat app like Slack', 'Build a video calling platform like Zoom', 'Design a social media app like Instagram'] },
-  { category: 'E-Commerce', examples: ['Design a marketplace like Amazon', 'Build a fashion platform like Myntra', 'Create a B2B wholesale platform'] },
-  { category: 'Transport', examples: ['Build a ride-sharing app like Uber', 'Design a logistics platform like Delhivery', 'Create a bike rental platform'] },
-  { category: 'Health & Education', examples: ['Build a telemedicine platform like Practo', 'Design an ed-tech platform like Unacademy', 'Create a fitness app like Cult.fit'] },
+  {
+    category: 'FOOD & DELIVERY',
+    examples: [
+      'Design a food delivery app like Swiggy with real-time tracking',
+      'Build a grocery delivery platform like Blinkit for tier-2 cities',
+      'Create a cloud kitchen management platform like Rebel Foods',
+      'Build a meal kit subscription service like HelloFresh for India',
+    ]
+  },
+  {
+    category: 'FINTECH',
+    examples: [
+      'Build a UPI payment platform like Razorpay for small businesses',
+      'Design a stock trading and investment app like Zerodha',
+      'Create a buy-now-pay-later platform like LazyPay',
+      'Build a digital lending platform like KreditBee for rural India',
+      'Design a crypto exchange and wallet platform like CoinDCX',
+      'Create a personal finance management app like ET Money',
+    ]
+  },
+  {
+    category: 'HEALTH & WELLNESS',
+    examples: [
+      'Build a telemedicine platform like Practo with video consultations',
+      'Design a mental health and therapy platform like YourDOST',
+      'Create a fitness and workout tracking app like Cult.fit',
+      'Build an online pharmacy and medicine delivery app like PharmEasy',
+      'Design a period and fertility tracking app like Flo Health',
+    ]
+  },
+  {
+    category: 'EDUCATION',
+    examples: [
+      'Build a live tutoring platform like Unacademy for competitive exams',
+      'Design a skill-based learning platform like Coursera for India',
+      'Create a coding education platform like Scaler for engineers',
+      'Build a K-12 homework help app like Doubtnut',
+    ]
+  },
+  {
+    category: 'SOCIAL & COMMUNICATION',
+    examples: [
+      'Create a real-time team chat platform like Slack for Indian SMEs',
+      'Build a short video platform like Instagram Reels for creators',
+      'Design a professional networking platform like LinkedIn for India',
+      'Create a community platform like Discord for gaming and creators',
+    ]
+  },
+  {
+    category: 'E-COMMERCE & RETAIL',
+    examples: [
+      'Design a fashion marketplace like Myntra with AR try-on feature',
+      'Build a B2B wholesale platform like IndiaMART for manufacturers',
+      'Create a reselling platform like Meesho for homemakers',
+      'Design a luxury goods authentication and resale platform',
+      'Build a hyperlocal marketplace connecting nearby buyers and sellers',
+    ]
+  },
+  {
+    category: 'TRANSPORT & LOGISTICS',
+    examples: [
+      'Build a ride-sharing platform like Uber for auto-rickshaws',
+      'Design an intercity bus booking platform like redBus',
+      'Create a last-mile delivery platform like Shadowfax for ecommerce',
+      'Build a truck aggregation platform like BlackBuck for logistics',
+    ]
+  },
+  {
+    category: 'SAAS & ENTERPRISE',
+    examples: [
+      'Build an AI-powered CRM platform like Salesforce for Indian SMEs',
+      'Design a project management tool like Jira for remote teams',
+      'Create an HR and payroll management system like Darwinbox',
+      'Build a customer support platform like Freshdesk with AI agents',
+      'Design an inventory management system for retail chains',
+    ]
+  },
+  {
+    category: 'REAL ESTATE & HOME',
+    examples: [
+      'Build a property rental platform like NoBroker with AI matching',
+      'Design a home services marketplace like Urban Company',
+      'Create a co-living space management platform like Stanza Living',
+    ]
+  },
+  {
+    category: 'AI & DEVELOPER TOOLS',
+    examples: [
+      'Build an AI code review and quality platform for engineering teams',
+      'Design a no-code app builder platform like Bubble for India',
+      'Create an AI writing assistant for content creators like Jasper',
+      'Build a data analytics platform like Mixpanel for Indian startups',
+    ]
+  },
 ]
 
 const TABS = [
@@ -36,18 +124,18 @@ const TABS = [
 ]
 
 const AGENT_STEPS = [
-  { id: 1,  name: 'Founder Mindset',       desc: 'Analyzing business fundamentals...',    color: 'text-violet-400',  dot: 'bg-violet-500' },
-  { id: 2,  name: 'Product Strategy',      desc: 'Defining user journeys & metrics...',   color: 'text-blue-400',    dot: 'bg-blue-500' },
-  { id: 3,  name: 'System Architecture',   desc: 'Designing service topology...',         color: 'text-cyan-400',    dot: 'bg-cyan-500' },
-  { id: 4,  name: 'Data Modeling',         desc: 'Designing schema & relationships...',   color: 'text-emerald-400', dot: 'bg-emerald-500' },
-  { id: 5,  name: 'API Design',            desc: 'Generating REST endpoints...',          color: 'text-green-400',   dot: 'bg-green-500' },
-  { id: 6,  name: 'Scaling & Reliability', desc: 'Planning 0→100M user journey...',      color: 'text-yellow-400',  dot: 'bg-yellow-500' },
-  { id: 7,  name: 'Security Review',       desc: 'Running threat model analysis...',      color: 'text-red-400',     dot: 'bg-red-500' },
-  { id: 8,  name: 'DevOps Engineering',    desc: 'Designing CI/CD & observability...',    color: 'text-orange-400',  dot: 'bg-orange-500' },
-  { id: 9,  name: 'FinOps Analysis',       desc: 'Calculating cost tiers & savings...',   color: 'text-amber-400',   dot: 'bg-amber-500' },
-  { id: 10, name: 'Hiring Plan',           desc: 'Planning 3-year team roadmap...',       color: 'text-pink-400',    dot: 'bg-pink-500' },
-  { id: 11, name: 'Diagram Generation',    desc: 'Rendering architecture diagrams...',    color: 'text-indigo-400',  dot: 'bg-indigo-500' },
-  { id: 12, name: 'CTO Verdict',           desc: 'Issuing final investment verdict...',   color: 'text-rose-400',    dot: 'bg-rose-500' },
+  { id: 1,  name: 'Founder Mindset',       desc: 'Analyzing business fundamentals...',   icon: Brain,      color: '#8B5CF6' },
+  { id: 2,  name: 'Product Strategy',      desc: 'Defining user journeys & metrics...',  icon: Target,     color: '#3B82F6' },
+  { id: 3,  name: 'System Architecture',   desc: 'Designing service topology...',        icon: Layers,     color: '#06B6D4' },
+  { id: 4,  name: 'Data Modeling',         desc: 'Designing schema & relationships...',  icon: Database,   color: '#10B981' },
+  { id: 5,  name: 'API Design',            desc: 'Generating REST endpoints...',         icon: Code,       color: '#22C55E' },
+  { id: 6,  name: 'Scaling & Reliability', desc: 'Planning 0→100M user journey...',     icon: TrendingUp, color: '#EAB308' },
+  { id: 7,  name: 'Security Review',       desc: 'Running threat model analysis...',     icon: Shield,     color: '#EF4444' },
+  { id: 8,  name: 'DevOps Engineering',    desc: 'Designing CI/CD & observability...',   icon: Cloud,      color: '#F97316' },
+  { id: 9,  name: 'FinOps Analysis',       desc: 'Calculating cost tiers & savings...',  icon: DollarSign, color: '#F59E0B' },
+  { id: 10, name: 'Hiring Plan',           desc: 'Planning 3-year team roadmap...',      icon: Users,      color: '#EC4899' },
+  { id: 11, name: 'Diagram Generation',    desc: 'Rendering architecture diagrams...',   icon: GitBranch,  color: '#6366F1' },
+  { id: 12, name: 'CTO Verdict',           desc: 'Issuing final investment verdict...',  icon: Award,      color: '#F43F5E' },
 ]
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -1192,7 +1280,9 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState(0)
   const [currentStep, setCurrentStep] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
+  const [logs, setLogs] = useState<string[]>([])
   const timerRefs = useRef<NodeJS.Timeout[]>([])
+  const logsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -1205,22 +1295,35 @@ export default function DashboardPage() {
     timerRefs.current.forEach(t => clearTimeout(t))
     timerRefs.current = []
     setCompletedSteps([])
+    setLogs(['▸ Booting CTO Intelligence System...', '▸ Loading 12 specialized agents...'])
     setCurrentStep(1)
     AGENT_STEPS.forEach((step, i) => {
-      const t = setTimeout(() => {
+      const startT = setTimeout(() => {
+        setLogs(prev => [...prev, `▸ [${String(step.id).padStart(2,'0')}] ${step.name} — ${step.desc}`])
+        setTimeout(() => {
+          if (logsRef.current) logsRef.current.scrollTop = logsRef.current.scrollHeight
+        }, 50)
+      }, i * 18000)
+      timerRefs.current.push(startT)
+      const doneT = setTimeout(() => {
         setCurrentStep(step.id < AGENT_STEPS.length ? step.id + 1 : step.id)
         setCompletedSteps(prev => [...prev, step.id])
+        setLogs(prev => [...prev, `✓ [${String(step.id).padStart(2,'0')}] ${step.name} complete`])
+        setTimeout(() => {
+          if (logsRef.current) logsRef.current.scrollTop = logsRef.current.scrollHeight
+        }, 50)
       }, (i + 1) * 18000)
-      timerRefs.current.push(t)
+      timerRefs.current.push(doneT)
     })
   }
 
   const stopSimulation = () => {
     timerRefs.current.forEach(t => clearTimeout(t))
     timerRefs.current = []
+    setLogs([])
   }
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (forceRegenerate = false) => {
     if (!problem.trim() || problem.trim().length < 10) {
       setError('Please describe your startup idea (at least 10 characters)')
       return
@@ -1235,7 +1338,7 @@ export default function DashboardPage() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ problem: problem.trim() }),
+        body: JSON.stringify({ problem: problem.trim(), force_regenerate: forceRegenerate }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Generation failed')
@@ -1344,7 +1447,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
               <span className="text-[10px] text-gray-600">{problem.length} chars · ⌘+Enter to generate</span>
               <button
-                onClick={handleGenerate}
+                onClick={() => handleGenerate()}
                 disabled={loading || problem.trim().length < 10}
                 className="btn-jarvis flex items-center gap-2 text-xs px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -1355,7 +1458,7 @@ export default function DashboardPage() {
           </div>
           {!result && !loading && (
             <div className="flex flex-wrap gap-2">
-              {EXAMPLE_CATEGORIES.flatMap(c => c.examples.slice(0, 1)).map((ex, i) => (
+              {EXAMPLE_CATEGORIES.flatMap(c => c.examples).map((ex, i) => (
                 <button
                   key={i}
                   onClick={() => setProblem(ex)}
@@ -1380,52 +1483,156 @@ export default function DashboardPage() {
         <AnimatePresence>
           {loading && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="mb-10"
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-6 space-y-3"
             >
-              <div className="hud-panel rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <Activity className="w-4 h-4 text-cyan-400 animate-pulse" />
-                  <p className="text-xs text-cyan-400 uppercase tracking-widest">12-Phase CTO Analysis in Progress</p>
+              {/* Header progress card */}
+              <div className="hud-panel rounded-xl p-5 relative overflow-hidden" style={{ borderColor: 'rgba(0,212,255,0.15)' }}>
+                <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.6),transparent)' }} />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="relative">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)' }}>
+                      <Cpu className="w-4 h-4" style={{ color: '#00D4FF' }} />
+                    </div>
+                    <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: '#00D4FF', boxShadow: '0 0 8px #00D4FF' }} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-white">CTO Intelligence System</p>
+                    <p className="text-[10px] font-mono" style={{ color: 'rgba(0,212,255,0.5)' }}>
+                      {completedSteps.length === 0
+                        ? 'Initializing 12 specialized agents...'
+                        : completedSteps.length === 12
+                        ? 'All phases complete — compiling blueprint...'
+                        : `Phase ${currentStep} of 12 running...`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-black text-cyan-400">{completedSteps.length}</p>
+                    <p className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>/ 12</p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {AGENT_STEPS.map(step => {
+                <div className="h-1 rounded-full overflow-hidden mb-1" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <motion.div
+                    className="h-full rounded-full"
+                    animate={{ width: `${(completedSteps.length / 12) * 100}%` }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                    style={{ background: 'linear-gradient(90deg,#00D4FF,#38BDF8,#818CF8)', boxShadow: '0 0 10px rgba(0,212,255,0.5)' }}
+                  />
+                </div>
+                <div className="flex justify-between text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>
+                  <span>{Math.round((completedSteps.length / 12) * 100)}% COMPLETE</span>
+                  <span>{completedSteps.length < 12 ? `~${Math.max(0, (12 - completedSteps.length) * 18)}s remaining` : 'Finalizing...'}</span>
+                </div>
+              </div>
+
+              {/* All 12 agent steps */}
+              <div className="hud-panel rounded-xl overflow-hidden" style={{ borderColor: 'rgba(0,212,255,0.08)' }}>
+                <div className="px-4 py-2.5 border-b flex items-center gap-2" style={{ borderColor: 'rgba(0,212,255,0.06)', background: 'rgba(0,212,255,0.02)' }}>
+                  <Activity className="w-3.5 h-3.5" style={{ color: 'rgba(0,212,255,0.4)' }} />
+                  <span className="text-[9px] font-mono tracking-widest" style={{ color: 'rgba(0,212,255,0.4)' }}>AGENT PIPELINE</span>
+                </div>
+                <div className="divide-y" style={{ borderColor: 'rgba(0,212,255,0.04)' }}>
+                  {AGENT_STEPS.map((step, i) => {
                     const isDone = completedSteps.includes(step.id)
                     const isActive = currentStep === step.id
+                    const isPending = !isDone && !isActive
+                    const Icon = step.icon
                     return (
-                      <div
+                      <motion.div
                         key={step.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-500 ${
-                          isDone   ? 'border-green-500/20 bg-green-500/5' :
-                          isActive ? 'border-cyan-500/30 bg-cyan-500/5'  :
-                                     'border-white/5 opacity-40'
-                        }`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: i * 0.04 }}
+                        className="flex items-center gap-3 px-4 py-3 transition-all duration-500"
+                        style={{
+                          background: isActive
+                            ? `${step.color}0f`
+                            : isDone
+                            ? 'rgba(74,222,128,0.02)'
+                            : 'transparent'
+                        }}
                       >
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${isDone ? 'bg-green-400' : isActive ? `${step.dot} animate-pulse` : 'bg-gray-700'}`} />
-                        <div className="min-w-0">
-                          <p className={`text-xs font-medium truncate ${isDone ? 'text-green-400' : isActive ? step.color : 'text-gray-600'}`}>{step.name}</p>
-                          {isActive && <p className="text-[10px] text-gray-500 truncate">{step.desc}</p>}
+                        {/* Step number */}
+                        <span className="text-[9px] font-mono w-5 shrink-0 text-center tabular-nums" style={{ color: isDone ? 'rgba(74,222,128,0.5)' : isActive ? step.color : 'rgba(255,255,255,0.12)' }}>
+                          {String(step.id).padStart(2, '0')}
+                        </span>
+
+                        {/* Icon */}
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300" style={{
+                          background: isDone ? 'rgba(74,222,128,0.08)' : isActive ? `${step.color}14` : 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${isDone ? 'rgba(74,222,128,0.2)' : isActive ? `${step.color}30` : 'rgba(255,255,255,0.06)'}`
+                        }}>
+                          {isDone ? (
+                            <CheckCircle className="w-3.5 h-3.5" style={{ color: '#4ADE80' }} />
+                          ) : isActive ? (
+                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
+                              <Icon className="w-3.5 h-3.5" style={{ color: step.color }} />
+                            </motion.div>
+                          ) : (
+                            <Icon className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.12)' }} />
+                          )}
                         </div>
-                        {isDone && <CheckCircle className="w-3 h-3 text-green-400 shrink-0 ml-auto" />}
-                      </div>
+
+                        {/* Name + desc */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-semibold font-mono transition-all duration-300" style={{ color: isDone ? '#4ADE80' : isActive ? '#F8FAFC' : 'rgba(255,255,255,0.22)' }}>
+                            {step.name}
+                          </p>
+                          {isActive && (
+                            <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[9px] font-mono mt-0.5" style={{ color: 'rgba(248,250,252,0.3)' }}>
+                              {step.desc}
+                            </motion.p>
+                          )}
+                        </div>
+
+                        {/* Right status */}
+                        <div className="shrink-0 w-14 text-right">
+                          {isDone && (
+                            <motion.span initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} className="text-[9px] font-mono" style={{ color: 'rgba(74,222,128,0.7)' }}>
+                              DONE ✓
+                            </motion.span>
+                          )}
+                          {isActive && (
+                            <div className="flex justify-end gap-0.5">
+                              {[0, 1, 2].map(j => (
+                                <motion.div key={j} animate={{ opacity: [0.2, 1, 0.2], scaleY: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: j * 0.15 }} className="w-0.5 h-3 rounded-full" style={{ background: step.color }} />
+                              ))}
+                            </div>
+                          )}
+                          {isPending && (
+                            <span className="text-[9px] font-mono" style={{ color: 'rgba(255,255,255,0.08)' }}>QUEUED</span>
+                          )}
+                        </div>
+                      </motion.div>
                     )
                   })}
                 </div>
-                <div className="mt-5">
-                  <div className="flex items-center justify-between text-[10px] text-gray-600 mb-1.5">
-                    <span>Progress</span>
-                    <span>{completedSteps.length} / {AGENT_STEPS.length}</span>
+              </div>
+
+              {/* Terminal log */}
+              <div className="hud-panel rounded-xl overflow-hidden" style={{ borderColor: 'rgba(0,212,255,0.06)' }}>
+                <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ borderColor: 'rgba(0,212,255,0.05)', background: 'rgba(0,0,0,0.2)' }}>
+                  <div className="flex gap-1">
+                    {[0,1,2].map(i => <div key={i} className="w-2 h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }} />)}
                   </div>
-                  <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
-                      initial={{ width: '0%' }}
-                      animate={{ width: `${(completedSteps.length / AGENT_STEPS.length) * 100}%` }}
-                      transition={{ duration: 0.5 }}
-                    />
+                  <span className="text-[9px] font-mono ml-1" style={{ color: 'rgba(248,250,252,0.15)' }}>cto.intelligence.log</span>
+                  <div className="ml-auto flex items-center gap-1">
+                    <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-1.5 h-1.5 rounded-full" style={{ background: '#00D4FF', boxShadow: '0 0 4px #00D4FF' }} />
+                    <span className="text-[8px] font-mono" style={{ color: 'rgba(0,212,255,0.4)' }}>LIVE</span>
                   </div>
+                </div>
+                <div ref={logsRef} className="p-3 h-24 overflow-y-auto space-y-0.5">
+                  {logs.length === 0 && (
+                    <span className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.1)' }}>Booting CTO Intelligence System...</span>
+                  )}
+                  {logs.map((log, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="text-[9px] font-mono leading-relaxed" style={{ color: log.startsWith('✓') ? 'rgba(74,222,128,0.6)' : 'rgba(0,212,255,0.4)' }}>
+                      {log}
+                    </motion.div>
+                  ))}
+                  <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ duration: 1, repeat: Infinity }} className="text-[9px] font-mono" style={{ color: 'rgba(0,212,255,0.3)' }}>▊</motion.span>
                 </div>
               </div>
             </motion.div>
@@ -1444,12 +1651,32 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Blueprint Generated</p>
                   <h2 className="text-xl font-bold text-white">{result.projectName}</h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    {result.from_cache && (
+                      <span className="text-[10px] px-2 py-0.5 rounded border border-yellow-500/30 text-yellow-400 bg-yellow-500/10">Cached</span>
+                    )}
+                    <span className="text-[10px] px-2 py-0.5 rounded border border-green-500/30 text-green-400 bg-green-500/10">12 Phases Complete</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {result.from_cache && (
-                    <span className="text-[10px] px-2 py-1 rounded border border-yellow-500/30 text-yellow-400 bg-yellow-500/10">Cached</span>
-                  )}
-                  <span className="text-[10px] px-2 py-1 rounded border border-green-500/30 text-green-400 bg-green-500/10">12 Phases Complete</span>
+                  <button
+                    onClick={() => handleGenerate(true)}
+                    className="flex items-center gap-1.5 text-[10px] font-mono px-3 py-2 rounded transition-all"
+                    style={{ color: 'rgba(248,250,252,0.3)', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#00D4FF'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.25)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(248,250,252,0.3)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> REGENERATE
+                  </button>
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="flex items-center gap-1.5 text-[10px] font-mono px-4 py-2 rounded transition-all"
+                    style={{ color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.05)', boxShadow: '0 0 12px rgba(245,158,11,0.1)' }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 20px rgba(245,158,11,0.25)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.5)' }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 12px rgba(245,158,11,0.1)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)' }}
+                  >
+                    <Download className="w-3.5 h-3.5" /> DOWNLOAD PDF
+                  </button>
                 </div>
               </div>
 
