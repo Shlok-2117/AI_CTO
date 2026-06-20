@@ -1642,160 +1642,219 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="mb-6 space-y-3"
+              className="mb-6"
             >
-              {/* Header progress card */}
-              <div className="hud-panel rounded-xl p-5 relative overflow-hidden" style={{ borderColor: 'rgba(0,212,255,0.15)' }}>
-                <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.6),transparent)' }} />
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="relative">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)' }}>
-                      <Cpu className="w-4 h-4" style={{ color: '#00D4FF' }} />
-                    </div>
-                    <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: '#00D4FF', boxShadow: '0 0 8px #00D4FF' }} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-white">CTO Intelligence System</p>
-                    <p className="text-[10px] font-mono" style={{ color: 'rgba(0,212,255,0.5)' }}>
-                      {completedSteps.length === 0
-                        ? 'Initializing 12 specialized agents...'
-                        : completedSteps.length === 12
-                        ? 'All phases complete — compiling blueprint...'
-                        : `Phase ${currentStep} of 12 running...`}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-lg font-black text-cyan-400">{completedSteps.length}</p>
-                      <p className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>/ 12</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-black font-mono" style={{ color: '#F59E0B' }}>{formatTime(elapsedTime)}</p>
-                      <p className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>ELAPSED</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="h-1 rounded-full overflow-hidden mb-1" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                  <motion.div
-                    className="h-full rounded-full"
-                    animate={{ width: `${(completedSteps.length / 12) * 100}%` }}
-                    transition={{ duration: 0.6, ease: 'easeOut' }}
-                    style={{ background: 'linear-gradient(90deg,#00D4FF,#38BDF8,#818CF8)', boxShadow: '0 0 10px rgba(0,212,255,0.5)' }}
-                  />
-                </div>
-                <div className="flex justify-between text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>
-                  <span>{Math.round((completedSteps.length / 12) * 100)}% COMPLETE</span>
-                  <span>{completedSteps.length < 12 ? `~${Math.max(0, (12 - completedSteps.length) * 18)}s remaining` : 'Finalizing...'}</span>
-                </div>
-              </div>
+              <div className="hud-panel rounded-2xl overflow-hidden relative"
+                style={{ borderColor: 'rgba(0,212,255,0.12)' }}>
 
-              {/* All 12 agent steps */}
-              <div className="hud-panel rounded-xl overflow-hidden" style={{ borderColor: 'rgba(0,212,255,0.08)' }}>
-                <div className="px-4 py-2.5 border-b flex items-center gap-2" style={{ borderColor: 'rgba(0,212,255,0.06)', background: 'rgba(0,212,255,0.02)' }}>
-                  <Activity className="w-3.5 h-3.5" style={{ color: 'rgba(0,212,255,0.4)' }} />
-                  <span className="text-[9px] font-mono tracking-widest" style={{ color: 'rgba(0,212,255,0.4)' }}>AGENT PIPELINE</span>
-                </div>
-                <div className="divide-y" style={{ borderColor: 'rgba(0,212,255,0.04)' }}>
-                  {AGENT_STEPS.map((step, i) => {
-                    const isDone = completedSteps.includes(step.id)
-                    const isActive = currentStep === step.id
-                    const isPending = !isDone && !isActive
-                    const Icon = step.icon
-                    return (
+                {/* Top beam */}
+                <div className="absolute top-0 left-0 right-0 h-px"
+                  style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.6),transparent)' }} />
+
+                <div className="p-8">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                          style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)' }}>
+                          <Cpu className="w-5 h-5" style={{ color: '#00D4FF' }} />
+                        </div>
+                        <motion.div
+                          animate={{ scale: [1, 1.4, 1], opacity: [1, 0, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                          className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full"
+                          style={{ background: '#00D4FF', boxShadow: '0 0 8px #00D4FF' }} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-black tracking-wide" style={{ color: '#F8FAFC' }}>
+                          CTO Intelligence System
+                        </div>
+                        <div className="text-[10px] font-mono" style={{ color: 'rgba(0,212,255,0.5)' }}>
+                          {completedSteps.length === 0
+                            ? 'INITIALIZING AGENTS...'
+                            : completedSteps.length === 12
+                            ? 'COMPILING BLUEPRINT...'
+                            : `PHASE ${currentStep} OF 12 · ${AGENT_STEPS[currentStep - 1]?.name?.toUpperCase() || ''}`
+                          }
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Phase counter */}
+                    <div className="text-right">
+                      <div className="text-3xl font-black font-mono text-cyan-400">
+                        {String(completedSteps.length).padStart(2, '0')}
+                        <span className="text-lg" style={{ color: 'rgba(248,250,252,0.15)' }}>/12</span>
+                      </div>
+                      <div className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>PHASES DONE</div>
+                    </div>
+                  </div>
+
+                  {/* JARVIS CLOCK */}
+                  <div className="flex flex-col items-center justify-center py-6 mb-8">
+                    <div className="relative" style={{ width: 200, height: 200 }}>
+
+                      {/* Outer static dashed ring */}
+                      <svg className="absolute inset-0" width="200" height="200">
+                        <circle cx="100" cy="100" r="95"
+                          fill="none" stroke="rgba(0,212,255,0.06)" strokeWidth="1"
+                          strokeDasharray="4 8" />
+                      </svg>
+
+                      {/* Rotating outer ring with dot */}
+                      <motion.svg className="absolute inset-0" width="200" height="200"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}>
+                        <circle cx="100" cy="100" r="90"
+                          fill="none" stroke="rgba(0,212,255,0.15)" strokeWidth="1"
+                          strokeDasharray="30 10 5 10" />
+                        <circle cx="100" cy="10" r="3" fill="#00D4FF"
+                          style={{ filter: 'drop-shadow(0 0 4px #00D4FF)' }} />
+                      </motion.svg>
+
+                      {/* Counter-rotating middle ring */}
+                      <motion.svg className="absolute inset-0" width="200" height="200"
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
+                        <circle cx="100" cy="100" r="74"
+                          fill="none" stroke="rgba(56,189,248,0.2)" strokeWidth="1"
+                          strokeDasharray="15 8" />
+                        <circle cx="100" cy="26" r="2.5" fill="#38BDF8"
+                          style={{ filter: 'drop-shadow(0 0 4px #38BDF8)' }} />
+                      </motion.svg>
+
+                      {/* Progress arc */}
+                      <svg className="absolute inset-0" width="200" height="200"
+                        style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="100" cy="100" r="82"
+                          fill="none" stroke="rgba(0,212,255,0.05)" strokeWidth="4" />
+                        <motion.circle
+                          cx="100" cy="100" r="82"
+                          fill="none"
+                          stroke="url(#progressGrad)"
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 82}`}
+                          animate={{
+                            strokeDashoffset: 2 * Math.PI * 82 * (1 - completedSteps.length / 12)
+                          }}
+                          transition={{ duration: 0.6, ease: 'easeOut' }}
+                        />
+                        <defs>
+                          <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#00D4FF" />
+                            <stop offset="100%" stopColor="#818CF8" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+
+                      {/* Inner amber ring */}
+                      <motion.svg className="absolute inset-0" width="200" height="200"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}>
+                        <circle cx="100" cy="100" r="58"
+                          fill="none" stroke="rgba(245,158,11,0.12)" strokeWidth="1"
+                          strokeDasharray="8 12" />
+                        <circle cx="100" cy="42" r="2" fill="#F59E0B"
+                          style={{ filter: 'drop-shadow(0 0 3px #F59E0B)' }} />
+                      </motion.svg>
+
+                      {/* Center content */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <div className="text-4xl font-black font-mono"
+                          style={{ color: '#00D4FF', textShadow: '0 0 20px rgba(0,212,255,0.5)', letterSpacing: '0.05em' }}>
+                          {formatTime(elapsedTime)}
+                        </div>
+                        <div className="text-[9px] font-mono mt-1"
+                          style={{ color: 'rgba(0,212,255,0.4)', letterSpacing: '0.2em' }}>
+                          ELAPSED
+                        </div>
+                        <div className="mt-3 px-3 py-1 rounded"
+                          style={{ background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.15)' }}>
+                          <div className="text-[9px] font-mono text-center"
+                            style={{ color: 'rgba(0,212,255,0.6)' }}>
+                            {completedSteps.length < 12
+                              ? (AGENT_STEPS[Math.max(0, currentStep - 1)]?.name || 'INITIALIZING')
+                              : 'ALL COMPLETE'
+                            }
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Cardinal tick marks */}
+                      {[0, 90, 180, 270].map(angle => (
+                        <div key={angle} className="absolute w-1.5 h-3"
+                          style={{
+                            background: 'rgba(0,212,255,0.3)',
+                            top: '50%', left: '50%',
+                            transformOrigin: '0 0',
+                            transform: `rotate(${angle}deg) translateX(-0.75px) translateY(-100px)`,
+                            borderRadius: 1
+                          }} />
+                      ))}
+                    </div>
+
+                    {/* Phase dots */}
+                    <div className="flex items-center gap-2 mt-6">
+                      {AGENT_STEPS.map(step => {
+                        const isDone = completedSteps.includes(step.id)
+                        const isActive = currentStep === step.id
+                        return (
+                          <motion.div
+                            key={step.id}
+                            title={step.name}
+                            animate={isActive ? { scale: [1, 1.4, 1] } : { scale: 1 }}
+                            transition={isActive ? { duration: 1, repeat: Infinity } : {}}
+                            className="rounded-full transition-all duration-500"
+                            style={{
+                              width: isActive ? 10 : isDone ? 8 : 5,
+                              height: isActive ? 10 : isDone ? 8 : 5,
+                              background: isDone ? '#4ADE80' : isActive ? step.color : 'rgba(255,255,255,0.08)',
+                              boxShadow: isDone ? '0 0 6px rgba(74,222,128,0.5)' : isActive ? `0 0 8px ${step.color}` : 'none'
+                            }}
+                          />
+                        )
+                      })}
+                    </div>
+                    <div className="text-[9px] font-mono mt-2" style={{ color: 'rgba(248,250,252,0.15)' }}>
+                      {completedSteps.length} / 12 PHASES COMPLETE
+                    </div>
+                  </div>
+
+                  {/* Bottom progress bar + live log */}
+                  <div className="space-y-2">
+                    <div className="h-0.5 rounded-full overflow-hidden"
+                      style={{ background: 'rgba(255,255,255,0.04)' }}>
                       <motion.div
-                        key={step.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: i * 0.04 }}
-                        className="flex items-center gap-3 px-4 py-3 transition-all duration-500"
-                        style={{
-                          background: isActive
-                            ? `${step.color}0f`
-                            : isDone
-                            ? 'rgba(74,222,128,0.02)'
-                            : 'transparent'
-                        }}
-                      >
-                        {/* Step number */}
-                        <span className="text-[9px] font-mono w-5 shrink-0 text-center tabular-nums" style={{ color: isDone ? 'rgba(74,222,128,0.5)' : isActive ? step.color : 'rgba(255,255,255,0.12)' }}>
-                          {String(step.id).padStart(2, '0')}
-                        </span>
+                        className="h-full rounded-full"
+                        animate={{ width: `${(completedSteps.length / 12) * 100}%` }}
+                        transition={{ duration: 0.6, ease: 'easeOut' }}
+                        style={{ background: 'linear-gradient(90deg,#00D4FF,#38BDF8,#818CF8)', boxShadow: '0 0 8px rgba(0,212,255,0.4)' }}
+                      />
+                    </div>
 
-                        {/* Icon */}
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300" style={{
-                          background: isDone ? 'rgba(74,222,128,0.08)' : isActive ? `${step.color}14` : 'rgba(255,255,255,0.03)',
-                          border: `1px solid ${isDone ? 'rgba(74,222,128,0.2)' : isActive ? `${step.color}30` : 'rgba(255,255,255,0.06)'}`
-                        }}>
-                          {isDone ? (
-                            <CheckCircle className="w-3.5 h-3.5" style={{ color: '#4ADE80' }} />
-                          ) : isActive ? (
-                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
-                              <Icon className="w-3.5 h-3.5" style={{ color: step.color }} />
-                            </motion.div>
-                          ) : (
-                            <Icon className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.12)' }} />
-                          )}
-                        </div>
-
-                        {/* Name + desc */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-semibold font-mono transition-all duration-300" style={{ color: isDone ? '#4ADE80' : isActive ? '#F8FAFC' : 'rgba(255,255,255,0.22)' }}>
-                            {step.name}
-                          </p>
-                          {isActive && (
-                            <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[9px] font-mono mt-0.5" style={{ color: 'rgba(248,250,252,0.3)' }}>
-                              {step.desc}
-                            </motion.p>
-                          )}
-                        </div>
-
-                        {/* Right status */}
-                        <div className="shrink-0 w-14 text-right">
-                          {isDone && (
-                            <motion.span initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} className="text-[9px] font-mono" style={{ color: 'rgba(74,222,128,0.7)' }}>
-                              DONE ✓
-                            </motion.span>
-                          )}
-                          {isActive && (
-                            <div className="flex justify-end gap-0.5">
-                              {[0, 1, 2].map(j => (
-                                <motion.div key={j} animate={{ opacity: [0.2, 1, 0.2], scaleY: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: j * 0.15 }} className="w-0.5 h-3 rounded-full" style={{ background: step.color }} />
-                              ))}
-                            </div>
-                          )}
-                          {isPending && (
-                            <span className="text-[9px] font-mono" style={{ color: 'rgba(255,255,255,0.08)' }}>QUEUED</span>
-                          )}
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Terminal log */}
-              <div className="hud-panel rounded-xl overflow-hidden" style={{ borderColor: 'rgba(0,212,255,0.06)' }}>
-                <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ borderColor: 'rgba(0,212,255,0.05)', background: 'rgba(0,0,0,0.2)' }}>
-                  <div className="flex gap-1">
-                    {[0,1,2].map(i => <div key={i} className="w-2 h-2 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }} />)}
-                  </div>
-                  <span className="text-[9px] font-mono ml-1" style={{ color: 'rgba(248,250,252,0.15)' }}>cto.intelligence.log</span>
-                  <div className="ml-auto flex items-center gap-1">
-                    <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} className="w-1.5 h-1.5 rounded-full" style={{ background: '#00D4FF', boxShadow: '0 0 4px #00D4FF' }} />
-                    <span className="text-[8px] font-mono" style={{ color: 'rgba(0,212,255,0.4)' }}>LIVE</span>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                      style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(0,212,255,0.05)' }}>
+                      <motion.div
+                        animate={{ opacity: [1, 0.3, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{ background: '#00D4FF', boxShadow: '0 0 4px #00D4FF' }} />
+                      <span className="text-[10px] font-mono truncate" style={{ color: 'rgba(0,212,255,0.4)' }}>
+                        {logs[logs.length - 1] || 'Initializing CTO Intelligence System...'}
+                      </span>
+                      <span className="text-[9px] font-mono flex-shrink-0 ml-auto"
+                        style={{ color: 'rgba(248,250,252,0.15)' }}>
+                        {Math.round((completedSteps.length / 12) * 100)}%
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div ref={logsRef} className="p-3 h-24 overflow-y-auto space-y-0.5">
-                  {logs.length === 0 && (
-                    <span className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.1)' }}>Booting CTO Intelligence System...</span>
-                  )}
-                  {logs.map((log, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="text-[9px] font-mono leading-relaxed" style={{ color: log.startsWith('✓') ? 'rgba(74,222,128,0.6)' : 'rgba(0,212,255,0.4)' }}>
-                      {log}
-                    </motion.div>
-                  ))}
-                  <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ duration: 1, repeat: Infinity }} className="text-[9px] font-mono" style={{ color: 'rgba(0,212,255,0.3)' }}>▊</motion.span>
-                </div>
+
+                {/* Bottom beam */}
+                <div className="absolute bottom-0 left-0 right-0 h-px"
+                  style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent)' }} />
               </div>
             </motion.div>
           )}
