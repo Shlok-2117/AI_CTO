@@ -1526,66 +1526,101 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#050a0f] text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050a0f]/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-              <Cpu className="w-4 h-4 text-cyan-400" />
+      <nav className="hud-panel border-b px-6 py-3.5 flex items-center justify-between sticky top-0 z-50"
+        style={{ borderColor: 'rgba(0,212,255,0.1)' }}>
+
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="relative">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.3)', boxShadow: '0 0 15px rgba(0,212,255,0.1)' }}>
+              <Cpu className="w-4 h-4" style={{ color: '#00D4FF' }} />
             </div>
-            <span className="font-semibold text-sm tracking-wide">AII<span className="text-cyan-400">_CTO</span></span>
+            <motion.div
+              animate={{ scale: [1, 1.6, 1], opacity: [0.8, 0, 0.8] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+              className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
+              style={{ background: '#00D4FF', boxShadow: '0 0 6px #00D4FF' }} />
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                const next = !voiceEnabled
-                setVoiceEnabled(next)
-                if (!next) stopSpeaking()
-                else speakText('JARVIS voice system activated. I am ready to assist you.')
-              }}
-              className="p-2 rounded transition-all relative"
-              title="Toggle JARVIS Voice (V)"
-              style={{
-                color: voiceEnabled ? '#00D4FF' : 'rgba(248,250,252,0.3)',
-                background: voiceEnabled ? 'rgba(0,212,255,0.08)' : 'transparent',
-                border: voiceEnabled ? '1px solid rgba(0,212,255,0.2)' : '1px solid transparent',
-                boxShadow: voiceEnabled ? '0 0 12px rgba(0,212,255,0.15)' : 'none'
-              }}>
-              {isSpeaking ? (
-                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5, repeat: Infinity }}>
-                  <Volume2 className="w-4 h-4" />
+          <div>
+            <div className="text-sm font-black tracking-[0.15em]" style={{ color: '#00D4FF' }}>
+              JARVIS<span style={{ color: 'rgba(248,250,252,0.4)' }}>_</span>CTO
+            </div>
+            <div className="text-[8px] font-mono tracking-widest -mt-0.5"
+              style={{ color: 'rgba(248,250,252,0.15)' }}>
+              ARCHITECTURE SYSTEM
+            </div>
+          </div>
+        </Link>
+
+        <div className="flex items-center gap-1">
+          {user && (
+            <div className="hidden sm:flex items-center gap-2 mr-2 px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(0,212,255,0.03)', border: '1px solid rgba(0,212,255,0.08)' }}>
+              <motion.div
+                animate={{ opacity: [1, 0.4, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: '#00D4FF', boxShadow: '0 0 4px #00D4FF' }} />
+              <span className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.35)' }}>
+                {user.name || user.email}
+              </span>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              const next = !voiceEnabled
+              setVoiceEnabled(next)
+              if (!next) stopSpeaking()
+              else speakText('JARVIS voice system activated.')
+            }}
+            title="Toggle Voice (V)"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[9px] font-mono tracking-widest transition-all"
+            style={{
+              color: voiceEnabled ? '#00D4FF' : 'rgba(248,250,252,0.25)',
+              background: voiceEnabled ? 'rgba(0,212,255,0.08)' : 'transparent',
+              border: voiceEnabled ? '1px solid rgba(0,212,255,0.2)' : '1px solid transparent',
+            }}>
+            {isSpeaking
+              ? <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5, repeat: Infinity }}>
+                  <Volume2 className="w-3.5 h-3.5" />
                 </motion.div>
-              ) : (
-                <Volume2 className="w-4 h-4" />
-              )}
-            </button>
-            <button
-              onClick={() => setShowShortcuts(true)}
-              className="p-2 rounded transition-all"
-              title="Keyboard shortcuts (?)"
-              style={{ color: 'rgba(248,250,252,0.3)' }}>
-              <Keyboard className="w-4 h-4" />
-            </button>
-            {result && (
-              <button
-                onClick={handleDownloadPDF}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-white/10 text-gray-300 hover:text-white hover:border-white/20 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />PDF
-              </button>
-            )}
-            <Link href="/history" className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-white/10 text-gray-300 hover:text-white hover:border-white/20 transition-colors">
-              <History className="w-3.5 h-3.5" />History
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />Logout
-            </button>
-          </div>
+              : <Volume2 className="w-3.5 h-3.5" />
+            }
+            <span className="hidden sm:block">VOICE</span>
+          </button>
+
+          <button
+            onClick={() => setShowShortcuts(true)}
+            title="Shortcuts (?)"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[9px] font-mono tracking-widest transition-all"
+            style={{ color: 'rgba(248,250,252,0.25)', border: '1px solid transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#00D4FF'; e.currentTarget.style.background = 'rgba(0,212,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.15)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(248,250,252,0.25)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}>
+            <Keyboard className="w-3.5 h-3.5" />
+            <span className="hidden sm:block">KEYS</span>
+          </button>
+
+          <Link href="/history"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[9px] font-mono tracking-widest transition-all"
+            style={{ color: 'rgba(248,250,252,0.25)', border: '1px solid transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#00D4FF'; e.currentTarget.style.background = 'rgba(0,212,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.15)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(248,250,252,0.25)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}>
+            <History className="w-3.5 h-3.5" />
+            <span className="hidden sm:block">HISTORY</span>
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[9px] font-mono tracking-widest transition-all ml-1"
+            style={{ color: 'rgba(245,158,11,0.6)', border: '1px solid rgba(245,158,11,0.15)', background: 'rgba(245,158,11,0.03)' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#F59E0B'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.35)'; e.currentTarget.style.background = 'rgba(245,158,11,0.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(245,158,11,0.6)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.15)'; e.currentTarget.style.background = 'rgba(245,158,11,0.03)' }}>
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:block">LOGOUT</span>
+          </button>
         </div>
-      </header>
+      </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Input */}
@@ -1725,33 +1760,33 @@ export default function DashboardPage() {
                           <Cpu className="w-5 h-5" style={{ color: '#00D4FF' }} />
                         </div>
                         <motion.div
-                          animate={{ scale: [1, 1.4, 1], opacity: [1, 0, 1] }}
+                          animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
                           transition={{ duration: 1.5, repeat: Infinity }}
                           className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full"
                           style={{ background: '#00D4FF', boxShadow: '0 0 8px #00D4FF' }} />
                       </div>
                       <div>
-                        <div className="text-sm font-black tracking-wide" style={{ color: '#F8FAFC' }}>
-                          CTO Intelligence System
+                        <div className="text-sm font-black" style={{ color: '#F8FAFC' }}>
+                          JARVIS_CTO Intelligence
                         </div>
                         <div className="text-[10px] font-mono" style={{ color: 'rgba(0,212,255,0.5)' }}>
-                          {completedSteps.length === 0
-                            ? 'INITIALIZING AGENTS...'
+                          {currentStep === 0
+                            ? 'INITIALIZING...'
                             : completedSteps.length === 12
-                            ? 'COMPILING BLUEPRINT...'
-                            : `PHASE ${currentStep} OF 12 · ${AGENT_STEPS[currentStep - 1]?.name?.toUpperCase() || ''}`
+                            ? 'BLUEPRINT COMPLETE'
+                            : `${AGENT_STEPS[currentStep - 1]?.name?.toUpperCase() || 'PROCESSING'}...`
                           }
                         </div>
                       </div>
                     </div>
 
-                    {/* Phase counter */}
                     <div className="text-right">
-                      <div className="text-3xl font-black font-mono text-cyan-400">
-                        {String(completedSteps.length).padStart(2, '0')}
-                        <span className="text-lg" style={{ color: 'rgba(248,250,252,0.15)' }}>/12</span>
+                      <div className="text-2xl font-black font-mono" style={{ color: '#F59E0B' }}>
+                        {formatTime(elapsedTime)}
                       </div>
-                      <div className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>PHASES DONE</div>
+                      <div className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.15)' }}>
+                        ELAPSED
+                      </div>
                     </div>
                   </div>
 
@@ -1826,24 +1861,17 @@ export default function DashboardPage() {
 
                       {/* Center content */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="text-4xl font-black font-mono"
-                          style={{ color: '#00D4FF', textShadow: '0 0 20px rgba(0,212,255,0.5)', letterSpacing: '0.05em' }}>
+                        <div className="text-5xl font-black font-mono"
+                          style={{ color: '#00D4FF', textShadow: '0 0 30px rgba(0,212,255,0.5)', letterSpacing: '0.05em' }}>
                           {formatTime(elapsedTime)}
                         </div>
-                        <div className="text-[9px] font-mono mt-1"
-                          style={{ color: 'rgba(0,212,255,0.4)', letterSpacing: '0.2em' }}>
-                          ELAPSED
-                        </div>
-                        <div className="mt-3 px-3 py-1 rounded"
-                          style={{ background: 'rgba(0,212,255,0.05)', border: '1px solid rgba(0,212,255,0.15)' }}>
-                          <div className="text-[9px] font-mono text-center"
-                            style={{ color: 'rgba(0,212,255,0.6)' }}>
-                            {completedSteps.length < 12
-                              ? (AGENT_STEPS[Math.max(0, currentStep - 1)]?.name || 'INITIALIZING')
-                              : 'ALL COMPLETE'
-                            }
-                          </div>
-                        </div>
+                        <motion.div
+                          animate={{ opacity: [0.4, 0.8, 0.4] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="text-[9px] font-mono mt-2 tracking-[0.3em]"
+                          style={{ color: 'rgba(0,212,255,0.5)' }}>
+                          PROCESSING
+                        </motion.div>
                       </div>
 
                       {/* Cardinal tick marks */}
@@ -1859,76 +1887,77 @@ export default function DashboardPage() {
                       ))}
                     </div>
 
-                    {/* Cinematic status text */}
-                    <div className="flex flex-col items-center gap-3 mt-6">
-                      <motion.div
-                        key={currentStep}
-                        initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
-                        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                        transition={{ duration: 0.5 }}
-                        className="text-center"
-                      >
-                        <div className="text-xs font-mono font-bold tracking-[0.25em] mb-1"
-                          style={{ color: 'rgba(0,212,255,0.8)' }}>
-                          {currentStep === 0
-                            ? 'INITIALIZING'
-                            : completedSteps.length === 12
-                            ? 'BLUEPRINT READY'
-                            : AGENT_STEPS[currentStep - 1]?.name?.toUpperCase() || 'PROCESSING'
-                          }
-                        </div>
-                        <div className="text-[10px] font-mono"
-                          style={{ color: 'rgba(248,250,252,0.2)' }}>
-                          {currentStep === 0
-                            ? 'Preparing 12 specialized agents...'
-                            : completedSteps.length === 12
-                            ? 'All phases complete — compiling your blueprint'
-                            : AGENT_STEPS[currentStep - 1]?.desc || 'Processing...'
-                          }
-                        </div>
-                      </motion.div>
+                    {/* Cinematic status below clock */}
+                    <div className="flex flex-col items-center gap-4 mt-8">
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={currentStep}
+                          initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
+                          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                          exit={{ opacity: 0, y: -12, filter: 'blur(6px)' }}
+                          transition={{ duration: 0.4 }}
+                          className="text-center"
+                        >
+                          <div className="text-xs font-mono font-black tracking-[0.25em] mb-1"
+                            style={{ color: 'rgba(0,212,255,0.9)' }}>
+                            {currentStep === 0
+                              ? '▸ INITIALIZING SYSTEM'
+                              : completedSteps.length === 12
+                              ? '✓ ALL SYSTEMS COMPLETE'
+                              : `▸ ${AGENT_STEPS[currentStep - 1]?.name?.toUpperCase() || 'PROCESSING'}`
+                            }
+                          </div>
+                          <div className="text-[10px] font-mono"
+                            style={{ color: 'rgba(248,250,252,0.2)' }}>
+                            {currentStep === 0
+                              ? 'Preparing specialized AI agents...'
+                              : completedSteps.length === 12
+                              ? 'Compiling your technical blueprint...'
+                              : AGENT_STEPS[currentStep - 1]?.desc || ''
+                            }
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
 
-                      <div className="flex items-center gap-3">
-                        <div className="h-px w-12"
-                          style={{ background: 'linear-gradient(90deg, transparent, rgba(0,212,255,0.3))' }} />
-                        <div className="text-[10px] font-mono" style={{ color: 'rgba(0,212,255,0.4)' }}>
-                          {completedSteps.length} OF 12 PHASES COMPLETE
-                        </div>
-                        <div className="h-px w-12"
-                          style={{ background: 'linear-gradient(90deg, rgba(0,212,255,0.3), transparent)' }} />
+                      {/* EQ bars — one per agent */}
+                      <div className="flex items-end gap-1.5 h-8">
+                        {AGENT_STEPS.map((step) => {
+                          const isDone = completedSteps.includes(step.id)
+                          const isActive = currentStep === step.id
+                          return (
+                            <motion.div
+                              key={step.id}
+                              title={step.name}
+                              className="w-1.5 rounded-full"
+                              animate={{
+                                height: isDone ? '100%' : isActive ? ['20%', '100%', '50%', '90%', '30%', '100%'] : '15%',
+                                opacity: isDone ? 1 : isActive ? 1 : 0.2
+                              }}
+                              transition={{
+                                duration: isActive ? 0.6 : 0.3,
+                                repeat: isActive ? Infinity : 0,
+                              }}
+                              style={{
+                                background: isDone ? '#4ADE80' : isActive ? step.color : 'rgba(255,255,255,0.08)',
+                                boxShadow: isDone ? '0 0 6px rgba(74,222,128,0.5)' : isActive ? `0 0 8px ${step.color}80` : 'none',
+                                minHeight: '3px'
+                              }}
+                            />
+                          )
+                        })}
                       </div>
 
-                      <div className="flex items-end gap-1 h-6">
-                        {Array.from({ length: 12 }).map((_, i) => (
+                      {/* Thin progress line — no fraction */}
+                      <div className="w-full max-w-xs">
+                        <div className="h-px rounded-full overflow-hidden"
+                          style={{ background: 'rgba(255,255,255,0.05)' }}>
                           <motion.div
-                            key={i}
-                            className="w-1 rounded-full"
-                            animate={{
-                              height: i < completedSteps.length
-                                ? ['100%', '100%']
-                                : i === currentStep - 1
-                                ? ['30%', '100%', '60%', '100%', '40%']
-                                : ['20%', '20%']
-                            }}
-                            transition={{
-                              duration: i === currentStep - 1 ? 0.8 : 0.3,
-                              repeat: i === currentStep - 1 ? Infinity : 0,
-                              delay: i * 0.05
-                            }}
-                            style={{
-                              background: i < completedSteps.length
-                                ? '#4ADE80'
-                                : i === currentStep - 1
-                                ? '#00D4FF'
-                                : 'rgba(255,255,255,0.06)',
-                              boxShadow: i < completedSteps.length
-                                ? '0 0 4px rgba(74,222,128,0.5)'
-                                : i === currentStep - 1
-                                ? '0 0 6px rgba(0,212,255,0.6)'
-                                : 'none'
-                            }}
+                            className="h-full rounded-full"
+                            animate={{ width: `${(completedSteps.length / 12) * 100}%` }}
+                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                            style={{ background: 'linear-gradient(90deg,#00D4FF,#38BDF8,#818CF8)', boxShadow: '0 0 6px rgba(0,212,255,0.4)' }}
                           />
-                        ))}
+                        </div>
                       </div>
                     </div>
                   </div>
