@@ -3,6 +3,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
+import nodemailer from 'nodemailer'
 import authRoutes from './routes/auth.routes'
 import generateRoutes from './routes/generate.routes'
 import historyRoutes from './routes/history.routes'
@@ -50,6 +51,30 @@ app.get('/test-ai', async (_req: Request, res: Response) => {
     openrouter_key_present: hasOpenRouter,
     node_env: process.env.NODE_ENV
   })
+})
+
+app.get('/test-email', async (_req: Request, res: Response) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+      }
+    })
+    await transporter.verify()
+    res.json({
+      status: 'ok',
+      gmail_user: process.env.GMAIL_USER || 'not set',
+      message: 'Email service is connected'
+    })
+  } catch (err: any) {
+    res.status(500).json({
+      status: 'error',
+      message: err.message,
+      gmail_user: process.env.GMAIL_USER || 'not set'
+    })
+  }
 })
 
 app.get('/health', (_req: Request, res: Response) => {
