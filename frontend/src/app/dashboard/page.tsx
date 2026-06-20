@@ -1286,6 +1286,8 @@ export default function DashboardPage() {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [elapsedTime, setElapsedTime] = useState(0)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showExamples, setShowExamples] = useState(false)
+  const [activeCategory, setActiveCategory] = useState(0)
   const timerRefs = useRef<NodeJS.Timeout[]>([])
   const logsRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -1439,9 +1441,10 @@ export default function DashboardPage() {
   }
 
   function formatTime(seconds: number): string {
-    const m = Math.floor(seconds / 60)
-    const s = seconds % 60
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    const s = Math.max(0, seconds)
+    const m = Math.floor(s / 60)
+    const sec = s % 60
+    return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
   }
 
   function speakText(text: string) {
@@ -1613,16 +1616,77 @@ export default function DashboardPage() {
             </div>
           </div>
           {!result && !loading && (
-            <div className="flex flex-wrap gap-2">
-              {EXAMPLE_CATEGORIES.flatMap(c => c.examples).map((ex, i) => (
-                <button
-                  key={i}
-                  onClick={() => setProblem(ex)}
-                  className="text-[11px] px-3 py-1 rounded-full border border-white/10 text-gray-500 hover:text-white hover:border-white/20 transition-colors"
-                >
-                  {ex}
-                </button>
-              ))}
+            <div>
+              <button
+                onClick={() => setShowExamples(!showExamples)}
+                className="flex items-center gap-2 text-[9px] font-mono tracking-widest mb-3 transition-all duration-300"
+                style={{ color: showExamples ? '#00D4FF' : 'rgba(248,250,252,0.25)' }}
+              >
+                <motion.span animate={{ rotate: showExamples ? 90 : 0 }} transition={{ duration: 0.2 }} className="inline-block">▶</motion.span>
+                QUICK EXAMPLES
+                <span className="px-1.5 py-0.5 rounded text-[8px]"
+                  style={{
+                    background: showExamples ? 'rgba(0,212,255,0.1)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${showExamples ? 'rgba(0,212,255,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                    color: showExamples ? '#00D4FF' : 'rgba(248,250,252,0.2)'
+                  }}>40+</span>
+              </button>
+              <AnimatePresence>
+                {showExamples && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                    className="overflow-hidden mb-4"
+                  >
+                    <div className="rounded-xl overflow-hidden"
+                      style={{ border: '1px solid rgba(0,212,255,0.08)', background: 'rgba(0,212,255,0.02)' }}>
+                      <div className="flex overflow-x-auto gap-0 border-b"
+                        style={{ borderColor: 'rgba(0,212,255,0.08)' }}>
+                        {EXAMPLE_CATEGORIES.map((cat, ci) => (
+                          <button
+                            key={cat.category}
+                            onClick={() => setActiveCategory(ci)}
+                            className="flex-shrink-0 px-4 py-2.5 text-[9px] font-mono tracking-widest transition-all whitespace-nowrap"
+                            style={{
+                              color: activeCategory === ci ? '#00D4FF' : 'rgba(248,250,252,0.2)',
+                              background: activeCategory === ci ? 'rgba(0,212,255,0.06)' : 'transparent',
+                              borderBottom: activeCategory === ci ? '1px solid #00D4FF' : '1px solid transparent',
+                            }}>
+                            {cat.category}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="p-3">
+                        <div className="grid grid-cols-1 gap-1.5">
+                          {EXAMPLE_CATEGORIES[activeCategory]?.examples.map(ex => (
+                            <button
+                              key={ex}
+                              onClick={() => { setProblem(ex); setShowExamples(false) }}
+                              disabled={loading}
+                              className="text-left text-xs px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
+                              style={{ color: 'rgba(248,250,252,0.45)', background: 'transparent', border: '1px solid transparent' }}
+                              onMouseEnter={e => {
+                                e.currentTarget.style.background = 'rgba(0,212,255,0.05)'
+                                e.currentTarget.style.borderColor = 'rgba(0,212,255,0.15)'
+                                e.currentTarget.style.color = 'rgba(248,250,252,0.8)'
+                              }}
+                              onMouseLeave={e => {
+                                e.currentTarget.style.background = 'transparent'
+                                e.currentTarget.style.borderColor = 'transparent'
+                                e.currentTarget.style.color = 'rgba(248,250,252,0.45)'
+                              }}>
+                              <span className="flex-shrink-0 text-[8px]" style={{ color: 'rgba(0,212,255,0.3)' }}>▸</span>
+                              {ex}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -1732,7 +1796,7 @@ export default function DashboardPage() {
                         <motion.circle
                           cx="100" cy="100" r="82"
                           fill="none"
-                          stroke="url(#progressGrad)"
+                          stroke="url(#jarvis-progress-grad)"
                           strokeWidth="4"
                           strokeLinecap="round"
                           strokeDasharray={`${2 * Math.PI * 82}`}
@@ -1742,7 +1806,7 @@ export default function DashboardPage() {
                           transition={{ duration: 0.6, ease: 'easeOut' }}
                         />
                         <defs>
-                          <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <linearGradient id="jarvis-progress-grad" x1="0%" y1="0%" x2="100%" y2="0%">
                             <stop offset="0%" stopColor="#00D4FF" />
                             <stop offset="100%" stopColor="#818CF8" />
                           </linearGradient>
@@ -1795,30 +1859,77 @@ export default function DashboardPage() {
                       ))}
                     </div>
 
-                    {/* Phase dots */}
-                    <div className="flex items-center gap-2 mt-6">
-                      {AGENT_STEPS.map(step => {
-                        const isDone = completedSteps.includes(step.id)
-                        const isActive = currentStep === step.id
-                        return (
+                    {/* Cinematic status text */}
+                    <div className="flex flex-col items-center gap-3 mt-6">
+                      <motion.div
+                        key={currentStep}
+                        initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
+                        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                        transition={{ duration: 0.5 }}
+                        className="text-center"
+                      >
+                        <div className="text-xs font-mono font-bold tracking-[0.25em] mb-1"
+                          style={{ color: 'rgba(0,212,255,0.8)' }}>
+                          {currentStep === 0
+                            ? 'INITIALIZING'
+                            : completedSteps.length === 12
+                            ? 'BLUEPRINT READY'
+                            : AGENT_STEPS[currentStep - 1]?.name?.toUpperCase() || 'PROCESSING'
+                          }
+                        </div>
+                        <div className="text-[10px] font-mono"
+                          style={{ color: 'rgba(248,250,252,0.2)' }}>
+                          {currentStep === 0
+                            ? 'Preparing 12 specialized agents...'
+                            : completedSteps.length === 12
+                            ? 'All phases complete — compiling your blueprint'
+                            : AGENT_STEPS[currentStep - 1]?.desc || 'Processing...'
+                          }
+                        </div>
+                      </motion.div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="h-px w-12"
+                          style={{ background: 'linear-gradient(90deg, transparent, rgba(0,212,255,0.3))' }} />
+                        <div className="text-[10px] font-mono" style={{ color: 'rgba(0,212,255,0.4)' }}>
+                          {completedSteps.length} OF 12 PHASES COMPLETE
+                        </div>
+                        <div className="h-px w-12"
+                          style={{ background: 'linear-gradient(90deg, rgba(0,212,255,0.3), transparent)' }} />
+                      </div>
+
+                      <div className="flex items-end gap-1 h-6">
+                        {Array.from({ length: 12 }).map((_, i) => (
                           <motion.div
-                            key={step.id}
-                            title={step.name}
-                            animate={isActive ? { scale: [1, 1.4, 1] } : { scale: 1 }}
-                            transition={isActive ? { duration: 1, repeat: Infinity } : {}}
-                            className="rounded-full transition-all duration-500"
+                            key={i}
+                            className="w-1 rounded-full"
+                            animate={{
+                              height: i < completedSteps.length
+                                ? ['100%', '100%']
+                                : i === currentStep - 1
+                                ? ['30%', '100%', '60%', '100%', '40%']
+                                : ['20%', '20%']
+                            }}
+                            transition={{
+                              duration: i === currentStep - 1 ? 0.8 : 0.3,
+                              repeat: i === currentStep - 1 ? Infinity : 0,
+                              delay: i * 0.05
+                            }}
                             style={{
-                              width: isActive ? 10 : isDone ? 8 : 5,
-                              height: isActive ? 10 : isDone ? 8 : 5,
-                              background: isDone ? '#4ADE80' : isActive ? step.color : 'rgba(255,255,255,0.08)',
-                              boxShadow: isDone ? '0 0 6px rgba(74,222,128,0.5)' : isActive ? `0 0 8px ${step.color}` : 'none'
+                              background: i < completedSteps.length
+                                ? '#4ADE80'
+                                : i === currentStep - 1
+                                ? '#00D4FF'
+                                : 'rgba(255,255,255,0.06)',
+                              boxShadow: i < completedSteps.length
+                                ? '0 0 4px rgba(74,222,128,0.5)'
+                                : i === currentStep - 1
+                                ? '0 0 6px rgba(0,212,255,0.6)'
+                                : 'none'
                             }}
                           />
-                        )
-                      })}
-                    </div>
-                    <div className="text-[9px] font-mono mt-2" style={{ color: 'rgba(248,250,252,0.15)' }}>
-                      {completedSteps.length} / 12 PHASES COMPLETE
+                        ))}
+                      </div>
                     </div>
                   </div>
 
