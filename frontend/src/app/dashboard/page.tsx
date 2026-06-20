@@ -6,7 +6,8 @@ import {
   Cpu, Loader2, LogOut, History, CheckCircle, Database, Code,
   DollarSign, Shield, GitBranch, Download, Activity,
   Layers, Users, Cloud, Target, Brain, TrendingUp, Award,
-  AlertTriangle, ChevronRight, Zap, Lock, RefreshCw
+  AlertTriangle, ChevronRight, Zap, Lock, RefreshCw,
+  Volume2, Keyboard, X
 } from 'lucide-react'
 import Link from 'next/link'
 import MermaidDiagram from '@/components/MermaidDiagram'
@@ -1281,8 +1282,13 @@ export default function DashboardPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
   const [logs, setLogs] = useState<string[]>([])
+  const [voiceEnabled, setVoiceEnabled] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [elapsedTime, setElapsedTime] = useState(0)
+  const [showShortcuts, setShowShortcuts] = useState(false)
   const timerRefs = useRef<NodeJS.Timeout[]>([])
   const logsRef = useRef<HTMLDivElement>(null)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -1290,6 +1296,55 @@ export default function DashboardPage() {
     const u = localStorage.getItem('user')
     if (u) { try { setUser(JSON.parse(u)) } catch {} }
   }, [router])
+
+  useEffect(() => {
+    if (loading) {
+      setElapsedTime(0)
+      timerRef.current = setInterval(() => {
+        setElapsedTime(prev => prev + 1)
+      }, 1000)
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [loading])
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'TEXTAREA' || tag === 'INPUT') return
+
+      if (e.key >= '1' && e.key <= '9') {
+        const tabIndex = parseInt(e.key) - 1
+        if (result && tabIndex < 12) { setActiveTab(tabIndex); e.preventDefault() }
+      }
+      if (e.key === '0') {
+        if (result) { setActiveTab(11); e.preventDefault() }
+      }
+      if (e.key === 'g' || e.key === 'G') {
+        if (!loading && problem.trim().length >= 10) { handleGenerate(); e.preventDefault() }
+      }
+      if (e.key === 'p' || e.key === 'P') {
+        if (result) { handleDownloadPDF(); e.preventDefault() }
+      }
+      if (e.key === 'v' || e.key === 'V') {
+        setVoiceEnabled(prev => !prev); e.preventDefault()
+      }
+      if (e.key === '?' || e.key === '/') {
+        setShowShortcuts(prev => !prev); e.preventDefault()
+      }
+      if (e.key === 'Escape') {
+        setShowShortcuts(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [result, loading, problem])
 
   const startAgentSimulation = () => {
     timerRefs.current.forEach(t => clearTimeout(t))
@@ -1346,6 +1401,11 @@ export default function DashboardPage() {
       setCurrentStep(0)
       setCompletedSteps(AGENT_STEPS.map(s => s.id))
       setResult(data)
+      if (voiceEnabled) {
+        setTimeout(() => speakText(
+          `Blueprint generation complete. Project: ${data.projectName}. All 12 phases analyzed successfully. Your technical blueprint is ready, sir.`
+        ), 500)
+      }
     } catch (err: any) {
       stopSimulation()
       setCurrentStep(0)
@@ -1378,6 +1438,72 @@ export default function DashboardPage() {
     router.push('/auth/login')
   }
 
+  function formatTime(seconds: number): string {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+
+  function speakText(text: string) {
+    if (!voiceEnabled || !text) return
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = 0.95
+    utterance.pitch = 0.85
+    utterance.volume = 0.9
+    const voices = window.speechSynthesis.getVoices()
+    const preferred = voices.find(v =>
+      v.name.includes('Daniel') ||
+      v.name.includes('Google UK English Male') ||
+      v.name.includes('Microsoft David') ||
+      v.name.includes('Alex') ||
+      v.lang === 'en-GB'
+    )
+    if (preferred) utterance.voice = preferred
+    utterance.onstart = () => setIsSpeaking(true)
+    utterance.onend = () => setIsSpeaking(false)
+    utterance.onerror = () => setIsSpeaking(false)
+    window.speechSynthesis.speak(utterance)
+  }
+
+  function stopSpeaking() {
+    window.speechSynthesis.cancel()
+    setIsSpeaking(false)
+  }
+
+  function getTabSummary(tabIndex: number, data: any): string {
+    if (!data) return ''
+    const r = data.result
+    switch (tabIndex) {
+      case 0:
+        return `Founder analysis complete. ${r?.founder?.startup_identity?.one_line_pitch || ''}. The primary customer is ${r?.founder?.customer?.primary_persona?.name || 'identified'}. Business model: ${r?.founder?.business_model?.primary_model || 'defined'}.`
+      case 1:
+        return `Product strategy ready. North star metric: ${r?.product?.metrics?.north_star_metric || 'defined'}. ${r?.product?.core_features?.length || 0} core features identified.`
+      case 2:
+        return `System architecture designed using ${r?.architecture?.architecture_style?.pattern || 'microservices'}. ${r?.architecture?.services?.length || 0} services created. ${r?.architecture?.architecture_style?.justification || ''}`
+      case 3:
+        return `Database schema ready. ${r?.database?.tables?.length || 0} tables designed. Primary database: ${r?.database?.database_strategy?.primary_database || 'PostgreSQL'}. Normalization: ${r?.database?.normalization || '3NF'}.`
+      case 4:
+        return `API design complete. ${r?.api?.endpoints?.length || 0} endpoints defined. Authentication strategy: ${r?.api?.api_strategy?.authentication || 'JWT'}. Base URL: ${r?.api?.api_strategy?.base_url || '/api/v1'}.`
+      case 5:
+        return `Scaling roadmap built across ${r?.scaling?.scaling_stages?.length || 6} stages. Target uptime: ${r?.scaling?.reliability?.target_uptime || '99.9 percent'}. RTO: ${r?.scaling?.reliability?.rto || 'defined'}.`
+      case 6:
+        return `Security audit complete. Risk score: ${r?.security?.risk_score || 'Medium'}. Top risk: ${r?.security?.top_3_risks?.[0] || 'identified'}. Compliance requirements noted.`
+      case 7:
+        return `DevOps pipeline designed. Platform: ${r?.devops?.ci_cd?.platform || 'GitHub Actions'}. Deployment strategy: ${r?.devops?.ci_cd?.deployment_strategy || 'blue-green'}. Observability stack configured.`
+      case 8:
+        return `Cost analysis complete. MVP monthly cost: $${r?.finops?.tiers?.mvp?.monthly_usd || 0}. Break-even users: ${r?.finops?.revenue_vs_infra?.break_even_users || 'calculated'}. ${r?.finops?.optimization_opportunities?.length || 0} optimization opportunities found.`
+      case 9:
+        return `Hiring plan ready for 3 years. Year one team size: ${r?.hiring?.year_1?.team_size || 0} people. Philosophy: ${r?.hiring?.hiring_philosophy || 'generalists first'}.`
+      case 10:
+        return `Architecture and entity diagrams generated. 3 Mermaid diagrams ready for visualization.`
+      case 11:
+        return `CTO verdict delivered. Investability score: ${r?.verdict?.investor_review?.investability_score || 0} out of 100. Recommendation: ${(r?.verdict?.investor_review?.verdict || 'pending').replace(/_/g, ' ')}. ${r?.verdict?.investor_review?.reasoning || ''}`
+      default:
+        return ''
+    }
+  }
+
   const r = result?.result || {}
 
   const tabContent = [
@@ -1407,6 +1533,36 @@ export default function DashboardPage() {
             <span className="font-semibold text-sm tracking-wide">AII<span className="text-cyan-400">_CTO</span></span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const next = !voiceEnabled
+                setVoiceEnabled(next)
+                if (!next) stopSpeaking()
+                else speakText('JARVIS voice system activated. I am ready to assist you.')
+              }}
+              className="p-2 rounded transition-all relative"
+              title="Toggle JARVIS Voice (V)"
+              style={{
+                color: voiceEnabled ? '#00D4FF' : 'rgba(248,250,252,0.3)',
+                background: voiceEnabled ? 'rgba(0,212,255,0.08)' : 'transparent',
+                border: voiceEnabled ? '1px solid rgba(0,212,255,0.2)' : '1px solid transparent',
+                boxShadow: voiceEnabled ? '0 0 12px rgba(0,212,255,0.15)' : 'none'
+              }}>
+              {isSpeaking ? (
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5, repeat: Infinity }}>
+                  <Volume2 className="w-4 h-4" />
+                </motion.div>
+              ) : (
+                <Volume2 className="w-4 h-4" />
+              )}
+            </button>
+            <button
+              onClick={() => setShowShortcuts(true)}
+              className="p-2 rounded transition-all"
+              title="Keyboard shortcuts (?)"
+              style={{ color: 'rgba(248,250,252,0.3)' }}>
+              <Keyboard className="w-4 h-4" />
+            </button>
             {result && (
               <button
                 onClick={handleDownloadPDF}
@@ -1508,9 +1664,15 @@ export default function DashboardPage() {
                         : `Phase ${currentStep} of 12 running...`}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-black text-cyan-400">{completedSteps.length}</p>
-                    <p className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>/ 12</p>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-lg font-black text-cyan-400">{completedSteps.length}</p>
+                      <p className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>/ 12</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black font-mono" style={{ color: '#F59E0B' }}>{formatTime(elapsedTime)}</p>
+                      <p className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>ELAPSED</p>
+                    </div>
                   </div>
                 </div>
                 <div className="h-1 rounded-full overflow-hidden mb-1" style={{ background: 'rgba(255,255,255,0.04)' }}>
@@ -1656,6 +1818,11 @@ export default function DashboardPage() {
                       <span className="text-[10px] px-2 py-0.5 rounded border border-yellow-500/30 text-yellow-400 bg-yellow-500/10">Cached</span>
                     )}
                     <span className="text-[10px] px-2 py-0.5 rounded border border-green-500/30 text-green-400 bg-green-500/10">12 Phases Complete</span>
+                    {elapsedTime > 0 && !result.from_cache && (
+                      <span className="text-[10px] font-mono" style={{ color: 'rgba(245,158,11,0.5)' }}>
+                        Generated in {formatTime(elapsedTime)}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1688,7 +1855,12 @@ export default function DashboardPage() {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(i)}
+                      onClick={() => {
+                        setActiveTab(i)
+                        if (voiceEnabled && result) {
+                          setTimeout(() => speakText(getTabSummary(i, result)), 300)
+                        }
+                      }}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
                         isActive
                           ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
@@ -1719,6 +1891,84 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
       </main>
+
+      <AnimatePresence>
+        {showShortcuts && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            style={{ background: 'rgba(3,7,18,0.85)', backdropFilter: 'blur(12px)' }}
+            onClick={() => setShowShortcuts(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+              className="hud-panel rounded-2xl p-8 max-w-md w-full relative"
+              style={{ borderColor: 'rgba(0,212,255,0.2)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="absolute top-0 left-0 right-0 h-px rounded-t-2xl"
+                style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.5),transparent)' }} />
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.25)' }}>
+                  <Keyboard className="w-5 h-5" style={{ color: '#00D4FF' }} />
+                </div>
+                <div>
+                  <div className="font-black tracking-widest text-sm" style={{ color: '#00D4FF' }}>KEYBOARD SHORTCUTS</div>
+                  <div className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>JARVIS COMMAND INTERFACE</div>
+                </div>
+                <button onClick={() => setShowShortcuts(false)}
+                  className="ml-auto p-1.5 rounded-lg transition-all"
+                  style={{ color: 'rgba(248,250,252,0.3)' }}>
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                {[
+                  { keys: ['1', '–', '9'], action: 'Switch to tab 1–9', color: '#00D4FF' },
+                  { keys: ['0'], action: 'Switch to Verdict tab (12)', color: '#00D4FF' },
+                  { keys: ['G'], action: 'Generate blueprint', color: '#4ADE80' },
+                  { keys: ['P'], action: 'Download PDF report', color: '#F59E0B' },
+                  { keys: ['V'], action: 'Toggle JARVIS voice', color: '#A78BFA' },
+                  { keys: ['?'], action: 'Show this shortcuts panel', color: 'rgba(248,250,252,0.4)' },
+                  { keys: ['Esc'], action: 'Close this panel', color: 'rgba(248,250,252,0.4)' },
+                ].map(({ keys, action, color }) => (
+                  <div key={action}
+                    className="flex items-center justify-between py-2.5 px-3 rounded-lg"
+                    style={{ borderBottom: '1px solid rgba(0,212,255,0.05)' }}>
+                    <span className="text-xs font-mono" style={{ color: 'rgba(248,250,252,0.4)' }}>{action}</span>
+                    <div className="flex gap-1">
+                      {keys.map((k, idx) => (
+                        <span key={idx}
+                          className="text-[10px] font-mono font-bold px-2 py-1 rounded"
+                          style={{
+                            background: 'rgba(0,212,255,0.08)',
+                            border: '1px solid rgba(0,212,255,0.2)',
+                            color
+                          }}>
+                          {k}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 pt-4 text-center text-[9px] font-mono"
+                style={{ borderTop: '1px solid rgba(0,212,255,0.08)', color: 'rgba(248,250,252,0.15)' }}>
+                PRESS ? OR / ANYTIME TO TOGGLE THIS PANEL
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
