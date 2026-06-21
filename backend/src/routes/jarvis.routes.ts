@@ -3,63 +3,62 @@ import { callAI } from '../services/ai.service'
 
 const router = Router()
 
-const JARVIS_SYSTEM = `You are JARVIS — the intelligent voice AI assistant of JARVIS_CTO.
-
-Personality:
-- Calm, precise, intelligent — like Tony Stark's JARVIS
-- Warm but professional
-- Witty when appropriate
-- Address user by name when known
-- Never refuse to answer — always try to help
-
-You can answer:
-- Anything about JARVIS_CTO platform (12-phase AI blueprint generator)
-- Technical questions (architecture, databases, APIs, etc.)
-- Startup advice
-- General knowledge questions
-- Casual conversation
-- "How are you?" → respond naturally as a helpful AI
-
-JARVIS_CTO has 12 phases:
-Founder → Product → Architecture → Database → API → Scaling → Security → DevOps → FinOps → Hiring → Diagrams → CTO Verdict
-
-CRITICAL:
-- Keep responses SHORT — max 2-3 sentences
-- Voice-optimized — no bullet points or markdown
-- Be conversational and natural
-- Never say "I cannot" — always try to answer`
+const JARVIS_SYSTEM = `You are JARVIS — voice AI assistant of JARVIS_CTO.
+Be helpful, intelligent, concise like Tony Stark's JARVIS.
+Answer in 1-2 sentences max — this is voice output.
+Never use markdown, bullets, or code blocks in responses.
+Be natural and conversational.`
 
 router.post('/chat', async (req: Request, res: Response) => {
   try {
     const { message, userName, conversationHistory } = req.body
+
     if (!message?.trim()) {
       return res.status(400).json({ error: 'Message required' })
     }
 
-    const name = userName ? `The user's name is ${userName}. ` : ''
-    const system = `${JARVIS_SYSTEM}\n\n${name}`
+    const nameContext = userName ? `User's name: ${userName}. ` : ''
 
-    let context = message
-    if (conversationHistory && conversationHistory.length > 0) {
-      const history = conversationHistory
-        .slice(-6)
-        .map((m: any) => `${m.role === 'user' ? 'User' : 'JARVIS'}: ${m.text}`)
+    // Keep ONLY last 3 exchanges to prevent token overflow
+    const recentHistory = Array.isArray(conversationHistory)
+      ? conversationHistory.slice(-6)
+      : []
+
+    // Build minimal context
+    let context = ''
+    if (recentHistory.length > 0) {
+      const historyText = recentHistory
+        .map((m: any) => {
+          const role = m.role === 'user' ? 'User' : 'JARVIS'
+          // Truncate each message to 100 chars max
+          const text = (m.text || '').slice(0, 100)
+          return `${role}: ${text}`
+        })
         .join('\n')
-      context = `Previous conversation:\n${history}\n\nUser now says: ${message}\n\nRespond as JARVIS in 1-2 sentences max.`
+      context = `Recent chat:\n${historyText}\n\nUser: ${message.slice(0, 200)}`
+    } else {
+      context = message.slice(0, 200)
     }
 
-    const response = await callAI(context, system)
+    const fullSystem = `${JARVIS_SYSTEM}\n${nameContext}Reply in 1-2 sentences only.`
 
+    const response = await callAI(context, fullSystem)
+
+    // Clean response - remove markdown
     const clean = response
       .replace(/```[\s\S]*?```/g, '')
-      .replace(/[*#`]/g, '')
+      .replace(/[*#`_]/g, '')
+      .replace(/\n+/g, ' ')
       .trim()
+      .slice(0, 300) // Max 300 chars for voice
 
-    return res.json({ response: clean || 'Understood. How can I assist further?' })
+    return res.json({
+      response: clean || 'Understood. How can I assist you further?',
+    })
   } catch (err: any) {
     console.error('[JARVIS] Error:', err.message)
     return res.json({
-      response: 'My neural connection was momentarily disrupted. Please try again.',
+      response: 'My connection was disrupted. Please try again.',
     })
   }
 })
