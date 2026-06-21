@@ -1,14 +1,26 @@
 import nodemailer from 'nodemailer'
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
+function createTransporter() {
+  const gmailUser = process.env.GMAIL_USER
+  const gmailPass = process.env.GMAIL_APP_PASSWORD
+
+  if (!gmailUser || !gmailPass) {
+    throw new Error('GMAIL_USER and GMAIL_APP_PASSWORD must be set')
   }
-})
+
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: gmailUser,
+      pass: gmailPass.replace(/\s/g, '')
+    }
+  })
+}
 
 export async function sendOTPEmail(email: string, otp: string, name?: string): Promise<void> {
+  const transporter = createTransporter()
   await transporter.sendMail({
     from: `"AI CTO System" <${process.env.GMAIL_USER}>`,
     to: email,
@@ -69,6 +81,7 @@ export async function sendOTPEmail(email: string, otp: string, name?: string): P
 }
 
 export async function sendWelcomeEmail(email: string, name?: string): Promise<void> {
+  const transporter = createTransporter()
   await transporter.sendMail({
     from: `"AI CTO System" <${process.env.GMAIL_USER}>`,
     to: email,

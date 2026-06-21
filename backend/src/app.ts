@@ -79,13 +79,12 @@ app.get('/test-email', async (_req: Request, res: Response) => {
     const nodemailer = require('nodemailer')
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
+      port: 465,
+      secure: true,
       auth: {
         user: gmailUser,
         pass: gmailPass.replace(/\s/g, '')
-      },
-      tls: { rejectUnauthorized: false }
+      }
     })
 
     await transporter.verify()
