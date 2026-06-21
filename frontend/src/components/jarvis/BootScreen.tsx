@@ -17,7 +17,7 @@ const BOOT_LINES = [
   { text: '  ✓ Security Agent — ONLINE', delay: 3100, color: 'text-green-400' },
   { text: '  ✓ Diagram Agent — ONLINE', delay: 3300, color: 'text-green-400' },
   { text: '▸ All systems operational', delay: 3700, color: 'text-cyan-400' },
-  { text: '▸ WELCOME TO AI CTO', delay: 4000, color: 'text-amber-400' },
+  { text: '▸ WELCOME TO JARVIS_CTO', delay: 4000, color: 'text-amber-400' },
 ]
 
 export function BootScreen({ onComplete }: { onComplete: () => void }) {
@@ -42,6 +42,52 @@ export function BootScreen({ onComplete }: { onComplete: () => void }) {
       setDone(true)
       setTimeout(() => {
         sessionStorage.setItem('jarvis_booted', 'true')
+
+        // JARVIS welcome voice
+        try {
+          const userName = localStorage.getItem('user')
+            ? JSON.parse(localStorage.getItem('user') || '{}').name ||
+              JSON.parse(localStorage.getItem('user') || '{}').email?.split('@')[0] ||
+              null
+            : null
+
+          const greeting = userName
+            ? `Welcome back to JARVIS C T O, ${userName}. All systems are online.`
+            : `Welcome to JARVIS C T O. All 12 intelligence agents are standing by.`
+
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel()
+
+            const speak = () => {
+              const utterance = new SpeechSynthesisUtterance(greeting)
+              utterance.rate = 0.88
+              utterance.pitch = 0.75
+              utterance.volume = 1.0
+
+              const voices = window.speechSynthesis.getVoices()
+              const preferred = voices.find(v =>
+                v.name.includes('Daniel') ||
+                v.name.includes('Google UK English Male') ||
+                v.name.includes('Microsoft David') ||
+                v.name.includes('Aaron') ||
+                v.name.includes('Alex') ||
+                v.lang === 'en-GB'
+              ) || voices.find(v => v.lang.startsWith('en'))
+
+              if (preferred) utterance.voice = preferred
+              window.speechSynthesis.speak(utterance)
+            }
+
+            if (window.speechSynthesis.getVoices().length === 0) {
+              window.speechSynthesis.onvoiceschanged = speak
+            } else {
+              speak()
+            }
+          }
+        } catch (e) {
+          console.log('Voice not available')
+        }
+
         onComplete()
       }, 800)
     }, 4600)
