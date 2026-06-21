@@ -63,44 +63,35 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.get('/test-email', async (_req: Request, res: Response) => {
   try {
-    const gmailUser = process.env.GMAIL_USER
-    const gmailPass = process.env.GMAIL_APP_PASSWORD
-
-    if (!gmailUser || !gmailPass) {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
       return res.json({
         success: false,
-        error: 'Gmail credentials not set in environment',
-        gmail_user_set: !!gmailUser,
-        gmail_pass_set: !!gmailPass,
-        hint: 'Add GMAIL_USER and GMAIL_APP_PASSWORD to Render environment variables'
+        error: 'RESEND_API_KEY not set',
+        hint: 'Add RESEND_API_KEY to Render environment variables. Get free key at resend.com'
       })
     }
 
-    const nodemailer = require('nodemailer')
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: gmailUser,
-        pass: gmailPass.replace(/\s/g, '')
-      }
-    })
+    const { Resend } = require('resend')
+    const resend = new Resend(apiKey)
 
-    await transporter.verify()
+    const result = await resend.emails.send({
+      from: 'JARVIS_CTO <onboarding@resend.dev>',
+      to: 'shlokgohel2117@gmail.com',
+      subject: 'JARVIS_CTO Email Test',
+      html: '<p style="font-family:monospace;color:#00D4FF;background:#030712;padding:20px">✓ JARVIS_CTO email service is working!</p>'
+    })
 
     return res.json({
       success: true,
-      message: 'Gmail SMTP connected successfully!',
-      gmail_user: gmailUser,
-      status: 'Email service is ready'
+      message: 'Test email sent successfully!',
+      email_id: result.data?.id,
+      sent_to: 'shlokgohel2117@gmail.com'
     })
   } catch (err: any) {
     return res.json({
       success: false,
-      error: err.message,
-      gmail_user: process.env.GMAIL_USER || 'NOT SET',
-      hint: 'Check GMAIL_APP_PASSWORD - must be 16-char app password without spaces'
+      error: err.message
     })
   }
 })
