@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@sendgrid/mail": "^8.1.6",
     "@sparticuz/chromium": "^149.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",

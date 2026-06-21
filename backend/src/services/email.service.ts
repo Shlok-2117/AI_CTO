@@ -1,9 +1,9 @@
-import { Resend } from 'resend'
+import sgMail from '@sendgrid/mail'
 
-function getResend() {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) throw new Error('RESEND_API_KEY not set in environment')
-  return new Resend(apiKey)
+function initSendGrid() {
+  const apiKey = process.env.SENDGRID_API_KEY
+  if (!apiKey) throw new Error('SENDGRID_API_KEY not set')
+  sgMail.setApiKey(apiKey)
 }
 
 export async function sendOTPEmail(
@@ -11,12 +11,15 @@ export async function sendOTPEmail(
   otp: string,
   name?: string
 ): Promise<void> {
-  console.log(`[Email] Sending OTP to ${email}...`)
-  const resend = getResend()
+  console.log(`[Email] Sending OTP via SendGrid to ${email}...`)
+  initSendGrid()
 
-  await resend.emails.send({
-    from: 'JARVIS_CTO <onboarding@resend.dev>',
+  await sgMail.send({
     to: email,
+    from: {
+      email: 'shlokgohel2117@gmail.com',
+      name: 'JARVIS_CTO'
+    },
     subject: 'JARVIS_CTO — Your Verification Code',
     html: `
 <!DOCTYPE html>
@@ -40,7 +43,7 @@ export async function sendOTPEmail(
   .warn{background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:14px 16px}
   .warn-text{font-size:11px;font-family:monospace;color:rgba(245,158,11,0.6);line-height:1.9}
   .foot{padding:20px 32px;border-top:1px solid rgba(0,212,255,0.06);text-align:center}
-  .foot-text{font-size:10px;font-family:monospace;color:rgba(248,250,252,0.1);letter-spacing:0.1em}
+  .foot-text{font-size:10px;font-family:monospace;color:rgba(248,250,252,0.1)}
 </style>
 </head>
 <body>
@@ -53,10 +56,7 @@ export async function sendOTPEmail(
   <div class="body">
     <div class="label">Identity Verification</div>
     <div class="title">Your Access Code${name ? `, ${name}` : ''}</div>
-    <div class="desc">
-      Enter this 6-digit code to verify your email and
-      complete your JARVIS_CTO account setup.
-    </div>
+    <div class="desc">Enter this 6-digit code to verify your email and complete your JARVIS_CTO account setup.</div>
     <div class="otp-box">
       <div class="otp-label">Verification Code</div>
       <div class="otp-code">${otp}</div>
@@ -66,7 +66,7 @@ export async function sendOTPEmail(
       <div class="warn-text">
         ▸ Never share this code with anyone<br/>
         ▸ JARVIS_CTO will never ask for this code<br/>
-        ▸ If you did not request this — ignore this email
+        ▸ If you did not request this — ignore
       </div>
     </div>
   </div>
@@ -78,7 +78,7 @@ export async function sendOTPEmail(
 </html>`
   })
 
-  console.log(`[Email] OTP sent successfully to ${email}`)
+  console.log(`[Email] OTP sent successfully via SendGrid to ${email}`)
 }
 
 export async function sendWelcomeEmail(
@@ -86,12 +86,15 @@ export async function sendWelcomeEmail(
   name?: string
 ): Promise<void> {
   try {
-    console.log(`[Email] Sending welcome email to ${email}...`)
-    const resend = getResend()
+    console.log(`[Email] Sending welcome email via SendGrid to ${email}...`)
+    initSendGrid()
 
-    await resend.emails.send({
-      from: 'JARVIS_CTO <onboarding@resend.dev>',
+    await sgMail.send({
       to: email,
+      from: {
+        email: 'shlokgohel2117@gmail.com',
+        name: 'JARVIS_CTO'
+      },
       subject: 'Welcome to JARVIS_CTO — Access Granted',
       html: `
 <!DOCTYPE html>
@@ -108,10 +111,6 @@ export async function sendWelcomeEmail(
   .title{font-size:22px;font-weight:800;color:#F8FAFC;margin-bottom:16px}
   .desc{font-size:13px;color:rgba(248,250,252,0.4);line-height:1.7;margin-bottom:28px}
   .cta{display:inline-block;padding:13px 28px;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.3);border-radius:8px;color:#00D4FF;font-weight:700;text-decoration:none;font-size:11px;letter-spacing:0.2em;font-family:monospace}
-  .features{margin-top:28px;padding-top:20px;border-top:1px solid rgba(0,212,255,0.06)}
-  .feat-title{font-size:9px;font-family:monospace;color:rgba(0,212,255,0.3);letter-spacing:0.3em;margin-bottom:10px;text-transform:uppercase}
-  .feat{font-size:12px;color:rgba(248,250,252,0.3);padding:3px 0;font-family:monospace}
-  .feat span{color:rgba(0,212,255,0.5);margin-right:8px}
   .foot{padding:20px 32px;border-top:1px solid rgba(0,212,255,0.06);text-align:center}
   .foot-text{font-size:10px;font-family:monospace;color:rgba(248,250,252,0.1)}
 </style>
@@ -122,23 +121,9 @@ export async function sendWelcomeEmail(
   <div class="head"><div class="logo">JARVIS_CTO</div></div>
   <div class="body">
     <div class="label">Access Granted</div>
-    <div class="title">Welcome${name ? `, ${name}` : ' aboard'} 👋</div>
-    <div class="desc">
-      Your JARVIS_CTO account is now active. You have full access
-      to all 12 AI agents — from Founder Mindset to CTO Verdict.
-      Generate your first technical blueprint in under 60 seconds.
-    </div>
-    <a href="${process.env.FRONTEND_URL || 'https://ai-cto-two.vercel.app'}/dashboard" class="cta">
-      OPEN DASHBOARD →
-    </a>
-    <div class="features">
-      <div class="feat-title">What you have access to</div>
-      <div class="feat"><span>▸</span>12 specialized AI agents</div>
-      <div class="feat"><span>▸</span>Unlimited blueprint generations</div>
-      <div class="feat"><span>▸</span>PDF export & generation history</div>
-      <div class="feat"><span>▸</span>JARVIS voice & keyboard shortcuts</div>
-      <div class="feat"><span>▸</span>100% free — forever</div>
-    </div>
+    <div class="title">Welcome${name ? `, ${name}` : ' aboard'}</div>
+    <div class="desc">Your JARVIS_CTO account is now active. All 12 AI agents are ready. Generate your first technical blueprint in under 60 seconds.</div>
+    <a href="${process.env.FRONTEND_URL || 'https://ai-cto-two.vercel.app'}/dashboard" class="cta">OPEN DASHBOARD →</a>
   </div>
   <div class="foot">
     <div class="foot-text">JARVIS_CTO · ${new Date().getFullYear()}</div>
@@ -147,8 +132,8 @@ export async function sendWelcomeEmail(
 </body>
 </html>`
     })
-    console.log(`[Email] Welcome email sent to ${email}`)
+    console.log(`[Email] Welcome email sent via SendGrid to ${email}`)
   } catch (e: any) {
-    console.error('[Email] Welcome email failed (non-critical):', e.message)
+    console.error('[Email] Welcome email failed:', e.message)
   }
 }

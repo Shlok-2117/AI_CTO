@@ -63,29 +63,28 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.get('/test-email', async (_req: Request, res: Response) => {
   try {
-    const apiKey = process.env.RESEND_API_KEY
+    const apiKey = process.env.SENDGRID_API_KEY
     if (!apiKey) {
       return res.json({
         success: false,
-        error: 'RESEND_API_KEY not set',
-        hint: 'Add RESEND_API_KEY to Render environment variables. Get free key at resend.com'
+        error: 'SENDGRID_API_KEY not set',
+        hint: 'Add SENDGRID_API_KEY to Render environment variables. Get free key at sendgrid.com'
       })
     }
 
-    const { Resend } = require('resend')
-    const resend = new Resend(apiKey)
+    const sgMail = require('@sendgrid/mail')
+    sgMail.setApiKey(apiKey)
 
-    const result = await resend.emails.send({
-      from: 'JARVIS_CTO <onboarding@resend.dev>',
+    await sgMail.send({
       to: 'shlokgohel2117@gmail.com',
+      from: { email: 'shlokgohel2117@gmail.com', name: 'JARVIS_CTO' },
       subject: 'JARVIS_CTO Email Test',
-      html: '<p style="font-family:monospace;color:#00D4FF;background:#030712;padding:20px">✓ JARVIS_CTO email service is working!</p>'
+      html: '<p style="font-family:monospace;color:#00D4FF;background:#030712;padding:20px">✓ JARVIS_CTO email service is working via SendGrid!</p>'
     })
 
     return res.json({
       success: true,
-      message: 'Test email sent successfully!',
-      email_id: result.data?.id,
+      message: 'Test email sent successfully via SendGrid!',
       sent_to: 'shlokgohel2117@gmail.com'
     })
   } catch (err: any) {
