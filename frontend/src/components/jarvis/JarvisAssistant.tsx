@@ -1,35 +1,44 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mic, MicOff, Volume2, VolumeX, X } from 'lucide-react'
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 type Message = {
   role: 'user' | 'jarvis'
   text: string
-  timestamp: Date
 }
 
-const JARVIS_SYSTEM = `You are JARVIS — the AI assistant of JARVIS_CTO,
-a technical architecture generation system.
+function getVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices()
+  return (
+    voices.find(
+      v =>
+        v.name.includes('Daniel') ||
+        v.name.includes('Google UK English Male') ||
+        v.name.includes('Microsoft David') ||
+        v.name.includes('Aaron') ||
+        v.lang === 'en-GB'
+    ) ||
+    voices.find(v => v.lang.startsWith('en')) ||
+    null
+  )
+}
 
-Personality:
-- Calm, precise, slightly formal but helpful
-- Like Tony Stark's JARVIS — intelligent, witty when appropriate
-- Always address the user respectfully
-- Keep responses concise — 1-3 sentences max for voice
-- You know about the JARVIS_CTO platform — 12 AI agents that generate
-  complete technical blueprints from startup ideas
-
-You can help with:
-- Explaining what JARVIS_CTO does
-- Answering technical questions about architectures
-- Giving advice on startup tech decisions
-- Explaining the 12 phases (Founder, Product, Architecture, Database,
-  API, Scaling, Security, DevOps, FinOps, Hiring, Diagrams, CTO Verdict)
-- General conversation
-
-Keep responses SHORT — this is voice, not text.
-Max 2-3 sentences. Be direct and helpful.`
+function getUserName(): string | null {
+  try {
+    const stored = localStorage.getItem('user')
+    if (!stored) return null
+    const user = JSON.parse(stored)
+    if (user.name && user.name.trim() && !user.name.includes('@')) {
+      return user.name.trim()
+    }
+    return null
+  } catch {
+    return null
+  }
+}
 
 export function JarvisAssistant() {
   const [isOpen, setIsOpen] = useState(false)
@@ -40,16 +49,19 @@ export function JarvisAssistant() {
   const [messages, setMessages] = useState<Message[]>([])
   const [voiceMuted, setVoiceMuted] = useState(false)
   const [error, setError] = useState('')
-  const [supported, setSupported] = useState(true)
+  const [userName, setUserName] = useState<string | null>(null)
+  const [supported, setSupported] = useState(false)
 
   const recognitionRef = useRef<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const conversationRef = useRef<{ role: string; content: string }[]>([])
+  const voiceMutedRef = useRef(voiceMuted)
+  voiceMutedRef.current = voiceMuted
 
   useEffect(() => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      setSupported(false)
-    }
+    const hasSpeech =
+      'webkitSpeechRecognition' in window || 'SpeechRecognition' in window
+    setSupported(hasSpeech)
+    setUserName(getUserName())
   }, [])
 
   useEffect(() => {
@@ -57,70 +69,49 @@ export function JarvisAssistant() {
   }, [messages])
 
   function speak(text: string) {
-    if (voiceMuted) return
+    if (voiceMutedRef.current || typeof window === 'undefined') return
     window.speechSynthesis.cancel()
 
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.rate = 0.9
-    utterance.pitch = 0.75
-    utterance.volume = 1.0
+    const trySpeak = () => {
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.rate = 0.88
+      utterance.pitch = 0.75
+      utterance.volume = 1.0
+      const voice = getVoice()
+      if (voice) utterance.voice = voice
+      utterance.onstart = () => setIsSpeaking(true)
+      utterance.onend = () => setIsSpeaking(false)
+      utterance.onerror = () => setIsSpeaking(false)
+      window.speechSynthesis.speak(utterance)
+    }
 
-    const voices = window.speechSynthesis.getVoices()
-    const preferred =
-      voices.find(
-        v =>
-          v.name.includes('Daniel') ||
-          v.name.includes('Google UK English Male') ||
-          v.name.includes('Microsoft David') ||
-          v.name.includes('Aaron') ||
-          v.lang === 'en-GB'
-      ) || voices.find(v => v.lang.startsWith('en'))
-    if (preferred) utterance.voice = preferred
-
-    utterance.onstart = () => setIsSpeaking(true)
-    utterance.onend = () => setIsSpeaking(false)
-    utterance.onerror = () => setIsSpeaking(false)
-
-    window.speechSynthesis.speak(utterance)
+    if (window.speechSynthesis.getVoices().length === 0) {
+      window.speechSynthesis.onvoiceschanged = trySpeak
+    } else {
+      trySpeak()
+    }
   }
 
   async function askJarvis(userText: string) {
     setIsThinking(true)
-    conversationRef.current.push({ role: 'user', content: userText })
-
     try {
-      const groqKey = process.env.NEXT_PUBLIC_GROQ_API_KEY || ''
-      if (!groqKey) throw new Error('No API key')
-
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const res = await fetch(`${API}/api/jarvis/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${groqKey}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
-          messages: [
-            { role: 'system', content: JARVIS_SYSTEM },
-            ...conversationRef.current.slice(-8),
-          ],
-          max_tokens: 150,
-          temperature: 0.7,
+          message: userText,
+          userName,
+          conversationHistory: messages.slice(-8),
         }),
       })
 
-      if (!response.ok) throw new Error('AI request failed')
-
-      const data = await response.json()
-      const jarvisText = data.choices[0].message.content
-
-      conversationRef.current.push({ role: 'assistant', content: jarvisText })
-
-      setMessages(prev => [...prev, { role: 'jarvis', text: jarvisText, timestamp: new Date() }])
-      speak(jarvisText)
+      const data = await res.json()
+      const reply = data.response || 'I apologize, something went wrong.'
+      setMessages(prev => [...prev, { role: 'jarvis', text: reply }])
+      speak(reply)
     } catch {
-      const fallback = 'I apologize, my neural connection seems disrupted. Please try again.'
-      setMessages(prev => [...prev, { role: 'jarvis', text: fallback, timestamp: new Date() }])
+      const fallback = 'My connection seems disrupted. Please try again.'
+      setMessages(prev => [...prev, { role: 'jarvis', text: fallback }])
       speak(fallback)
     } finally {
       setIsThinking(false)
@@ -128,12 +119,17 @@ export function JarvisAssistant() {
   }
 
   function startListening() {
-    if (!supported) return
+    if (!supported) {
+      setError('Speech recognition not supported. Use Chrome.')
+      return
+    }
     setError('')
+    window.speechSynthesis.cancel()
+    setIsSpeaking(false)
 
-    const SpeechRecognition =
+    const SR =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    const recognition = new SpeechRecognition()
+    const recognition = new SR()
     recognitionRef.current = recognition
 
     recognition.continuous = false
@@ -143,31 +139,31 @@ export function JarvisAssistant() {
     recognition.onstart = () => {
       setIsListening(true)
       setTranscript('')
-      window.speechSynthesis.cancel()
-      setIsSpeaking(false)
     }
 
     recognition.onresult = (event: any) => {
-      const current = event.results[event.results.length - 1]
-      const text = current[0].transcript
+      const result = event.results[event.results.length - 1]
+      const text = result[0].transcript
       setTranscript(text)
 
-      if (current.isFinal && text.trim()) {
-        setMessages(prev => [
-          ...prev,
-          { role: 'user', text: text.trim(), timestamp: new Date() },
-        ])
-        askJarvis(text.trim())
+      if (result.isFinal && text.trim()) {
+        const finalText = text.trim()
+        setMessages(prev => [...prev, { role: 'user', text: finalText }])
+        setTranscript('')
+        askJarvis(finalText)
       }
     }
 
-    recognition.onerror = (event: any) => {
-      if (event.error === 'no-speech') {
-        setError('No speech detected. Try again.')
-      } else if (event.error === 'not-allowed') {
-        setError('Microphone access denied. Please allow microphone.')
-      }
+    recognition.onerror = (e: any) => {
       setIsListening(false)
+      setTranscript('')
+      if (e.error === 'not-allowed') {
+        setError('Microphone blocked. Allow mic access in browser settings.')
+      } else if (e.error === 'no-speech') {
+        setError('No speech detected. Please try again.')
+      } else {
+        setError(`Error: ${e.error}`)
+      }
     }
 
     recognition.onend = () => {
@@ -181,28 +177,19 @@ export function JarvisAssistant() {
   function stopListening() {
     recognitionRef.current?.stop()
     setIsListening(false)
-  }
-
-  function toggleListening() {
-    if (isListening) stopListening()
-    else startListening()
+    setTranscript('')
   }
 
   function openAssistant() {
     setIsOpen(true)
     if (messages.length === 0) {
-      let userName: string | null = null
-      try {
-        const raw = localStorage.getItem('user')
-        if (raw) userName = JSON.parse(raw).name || null
-      } catch {}
-
-      const greeting = userName
-        ? `Good to see you again, ${userName}. How can I assist you today?`
+      const name = getUserName()
+      setUserName(name)
+      const greeting = name
+        ? `Hello ${name}! JARVIS online and ready. How can I assist you today?`
         : `JARVIS online. How can I assist you today?`
-
-      setMessages([{ role: 'jarvis', text: greeting, timestamp: new Date() }])
-      setTimeout(() => speak(greeting), 300)
+      setMessages([{ role: 'jarvis', text: greeting }])
+      setTimeout(() => speak(greeting), 400)
     }
   }
 
@@ -210,13 +197,12 @@ export function JarvisAssistant() {
     stopListening()
     window.speechSynthesis.cancel()
     setIsOpen(false)
+    setIsSpeaking(false)
   }
-
-  if (!supported) return null
 
   return (
     <>
-      {/* Floating trigger */}
+      {/* Floating mic button */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
@@ -226,25 +212,25 @@ export function JarvisAssistant() {
             onClick={openAssistant}
             className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center"
             style={{
-              background: 'rgba(0,212,255,0.1)',
+              background: 'rgba(0,212,255,0.08)',
               border: '1px solid rgba(0,212,255,0.3)',
-              boxShadow: '0 0 30px rgba(0,212,255,0.2)',
+              boxShadow: '0 0 30px rgba(0,212,255,0.15)',
             }}
-            whileHover={{ scale: 1.1, boxShadow: '0 0 40px rgba(0,212,255,0.4)' }}
+            whileHover={{ scale: 1.1, boxShadow: '0 0 40px rgba(0,212,255,0.35)' }}
             whileTap={{ scale: 0.95 }}
-            title="Talk to JARVIS"
+            title="Talk to JARVIS (voice assistant)"
           >
             <motion.div
-              animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
+              animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
               transition={{ duration: 2, repeat: Infinity }}
               className="absolute inset-0 rounded-full"
-              style={{ border: '1px solid rgba(0,212,255,0.3)' }}
+              style={{ border: '1px solid rgba(0,212,255,0.25)' }}
             />
             <motion.div
-              animate={{ scale: [1, 1.6, 1], opacity: [0.2, 0, 0.2] }}
+              animate={{ scale: [1, 1.8, 1], opacity: [0.15, 0, 0.15] }}
               transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
               className="absolute inset-0 rounded-full"
-              style={{ border: '1px solid rgba(0,212,255,0.2)' }}
+              style={{ border: '1px solid rgba(0,212,255,0.15)' }}
             />
             <Mic className="w-5 h-5 relative z-10" style={{ color: '#00D4FF' }} />
           </motion.button>
@@ -255,88 +241,120 @@ export function JarvisAssistant() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.85, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-            className="fixed bottom-6 right-6 z-50 w-80 sm:w-96"
+            exit={{ opacity: 0, scale: 0.85, y: 30 }}
+            transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+            className="fixed bottom-6 right-6 z-50"
             style={{
-              background: 'rgba(3,7,18,0.95)',
+              width: 360,
+              background: 'rgba(3,7,18,0.97)',
               border: '1px solid rgba(0,212,255,0.2)',
-              borderRadius: 16,
-              boxShadow: '0 0 60px rgba(0,212,255,0.15), 0 20px 60px rgba(0,0,0,0.5)',
-              backdropFilter: 'blur(24px)',
+              borderRadius: 20,
+              boxShadow:
+                '0 0 60px rgba(0,212,255,0.12), 0 30px 80px rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(30px)',
+              overflow: 'hidden',
             }}
           >
-            {/* Top beam */}
+            {/* Top glow */}
             <div
-              className="absolute top-0 left-0 right-0 h-px rounded-t-2xl"
-              style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.6),transparent)' }}
+              className="absolute top-0 left-0 right-0 h-px"
+              style={{
+                background:
+                  'linear-gradient(90deg,transparent,#00D4FF,transparent)',
+              }}
             />
 
             {/* Header */}
             <div
-              className="flex items-center gap-3 px-4 py-3 border-b"
-              style={{ borderColor: 'rgba(0,212,255,0.1)' }}
+              className="px-5 py-3.5 border-b flex items-center gap-3"
+              style={{ borderColor: 'rgba(0,212,255,0.08)' }}
             >
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)' }}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'rgba(0,212,255,0.1)',
+                    border: '1px solid rgba(0,212,255,0.2)',
+                  }}
                 >
                   {isSpeaking ? (
-                    <motion.div className="flex gap-0.5 items-end h-4">
+                    <div className="flex gap-0.5 items-end h-4 px-1">
                       {[0, 1, 2, 3].map(i => (
                         <motion.div
                           key={i}
-                          animate={{ height: ['30%', '100%', '50%', '80%', '30%'] }}
-                          transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
-                          className="w-0.5 rounded-full"
+                          animate={{ height: ['20%', '100%', '40%', '80%', '20%'] }}
+                          transition={{ duration: 0.4, repeat: Infinity, delay: i * 0.1 }}
+                          className="w-0.5 rounded-full flex-shrink-0"
                           style={{ background: '#00D4FF', minHeight: 2 }}
                         />
                       ))}
-                    </motion.div>
+                    </div>
                   ) : (
                     <Volume2 className="w-4 h-4" style={{ color: '#00D4FF' }} />
                   )}
                 </div>
                 {(isSpeaking || isListening || isThinking) && (
                   <motion.div
-                    animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
+                    animate={{ opacity: [1, 0.2, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
                     className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
                     style={{
                       background: isListening ? '#F87171' : '#00D4FF',
-                      boxShadow: isListening ? '0 0 6px #F87171' : '0 0 6px #00D4FF',
+                      boxShadow: `0 0 6px ${isListening ? '#F87171' : '#00D4FF'}`,
                     }}
                   />
                 )}
               </div>
 
-              <div className="flex-1">
-                <div className="text-xs font-black tracking-widest" style={{ color: '#00D4FF' }}>
+              <div className="flex-1 min-w-0">
+                <div
+                  className="text-xs font-black tracking-[0.2em]"
+                  style={{ color: '#00D4FF' }}
+                >
                   JARVIS
                 </div>
-                <div className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.25)' }}>
+                <motion.div
+                  key={
+                    isListening
+                      ? 'listening'
+                      : isThinking
+                      ? 'thinking'
+                      : isSpeaking
+                      ? 'speaking'
+                      : 'idle'
+                  }
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-[9px] font-mono"
+                  style={{ color: 'rgba(248,250,252,0.25)' }}
+                >
                   {isListening
-                    ? 'LISTENING...'
+                    ? '● LISTENING TO YOU...'
                     : isThinking
-                    ? 'PROCESSING...'
+                    ? '◈ PROCESSING...'
                     : isSpeaking
-                    ? 'SPEAKING...'
-                    : 'STANDBY'}
-                </div>
+                    ? '▶ SPEAKING...'
+                    : userName
+                    ? `ONLINE · ${userName.toUpperCase()}`
+                    : 'ONLINE · STANDBY'}
+                </motion.div>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => {
-                    setVoiceMuted(!voiceMuted)
+                    setVoiceMuted(v => !v)
                     if (!voiceMuted) window.speechSynthesis.cancel()
                   }}
                   className="p-1.5 rounded-lg transition-all"
-                  style={{ color: voiceMuted ? 'rgba(248,113,113,0.6)' : 'rgba(0,212,255,0.5)' }}
-                  title={voiceMuted ? 'Unmute' : 'Mute'}
+                  title={voiceMuted ? 'Unmute JARVIS' : 'Mute JARVIS'}
+                  style={{
+                    color: voiceMuted
+                      ? 'rgba(248,113,113,0.5)'
+                      : 'rgba(0,212,255,0.4)',
+                  }}
                 >
                   {voiceMuted ? (
                     <VolumeX className="w-4 h-4" />
@@ -346,8 +364,8 @@ export function JarvisAssistant() {
                 </button>
                 <button
                   onClick={closeAssistant}
-                  className="p-1.5 rounded-lg transition-all"
-                  style={{ color: 'rgba(248,250,252,0.25)' }}
+                  className="p-1.5 rounded-lg"
+                  style={{ color: 'rgba(248,250,252,0.2)' }}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -355,39 +373,49 @@ export function JarvisAssistant() {
             </div>
 
             {/* Messages */}
-            <div className="h-72 overflow-y-auto p-4 space-y-3">
+            <div
+              className="h-64 overflow-y-auto p-4 space-y-3"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(0,212,255,0.2) transparent',
+              }}
+            >
               {messages.map((msg, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.25 }}
+                  className={`flex ${
+                    msg.role === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
                 >
                   <div
-                    className="max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed"
+                    className="max-w-[88%] px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed"
                     style={{
                       background:
                         msg.role === 'user'
-                          ? 'rgba(0,212,255,0.1)'
+                          ? 'rgba(0,212,255,0.12)'
                           : 'rgba(255,255,255,0.04)',
                       border:
                         msg.role === 'user'
-                          ? '1px solid rgba(0,212,255,0.2)'
+                          ? '1px solid rgba(0,212,255,0.25)'
                           : '1px solid rgba(255,255,255,0.06)',
                       color:
                         msg.role === 'user'
-                          ? 'rgba(248,250,252,0.8)'
-                          : 'rgba(248,250,252,0.6)',
-                      fontFamily: msg.role === 'jarvis' ? 'monospace' : 'inherit',
+                          ? 'rgba(248,250,252,0.9)'
+                          : 'rgba(248,250,252,0.65)',
+                      borderBottomRightRadius: msg.role === 'user' ? 4 : 16,
+                      borderBottomLeftRadius: msg.role === 'jarvis' ? 4 : 16,
                     }}
                   >
                     {msg.role === 'jarvis' && (
-                      <span
-                        className="text-[8px] block mb-1"
-                        style={{ color: 'rgba(0,212,255,0.4)' }}
+                      <div
+                        className="text-[8px] font-mono mb-1.5 font-bold"
+                        style={{ color: 'rgba(0,212,255,0.5)' }}
                       >
                         JARVIS
-                      </span>
+                      </div>
                     )}
                     {msg.text}
                   </div>
@@ -401,33 +429,38 @@ export function JarvisAssistant() {
                   className="flex justify-start"
                 >
                   <div
-                    className="px-3 py-2 rounded-xl"
+                    className="px-3.5 py-2.5 rounded-2xl rounded-bl-sm"
                     style={{
                       background: 'rgba(255,255,255,0.04)',
                       border: '1px solid rgba(255,255,255,0.06)',
                     }}
                   >
-                    <div className="flex gap-1 items-center">
+                    <div className="flex items-center gap-1.5">
                       <span
-                        className="text-[8px] font-mono mr-2"
-                        style={{ color: 'rgba(0,212,255,0.4)' }}
+                        className="text-[8px] font-mono"
+                        style={{ color: 'rgba(0,212,255,0.35)' }}
                       >
-                        PROCESSING
+                        JARVIS
                       </span>
-                      {[0, 1, 2].map(i => (
-                        <motion.div
-                          key={i}
-                          animate={{ opacity: [0.2, 1, 0.2] }}
-                          transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }}
-                          className="w-1 h-1 rounded-full"
-                          style={{ background: '#00D4FF' }}
-                        />
-                      ))}
+                      <div className="flex gap-1 ml-1">
+                        {[0, 1, 2].map(i => (
+                          <motion.div
+                            key={i}
+                            animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1, 0.8] }}
+                            transition={{
+                              duration: 0.7,
+                              repeat: Infinity,
+                              delay: i * 0.2,
+                            }}
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ background: '#00D4FF' }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
               )}
-
               <div ref={messagesEndRef} />
             </div>
 
@@ -435,10 +468,10 @@ export function JarvisAssistant() {
             <AnimatePresence>
               {(isListening || transcript) && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="px-4 py-2 border-t"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="px-4 py-2.5 border-t overflow-hidden"
                   style={{
                     borderColor: 'rgba(248,113,113,0.1)',
                     background: 'rgba(248,113,113,0.03)',
@@ -446,16 +479,16 @@ export function JarvisAssistant() {
                 >
                   <div className="flex items-center gap-2">
                     <motion.div
-                      animate={{ scale: [1, 1.3, 1] }}
-                      transition={{ duration: 0.5, repeat: Infinity }}
+                      animate={{ scale: [1, 1.4, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity }}
                       className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{ background: '#F87171', boxShadow: '0 0 4px #F87171' }}
+                      style={{ background: '#F87171', boxShadow: '0 0 6px #F87171' }}
                     />
                     <span
-                      className="text-[10px] font-mono italic"
+                      className="text-[10px] font-mono italic truncate"
                       style={{ color: 'rgba(248,250,252,0.4)' }}
                     >
-                      {transcript || 'Listening...'}
+                      {transcript || 'Listening for your voice...'}
                     </span>
                   </div>
                 </motion.div>
@@ -469,39 +502,54 @@ export function JarvisAssistant() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="px-4 py-2 text-[10px] font-mono"
-                  style={{ color: 'rgba(248,113,113,0.6)' }}
+                  className="mx-4 mb-2 px-3 py-2 rounded-lg text-[10px] font-mono flex items-center gap-2"
+                  style={{
+                    background: 'rgba(248,113,113,0.06)',
+                    color: 'rgba(248,113,113,0.7)',
+                    border: '1px solid rgba(248,113,113,0.1)',
+                  }}
                 >
-                  ⚠ {error}
+                  <span>⚠</span>
+                  <span className="flex-1">{error}</span>
+                  <button onClick={() => setError('')}>✕</button>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Bottom controls */}
+            {/* Controls */}
             <div
-              className="p-4 border-t flex items-center justify-between"
-              style={{ borderColor: 'rgba(0,212,255,0.08)' }}
+              className="px-5 py-4 border-t flex items-center justify-between"
+              style={{ borderColor: 'rgba(0,212,255,0.06)' }}
             >
-              <div className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.15)' }}>
-                {isListening ? 'Tap to stop' : 'Tap mic to speak'}
+              <div
+                className="text-[9px] font-mono"
+                style={{ color: 'rgba(248,250,252,0.12)' }}
+              >
+                {isListening
+                  ? '● Tap to stop'
+                  : isThinking
+                  ? '◈ Processing...'
+                  : '○ Tap mic · speak'}
               </div>
 
               <motion.button
-                onClick={toggleListening}
+                onClick={() => (isListening ? stopListening() : startListening())}
                 disabled={isThinking}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={!isThinking ? { scale: 1.08 } : {}}
+                whileTap={!isThinking ? { scale: 0.94 } : {}}
                 className="relative w-12 h-12 rounded-full flex items-center justify-center"
                 style={{
                   background: isListening
-                    ? 'rgba(248,113,113,0.15)'
+                    ? 'rgba(248,113,113,0.12)'
                     : 'rgba(0,212,255,0.1)',
-                  border: isListening
-                    ? '1px solid rgba(248,113,113,0.4)'
-                    : '1px solid rgba(0,212,255,0.3)',
+                  border: `1px solid ${
+                    isListening
+                      ? 'rgba(248,113,113,0.4)'
+                      : 'rgba(0,212,255,0.3)'
+                  }`,
                   boxShadow: isListening
-                    ? '0 0 20px rgba(248,113,113,0.3)'
-                    : '0 0 20px rgba(0,212,255,0.2)',
+                    ? '0 0 25px rgba(248,113,113,0.25)'
+                    : '0 0 25px rgba(0,212,255,0.15)',
                   cursor: isThinking ? 'not-allowed' : 'pointer',
                   opacity: isThinking ? 0.5 : 1,
                 }}
@@ -509,23 +557,29 @@ export function JarvisAssistant() {
                 {isListening && (
                   <>
                     <motion.div
-                      animate={{ scale: [1, 1.8, 1], opacity: [0.4, 0, 0.4] }}
-                      transition={{ duration: 1, repeat: Infinity }}
+                      animate={{ scale: [1, 2, 1], opacity: [0.3, 0, 0.3] }}
+                      transition={{ duration: 1.2, repeat: Infinity }}
                       className="absolute inset-0 rounded-full"
                       style={{ border: '1px solid rgba(248,113,113,0.3)' }}
                     />
                     <motion.div
-                      animate={{ scale: [1, 2.2, 1], opacity: [0.2, 0, 0.2] }}
-                      transition={{ duration: 1, repeat: Infinity, delay: 0.3 }}
+                      animate={{ scale: [1, 2.5, 1], opacity: [0.15, 0, 0.15] }}
+                      transition={{ duration: 1.2, repeat: Infinity, delay: 0.3 }}
                       className="absolute inset-0 rounded-full"
                       style={{ border: '1px solid rgba(248,113,113,0.15)' }}
                     />
                   </>
                 )}
                 {isListening ? (
-                  <MicOff className="w-5 h-5 relative z-10" style={{ color: '#F87171' }} />
+                  <MicOff
+                    className="w-5 h-5 relative z-10"
+                    style={{ color: '#F87171' }}
+                  />
                 ) : (
-                  <Mic className="w-5 h-5 relative z-10" style={{ color: '#00D4FF' }} />
+                  <Mic
+                    className="w-5 h-5 relative z-10"
+                    style={{ color: '#00D4FF' }}
+                  />
                 )}
               </motion.button>
             </div>

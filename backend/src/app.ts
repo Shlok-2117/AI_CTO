@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes'
 import generateRoutes from './routes/generate.routes'
 import historyRoutes from './routes/history.routes'
 import otpRoutes from './routes/otp.routes'
+import jarvisRoutes from './routes/jarvis.routes'
 
 const app = express()
 
@@ -99,6 +100,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/generate', generateRoutes)
 app.use('/api/history', historyRoutes)
 app.use('/api/otp', otpRoutes)
+app.use('/api/jarvis', jarvisRoutes)
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' })
