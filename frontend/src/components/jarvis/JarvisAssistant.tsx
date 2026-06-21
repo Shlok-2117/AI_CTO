@@ -115,61 +115,97 @@ export function JarvisAssistant() {
   function startListening() {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) {
-      setError('Voice not supported. Use text mode.')
+      setError('Voice not supported. Please use text mode.')
       setMode('text')
       return
     }
-    setError('')
-    setLiveText('')
-    window.speechSynthesis.cancel()
-    setSpeaking(false)
-    setPulseActive(false)
 
-    const recog = new SR()
-    recogRef.current = recog
-    recog.lang = 'en-US'
-    recog.continuous = false
-    recog.interimResults = true
-
-    recog.onstart = () => { setListening(true); setPulseActive(true) }
-
-    recog.onresult = (e: any) => {
-      let interim = '', final = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript
-        if (e.results[i].isFinal) final += t
-        else interim += t
-      }
-      setLiveText(interim || final)
-      if (final.trim()) {
+    // Explicitly request mic permission first so Chrome doesn't silently block
+    navigator.mediaDevices?.getUserMedia({ audio: true })
+      .then(() => {
+        setError('')
         setLiveText('')
-        setListening(false)
+        window.speechSynthesis.cancel()
+        setSpeaking(false)
         setPulseActive(false)
-        handleUserMessage(final.trim())
-      }
-    }
 
-    recog.onspeechend = () => { try { recog.stop() } catch {} }
+        const recog = new SR()
+        recogRef.current = recog
+        recog.lang = 'en-US'
+        recog.continuous = false
+        recog.interimResults = true
+        recog.maxAlternatives = 1
 
-    recog.onerror = (e: any) => {
-      setListening(false)
-      setLiveText('')
-      setPulseActive(false)
-      const msgs: Record<string, string> = {
-        'not-allowed': 'Mic blocked. Click lock icon in address bar → Allow microphone.',
-        'no-speech': 'Nothing heard. Try again or switch to text mode.',
-        'network': 'Network error.',
-        'audio-capture': 'No microphone found.',
-      }
-      if (msgs[e.error]) setError(msgs[e.error])
-    }
+        recog.onstart = () => {
+          setListening(true)
+          setPulseActive(true)
+          setError('')
+          console.log('[JARVIS] Listening started')
+        }
 
-    recog.onend = () => { setListening(false); setPulseActive(false) }
+        recog.onresult = (e: any) => {
+          let interim = ''
+          let final = ''
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            const t = e.results[i][0].transcript
+            if (e.results[i].isFinal) final += t
+            else interim += t
+          }
+          console.log('[JARVIS] interim:', interim, 'final:', final)
+          setLiveText(interim || final)
+          if (final.trim()) {
+            setLiveText('')
+            setListening(false)
+            setPulseActive(false)
+            handleUserMessage(final.trim())
+          }
+        }
 
-    try { recog.start() } catch {
-      setError('Could not start mic.')
-      setListening(false)
-    }
+        recog.onspeechstart = () => {
+          console.log('[JARVIS] Speech detected!')
+        }
+
+        recog.onspeechend = () => {
+          console.log('[JARVIS] Speech ended')
+          try { recog.stop() } catch {}
+        }
+
+        recog.onerror = (e: any) => {
+          console.error('[JARVIS] Error:', e.error)
+          setListening(false)
+          setLiveText('')
+          setPulseActive(false)
+          const msgs: Record<string, string> = {
+            'not-allowed': 'Mic blocked. Allow microphone in browser settings.',
+            'no-speech': 'No speech detected. Please speak clearly.',
+            'network': 'Network error. Check connection.',
+            'audio-capture': 'No microphone found.',
+            'aborted': '',
+          }
+          if (msgs[e.error] !== undefined && msgs[e.error]) {
+            setError(msgs[e.error])
+          }
+        }
+
+        recog.onend = () => {
+          console.log('[JARVIS] Recognition ended')
+          setListening(false)
+          setPulseActive(prev => speaking ? prev : false)
+        }
+
+        try {
+          recog.start()
+          console.log('[JARVIS] Recognition started')
+        } catch (err) {
+          console.error('[JARVIS] Start error:', err)
+          setError('Could not start microphone. Try text mode.')
+          setListening(false)
+        }
+      })
+      .catch((err) => {
+        console.error('[JARVIS] Mic permission denied:', err)
+        setError('Microphone permission denied. Click the lock icon in your browser address bar and allow microphone access, then try again.')
+      })
   }
 
   function stopListening() {
@@ -180,23 +216,33 @@ export function JarvisAssistant() {
   }
 
   function openJarvis() {
+    // Always start fresh chat
+    setMessages([])
+    setLiveText('')
+    setTextInput('')
+    setError('')
+    setListening(false)
+    setSpeaking(false)
+    setThinking(false)
+    setPulseActive(false)
+    setMode('voice')
     setOpen(true)
-    if (messages.length === 0) {
-      const name = getUser()
-      setUserName(name)
+
+    const name = getUser()
+    setUserName(name)
+
+    setTimeout(() => {
       const greeting = name
-        ? `Hello ${name}! I am JARVIS. How can I assist you today?`
+        ? `Hello ${name}! JARVIS online. How can I assist you today?`
         : `JARVIS online. How can I assist you today?`
       setMessages([{ role: 'jarvis', text: greeting }])
-      setTimeout(() => {
-        setSpeaking(true)
-        setPulseActive(true)
-        speakText(greeting, mutedRef.current, () => {
-          setSpeaking(false)
-          setPulseActive(false)
-        })
-      }, 300)
-    }
+      setSpeaking(true)
+      setPulseActive(true)
+      speakText(greeting, false, () => {
+        setSpeaking(false)
+        setPulseActive(false)
+      })
+    }, 200)
   }
 
   function closeJarvis() {
@@ -204,6 +250,10 @@ export function JarvisAssistant() {
     window.speechSynthesis.cancel()
     setSpeaking(false)
     setPulseActive(false)
+    setListening(false)
+    setThinking(false)
+    setLiveText('')
+    setError('')
     setOpen(false)
   }
 
