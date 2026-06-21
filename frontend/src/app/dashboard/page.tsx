@@ -1675,48 +1675,54 @@ export default function DashboardPage() {
                     transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
                     className="overflow-hidden mb-4"
                   >
-                    <div className="rounded-xl overflow-hidden"
-                      style={{ border: '1px solid rgba(0,212,255,0.08)', background: 'rgba(0,212,255,0.02)' }}>
-                      <div className="flex overflow-x-auto gap-0 border-b"
+                    <div style={{ border: '1px solid rgba(0,212,255,0.1)', background: 'rgba(3,7,18,0.6)', borderRadius: 12 }}>
+                      <div className="flex overflow-x-auto border-b"
                         style={{ borderColor: 'rgba(0,212,255,0.08)' }}>
                         {EXAMPLE_CATEGORIES.map((cat, ci) => (
                           <button
                             key={cat.category}
                             onClick={() => setActiveCategory(ci)}
-                            className="flex-shrink-0 px-4 py-2.5 text-[9px] font-mono tracking-widest transition-all whitespace-nowrap"
-                            style={{
-                              color: activeCategory === ci ? '#00D4FF' : 'rgba(248,250,252,0.2)',
-                              background: activeCategory === ci ? 'rgba(0,212,255,0.06)' : 'transparent',
-                              borderBottom: activeCategory === ci ? '1px solid #00D4FF' : '1px solid transparent',
-                            }}>
+                            className="flex-shrink-0 px-4 py-2.5 text-[9px] font-mono tracking-widest transition-all whitespace-nowrap relative"
+                            style={{ color: activeCategory === ci ? '#00D4FF' : 'rgba(248,250,252,0.2)', background: 'transparent' }}>
+                            {activeCategory === ci && (
+                              <motion.div layoutId="activeCatTab" className="absolute bottom-0 left-0 right-0 h-px"
+                                style={{ background: '#00D4FF' }} />
+                            )}
                             {cat.category}
                           </button>
                         ))}
                       </div>
                       <div className="p-3">
-                        <div className="grid grid-cols-1 gap-1.5">
-                          {EXAMPLE_CATEGORIES[activeCategory]?.examples.map(ex => (
-                            <button
-                              key={ex}
-                              onClick={() => { setProblem(ex); setShowExamples(false) }}
-                              disabled={loading}
-                              className="text-left text-xs px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2"
-                              style={{ color: 'rgba(248,250,252,0.45)', background: 'transparent', border: '1px solid transparent' }}
-                              onMouseEnter={e => {
-                                e.currentTarget.style.background = 'rgba(0,212,255,0.05)'
-                                e.currentTarget.style.borderColor = 'rgba(0,212,255,0.15)'
-                                e.currentTarget.style.color = 'rgba(248,250,252,0.8)'
-                              }}
-                              onMouseLeave={e => {
-                                e.currentTarget.style.background = 'transparent'
-                                e.currentTarget.style.borderColor = 'transparent'
-                                e.currentTarget.style.color = 'rgba(248,250,252,0.45)'
-                              }}>
-                              <span className="flex-shrink-0 text-[8px]" style={{ color: 'rgba(0,212,255,0.3)' }}>▸</span>
-                              {ex}
-                            </button>
-                          ))}
-                        </div>
+                        <AnimatePresence mode="wait">
+                          <motion.div key={activeCategory}
+                            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex flex-col gap-1">
+                            {EXAMPLE_CATEGORIES[activeCategory]?.examples.map((ex, ei) => (
+                              <motion.button
+                                key={ex}
+                                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: ei * 0.05 }}
+                                onClick={() => { setProblem(ex); setShowExamples(false) }}
+                                disabled={loading}
+                                className="group flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left transition-all"
+                                style={{ background: 'rgba(0,212,255,0.02)', border: '1px solid rgba(0,212,255,0.06)' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.2)' }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.02)'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.06)' }}
+                              >
+                                <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
+                                  style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.15)' }}>
+                                  <span className="text-[9px]" style={{ color: 'rgba(0,212,255,0.6)' }}>▸</span>
+                                </div>
+                                <span className="text-xs flex-1" style={{ color: 'rgba(248,250,252,0.5)' }}>{ex}</span>
+                                <span className="text-[8px] font-mono px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                  style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)', color: '#00D4FF' }}>
+                                  USE
+                                </span>
+                              </motion.button>
+                            ))}
+                          </motion.div>
+                        </AnimatePresence>
                       </div>
                     </div>
                   </motion.div>
@@ -1744,251 +1750,195 @@ export default function DashboardPage() {
               className="mb-6"
             >
               <div className="hud-panel rounded-2xl overflow-hidden relative"
-                style={{ borderColor: 'rgba(0,212,255,0.12)' }}>
+                style={{ borderColor: 'rgba(0,212,255,0.12)', minHeight: 420 }}>
 
                 {/* Top beam */}
                 <div className="absolute top-0 left-0 right-0 h-px"
                   style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.6),transparent)' }} />
 
-                <div className="p-8">
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                          style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.2)' }}>
-                          <Cpu className="w-5 h-5" style={{ color: '#00D4FF' }} />
-                        </div>
-                        <motion.div
-                          animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                          className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full"
-                          style={{ background: '#00D4FF', boxShadow: '0 0 8px #00D4FF' }} />
-                      </div>
-                      <div>
-                        <div className="text-sm font-black" style={{ color: '#F8FAFC' }}>
-                          JARVIS_CTO Intelligence
-                        </div>
-                        <div className="text-[10px] font-mono" style={{ color: 'rgba(0,212,255,0.5)' }}>
-                          {currentStep === 0
-                            ? 'INITIALIZING...'
-                            : completedSteps.length === 12
-                            ? 'BLUEPRINT COMPLETE'
-                            : `${AGENT_STEPS[currentStep - 1]?.name?.toUpperCase() || 'PROCESSING'}...`
-                          }
-                        </div>
-                      </div>
-                    </div>
+                {/* Ambient glow */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  <motion.div
+                    animate={{ scale: [1, 1.3, 1], opacity: [0.03, 0.07, 0.03] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full"
+                    style={{ background: 'radial-gradient(circle, #00D4FF 0%, transparent 70%)' }}
+                  />
+                </div>
 
-                    <div className="text-right">
-                      <div className="text-2xl font-black font-mono" style={{ color: '#F59E0B' }}>
+                <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center">
+
+                  {/* System label */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex items-center gap-2 mb-10"
+                  >
+                    <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: '#00D4FF', boxShadow: '0 0 6px #00D4FF' }} />
+                    <span className="text-[9px] font-mono tracking-[0.4em]" style={{ color: 'rgba(0,212,255,0.5)' }}>
+                      JARVIS_CTO INTELLIGENCE ACTIVE
+                    </span>
+                    <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.75 }}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: '#00D4FF', boxShadow: '0 0 6px #00D4FF' }} />
+                  </motion.div>
+
+                  {/* 220×220 JARVIS clock */}
+                  <div className="relative mb-10" style={{ width: 220, height: 220 }}>
+
+                    <svg className="absolute inset-0" width="220" height="220">
+                      <circle cx="110" cy="110" r="100" fill="none"
+                        stroke="rgba(0,212,255,0.04)" strokeWidth="1" strokeDasharray="3 6" />
+                    </svg>
+
+                    <motion.svg className="absolute inset-0" width="220" height="220"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}>
+                      <circle cx="110" cy="110" r="104" fill="none"
+                        stroke="rgba(0,212,255,0.12)" strokeWidth="1" strokeDasharray="20 8 4 8" />
+                      <circle cx="110" cy="6" r="3" fill="#00D4FF"
+                        style={{ filter: 'drop-shadow(0 0 4px #00D4FF)' }} />
+                    </motion.svg>
+
+                    <motion.svg className="absolute inset-0" width="220" height="220"
+                      animate={{ rotate: -360 }}
+                      transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}>
+                      <circle cx="110" cy="110" r="86" fill="none"
+                        stroke="rgba(56,189,248,0.15)" strokeWidth="1" strokeDasharray="12 8" />
+                      <circle cx="110" cy="24" r="2.5" fill="#38BDF8"
+                        style={{ filter: 'drop-shadow(0 0 3px #38BDF8)' }} />
+                    </motion.svg>
+
+                    {/* 30-second countdown arc */}
+                    <svg className="absolute inset-0" width="220" height="220"
+                      style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx="110" cy="110" r="96" fill="none"
+                        stroke="rgba(0,212,255,0.06)" strokeWidth="3" />
+                      <motion.circle
+                        cx="110" cy="110" r="96"
+                        fill="none" stroke="#00D4FF" strokeWidth="3" strokeLinecap="round"
+                        style={{
+                          filter: 'drop-shadow(0 0 6px rgba(0,212,255,0.5))',
+                          strokeDasharray: `${2 * Math.PI * 96}`,
+                        }}
+                        animate={{ strokeDashoffset: [0, 2 * Math.PI * 96] }}
+                        transition={{ duration: 30, ease: 'linear', repeat: Infinity }}
+                      />
+                    </svg>
+
+                    <motion.svg className="absolute inset-0" width="220" height="220"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
+                      <circle cx="110" cy="110" r="68" fill="none"
+                        stroke="rgba(245,158,11,0.1)" strokeWidth="1" strokeDasharray="6 10" />
+                      <circle cx="110" cy="42" r="2" fill="#F59E0B"
+                        style={{ filter: 'drop-shadow(0 0 3px #F59E0B)' }} />
+                    </motion.svg>
+
+                    {/* Center */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="text-5xl font-black font-mono leading-none"
+                        style={{ color: '#00D4FF', textShadow: '0 0 30px rgba(0,212,255,0.5)', letterSpacing: '0.05em' }}>
                         {formatTime(elapsedTime)}
                       </div>
-                      <div className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.15)' }}>
+                      <motion.div
+                        animate={{ opacity: [0.4, 0.9, 0.4] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="text-[9px] font-mono mt-2 tracking-[0.3em]"
+                        style={{ color: 'rgba(0,212,255,0.4)' }}>
                         ELAPSED
-                      </div>
+                      </motion.div>
                     </div>
+
+                    {/* 8 tick marks */}
+                    {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+                      <div key={angle} className="absolute"
+                        style={{
+                          width: 1, height: 8,
+                          background: 'rgba(0,212,255,0.25)',
+                          top: '50%', left: '50%',
+                          transformOrigin: '50% 110px',
+                          transform: `rotate(${angle}deg) translateX(-50%) translateY(-110px)`,
+                          borderRadius: 1
+                        }} />
+                    ))}
                   </div>
 
-                  {/* JARVIS CLOCK */}
-                  <div className="flex flex-col items-center justify-center py-6 mb-8">
-                    <div className="relative" style={{ width: 200, height: 200 }}>
+                  {/* Agent name — blur in/out */}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentStep}
+                      initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
+                      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                      exit={{ opacity: 0, y: -12, filter: 'blur(6px)' }}
+                      transition={{ duration: 0.5 }}
+                      className="text-center mb-6"
+                    >
+                      <div className="text-sm font-mono font-black tracking-[0.2em] mb-1.5"
+                        style={{ color: currentStep === 0 ? 'rgba(0,212,255,0.6)' : completedSteps.length === 12 ? '#4ADE80' : '#F8FAFC' }}>
+                        {currentStep === 0
+                          ? '▸ INITIALIZING SYSTEM'
+                          : completedSteps.length === 12
+                          ? '✓ BLUEPRINT COMPLETE'
+                          : `▸ ${AGENT_STEPS[currentStep - 1]?.name?.toUpperCase()}`
+                        }
+                      </div>
+                      <div className="text-xs font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>
+                        {currentStep === 0
+                          ? 'Preparing 12 specialized agents...'
+                          : completedSteps.length === 12
+                          ? 'Compiling your technical blueprint...'
+                          : AGENT_STEPS[currentStep - 1]?.desc
+                        }
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
 
-                      {/* Outer static dashed ring */}
-                      <svg className="absolute inset-0" width="200" height="200">
-                        <circle cx="100" cy="100" r="95"
-                          fill="none" stroke="rgba(0,212,255,0.06)" strokeWidth="1"
-                          strokeDasharray="4 8" />
-                      </svg>
-
-                      {/* Rotating outer ring with dot */}
-                      <motion.svg className="absolute inset-0" width="200" height="200"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}>
-                        <circle cx="100" cy="100" r="90"
-                          fill="none" stroke="rgba(0,212,255,0.15)" strokeWidth="1"
-                          strokeDasharray="30 10 5 10" />
-                        <circle cx="100" cy="10" r="3" fill="#00D4FF"
-                          style={{ filter: 'drop-shadow(0 0 4px #00D4FF)' }} />
-                      </motion.svg>
-
-                      {/* Counter-rotating middle ring */}
-                      <motion.svg className="absolute inset-0" width="200" height="200"
-                        animate={{ rotate: -360 }}
-                        transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
-                        <circle cx="100" cy="100" r="74"
-                          fill="none" stroke="rgba(56,189,248,0.2)" strokeWidth="1"
-                          strokeDasharray="15 8" />
-                        <circle cx="100" cy="26" r="2.5" fill="#38BDF8"
-                          style={{ filter: 'drop-shadow(0 0 4px #38BDF8)' }} />
-                      </motion.svg>
-
-                      {/* Progress arc */}
-                      <svg className="absolute inset-0" width="200" height="200"
-                        style={{ transform: 'rotate(-90deg)' }}>
-                        <circle cx="100" cy="100" r="82"
-                          fill="none" stroke="rgba(0,212,255,0.05)" strokeWidth="4" />
-                        <motion.circle
-                          cx="100" cy="100" r="82"
-                          fill="none"
-                          stroke="url(#jarvis-progress-grad)"
-                          strokeWidth="4"
-                          strokeLinecap="round"
-                          strokeDasharray={`${2 * Math.PI * 82}`}
+                  {/* EQ bars */}
+                  <div className="flex items-end gap-1.5 h-10 mb-6">
+                    {AGENT_STEPS.map((step, i) => {
+                      const isDone = completedSteps.includes(step.id)
+                      const isActive = currentStep === step.id
+                      return (
+                        <motion.div
+                          key={step.id}
+                          className="w-1.5 rounded-full"
                           animate={{
-                            strokeDashoffset: 2 * Math.PI * 82 * (1 - completedSteps.length / 12)
+                            height: isDone ? '100%' :
+                              isActive ? ['15%', '100%', '40%', '80%', '25%', '90%', '50%', '100%'] :
+                              ['10%', '15%', '10%', '20%', '10%']
                           }}
-                          transition={{ duration: 0.6, ease: 'easeOut' }}
-                        />
-                        <defs>
-                          <linearGradient id="jarvis-progress-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#00D4FF" />
-                            <stop offset="100%" stopColor="#818CF8" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-
-                      {/* Inner amber ring */}
-                      <motion.svg className="absolute inset-0" width="200" height="200"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}>
-                        <circle cx="100" cy="100" r="58"
-                          fill="none" stroke="rgba(245,158,11,0.12)" strokeWidth="1"
-                          strokeDasharray="8 12" />
-                        <circle cx="100" cy="42" r="2" fill="#F59E0B"
-                          style={{ filter: 'drop-shadow(0 0 3px #F59E0B)' }} />
-                      </motion.svg>
-
-                      {/* Center content */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="text-5xl font-black font-mono"
-                          style={{ color: '#00D4FF', textShadow: '0 0 30px rgba(0,212,255,0.5)', letterSpacing: '0.05em' }}>
-                          {formatTime(elapsedTime)}
-                        </div>
-                        <motion.div
-                          animate={{ opacity: [0.4, 0.8, 0.4] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                          className="text-[9px] font-mono mt-2 tracking-[0.3em]"
-                          style={{ color: 'rgba(0,212,255,0.5)' }}>
-                          PROCESSING
-                        </motion.div>
-                      </div>
-
-                      {/* Cardinal tick marks */}
-                      {[0, 90, 180, 270].map(angle => (
-                        <div key={angle} className="absolute w-1.5 h-3"
+                          transition={{
+                            duration: isActive ? 0.5 : 2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                            delay: i * 0.08
+                          }}
                           style={{
-                            background: 'rgba(0,212,255,0.3)',
-                            top: '50%', left: '50%',
-                            transformOrigin: '0 0',
-                            transform: `rotate(${angle}deg) translateX(-0.75px) translateY(-100px)`,
-                            borderRadius: 1
-                          }} />
-                      ))}
-                    </div>
-
-                    {/* Cinematic status below clock */}
-                    <div className="flex flex-col items-center gap-4 mt-8">
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={currentStep}
-                          initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
-                          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                          exit={{ opacity: 0, y: -12, filter: 'blur(6px)' }}
-                          transition={{ duration: 0.4 }}
-                          className="text-center"
-                        >
-                          <div className="text-xs font-mono font-black tracking-[0.25em] mb-1"
-                            style={{ color: 'rgba(0,212,255,0.9)' }}>
-                            {currentStep === 0
-                              ? '▸ INITIALIZING SYSTEM'
-                              : completedSteps.length === 12
-                              ? '✓ ALL SYSTEMS COMPLETE'
-                              : `▸ ${AGENT_STEPS[currentStep - 1]?.name?.toUpperCase() || 'PROCESSING'}`
-                            }
-                          </div>
-                          <div className="text-[10px] font-mono"
-                            style={{ color: 'rgba(248,250,252,0.2)' }}>
-                            {currentStep === 0
-                              ? 'Preparing specialized AI agents...'
-                              : completedSteps.length === 12
-                              ? 'Compiling your technical blueprint...'
-                              : AGENT_STEPS[currentStep - 1]?.desc || ''
-                            }
-                          </div>
-                        </motion.div>
-                      </AnimatePresence>
-
-                      {/* EQ bars — one per agent */}
-                      <div className="flex items-end gap-1.5 h-8">
-                        {AGENT_STEPS.map((step) => {
-                          const isDone = completedSteps.includes(step.id)
-                          const isActive = currentStep === step.id
-                          return (
-                            <motion.div
-                              key={step.id}
-                              title={step.name}
-                              className="w-1.5 rounded-full"
-                              animate={{
-                                height: isDone ? '100%' : isActive ? ['20%', '100%', '50%', '90%', '30%', '100%'] : '15%',
-                                opacity: isDone ? 1 : isActive ? 1 : 0.2
-                              }}
-                              transition={{
-                                duration: isActive ? 0.6 : 0.3,
-                                repeat: isActive ? Infinity : 0,
-                              }}
-                              style={{
-                                background: isDone ? '#4ADE80' : isActive ? step.color : 'rgba(255,255,255,0.08)',
-                                boxShadow: isDone ? '0 0 6px rgba(74,222,128,0.5)' : isActive ? `0 0 8px ${step.color}80` : 'none',
-                                minHeight: '3px'
-                              }}
-                            />
-                          )
-                        })}
-                      </div>
-
-                      {/* Thin progress line — no fraction */}
-                      <div className="w-full max-w-xs">
-                        <div className="h-px rounded-full overflow-hidden"
-                          style={{ background: 'rgba(255,255,255,0.05)' }}>
-                          <motion.div
-                            className="h-full rounded-full"
-                            animate={{ width: `${(completedSteps.length / 12) * 100}%` }}
-                            transition={{ duration: 0.6, ease: 'easeOut' }}
-                            style={{ background: 'linear-gradient(90deg,#00D4FF,#38BDF8,#818CF8)', boxShadow: '0 0 6px rgba(0,212,255,0.4)' }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                            background: isDone ? '#4ADE80' : isActive ? '#00D4FF' : 'rgba(255,255,255,0.06)',
+                            boxShadow: isDone ? '0 0 6px rgba(74,222,128,0.4)' : isActive ? '0 0 8px rgba(0,212,255,0.6)' : 'none',
+                            minHeight: 3
+                          }}
+                        />
+                      )
+                    })}
                   </div>
 
-                  {/* Bottom progress bar + live log */}
-                  <div className="space-y-2">
-                    <div className="h-0.5 rounded-full overflow-hidden"
-                      style={{ background: 'rgba(255,255,255,0.04)' }}>
-                      <motion.div
-                        className="h-full rounded-full"
-                        animate={{ width: `${(completedSteps.length / 12) * 100}%` }}
-                        transition={{ duration: 0.6, ease: 'easeOut' }}
-                        style={{ background: 'linear-gradient(90deg,#00D4FF,#38BDF8,#818CF8)', boxShadow: '0 0 8px rgba(0,212,255,0.4)' }}
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
-                      style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(0,212,255,0.05)' }}>
-                      <motion.div
-                        animate={{ opacity: [1, 0.3, 1] }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                        style={{ background: '#00D4FF', boxShadow: '0 0 4px #00D4FF' }} />
-                      <span className="text-[10px] font-mono truncate" style={{ color: 'rgba(0,212,255,0.4)' }}>
-                        {logs[logs.length - 1] || 'Initializing CTO Intelligence System...'}
-                      </span>
-                      <span className="text-[9px] font-mono flex-shrink-0 ml-auto"
-                        style={{ color: 'rgba(248,250,252,0.15)' }}>
-                        {Math.round((completedSteps.length / 12) * 100)}%
-                      </span>
-                    </div>
+                  {/* Live log — single line */}
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg w-full max-w-sm"
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,212,255,0.06)' }}>
+                    <motion.div
+                      animate={{ opacity: [1, 0.2, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity }}
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      style={{ background: '#00D4FF', boxShadow: '0 0 4px #00D4FF' }} />
+                    <span className="text-[9px] font-mono truncate flex-1 text-left"
+                      style={{ color: 'rgba(0,212,255,0.35)' }}>
+                      {logs[logs.length - 1] || 'Booting intelligence system...'}
+                    </span>
                   </div>
                 </div>
 
