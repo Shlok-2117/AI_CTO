@@ -1,64 +1,98 @@
 import { Router, Request, Response } from 'express'
-import { callAI } from '../services/ai.service'
 
 const router = Router()
 
-const JARVIS_SYSTEM = `You are JARVIS — voice AI assistant of JARVIS_CTO.
-Be helpful, intelligent, concise like Tony Stark's JARVIS.
-Answer in 1-2 sentences max — this is voice output.
-Never use markdown, bullets, or code blocks in responses.
-Be natural and conversational.`
+const JARVIS_SYSTEM = `You are JARVIS, an intelligent AI assistant like Tony Stark's JARVIS.
+Be helpful, witty, and concise. Keep responses to 1-3 sentences maximum.
+Be conversational and natural. Never say you cannot answer something.
+Never use markdown, bullets, asterisks, or code blocks in responses.`
+
+async function callGroqText(message: string, systemPrompt: string): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) throw new Error('GROQ_API_KEY not set')
+
+  const models = [
+    'llama-3.1-8b-instant',
+    'llama-3.3-70b-versatile',
+  ]
+
+  for (const model of models) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message },
+          ],
+          max_tokens: 150,
+          temperature: 0.7,
+        }),
+      })
+
+      if (!res.ok) {
+        const errText = await res.text()
+        console.error(`[JARVIS] Groq ${model} HTTP ${res.status}: ${errText}`)
+        continue
+      }
+
+      const data = await res.json() as any
+      const text = data.choices?.[0]?.message?.content?.trim()
+      if (text) {
+        console.log(`[JARVIS] ${model} responded: ${text.slice(0, 80)}...`)
+        return text
+      }
+    } catch (e: any) {
+      console.error(`[JARVIS] ${model} failed: ${e.message}`)
+    }
+  }
+
+  throw new Error('All models failed')
+}
 
 router.post('/chat', async (req: Request, res: Response) => {
   try {
     const { message, userName, conversationHistory } = req.body
 
     if (!message?.trim()) {
-      return res.status(400).json({ error: 'Message required' })
+      return res.status(400).json({ response: 'Please say something.' })
     }
 
-    const nameContext = userName ? `User's name: ${userName}. ` : ''
+    console.log(`[JARVIS] User (${userName || 'guest'}): ${message}`)
 
-    // Keep ONLY last 3 exchanges to prevent token overflow
+    const nameCtx = userName ? `The user's name is ${userName}. ` : ''
+    const system = `${JARVIS_SYSTEM}\n${nameCtx}`
+
     const recentHistory = Array.isArray(conversationHistory)
-      ? conversationHistory.slice(-6)
+      ? conversationHistory.slice(-4)
       : []
 
-    // Build minimal context
-    let context = ''
+    let context = message.trim().slice(0, 300)
     if (recentHistory.length > 0) {
-      const historyText = recentHistory
-        .map((m: any) => {
-          const role = m.role === 'user' ? 'User' : 'JARVIS'
-          // Truncate each message to 100 chars max
-          const text = (m.text || '').slice(0, 100)
-          return `${role}: ${text}`
-        })
+      const historyLines = recentHistory
+        .map((m: any) => `${m.role === 'user' ? 'User' : 'JARVIS'}: ${(m.text || '').slice(0, 80)}`)
         .join('\n')
-      context = `Recent chat:\n${historyText}\n\nUser: ${message.slice(0, 200)}`
-    } else {
-      context = message.slice(0, 200)
+      context = `${historyLines}\nUser: ${message.trim().slice(0, 300)}`
     }
 
-    const fullSystem = `${JARVIS_SYSTEM}\n${nameContext}Reply in 1-2 sentences only.`
+    const response = await callGroqText(context, system)
 
-    const response = await callAI(context, fullSystem)
-
-    // Clean response - remove markdown
     const clean = response
-      .replace(/```[\s\S]*?```/g, '')
       .replace(/[*#`_]/g, '')
       .replace(/\n+/g, ' ')
       .trim()
-      .slice(0, 300) // Max 300 chars for voice
+      .slice(0, 400)
 
-    return res.json({
-      response: clean || 'Understood. How can I assist you further?',
-    })
+    return res.json({ response: clean || 'How can I assist you?' })
   } catch (err: any) {
     console.error('[JARVIS] Error:', err.message)
     return res.json({
-      response: 'My connection was disrupted. Please try again.',
+      response: `I encountered an issue: ${err.message?.slice(0, 80) || 'unknown error'}. Please try again.`,
     })
   }
 })
