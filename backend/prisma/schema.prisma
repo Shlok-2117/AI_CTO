@@ -17,7 +17,33 @@ model User {
   updatedAt     DateTime       @updatedAt
   generations   Generation[]
   refreshTokens RefreshToken[]
+  feedbacks     Feedback[]
   @@map("users")
+}
+
+model Feedback {
+  id              String   @id @default(cuid())
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  generationId    String?
+
+  overallRating   Int
+  outputQuality   Int
+  easeOfUse       Int
+  speedRating     Int
+
+  featureRequests String
+
+  wouldRecommend  Boolean
+  usageContext    String
+
+  bestThing       String?
+  improvementArea String?
+  message         String?
+
+  createdAt       DateTime @default(now())
+
+  @@map("feedbacks")
 }
 
 model Generation {

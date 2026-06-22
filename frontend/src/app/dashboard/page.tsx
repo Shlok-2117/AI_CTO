@@ -7,10 +7,11 @@ import {
   DollarSign, Shield, GitBranch, Download, Activity,
   Layers, Users, Cloud, Target, Brain, TrendingUp, Award,
   AlertTriangle, ChevronRight, Zap, Lock, RefreshCw,
-  Volume2, Keyboard, X
+  Volume2, Keyboard, X, Star
 } from 'lucide-react'
 import Link from 'next/link'
 import MermaidDiagram from '@/components/MermaidDiagram'
+import { FeedbackModal } from '@/components/jarvis/FeedbackModal'
 
 const EXAMPLE_CATEGORIES = [
   {
@@ -1286,6 +1287,7 @@ export default function DashboardPage() {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [elapsedTime, setElapsedTime] = useState(0)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
   const [activeCategory, setActiveCategory] = useState(0)
   const timerRefs = useRef<NodeJS.Timeout[]>([])
@@ -1403,6 +1405,7 @@ export default function DashboardPage() {
       setCurrentStep(0)
       setCompletedSteps(AGENT_STEPS.map(s => s.id))
       setResult(data)
+      setTimeout(() => setShowFeedback(true), 3000)
       if (voiceEnabled) {
         setTimeout(() => speakText(
           `Blueprint generation complete. Project: ${data.projectName}. All 12 phases analyzed successfully. Your technical blueprint is ready, sir.`
@@ -1613,6 +1616,17 @@ export default function DashboardPage() {
             <History className="w-3.5 h-3.5" />
             <span className="hidden sm:block">HISTORY</span>
           </Link>
+
+          <button
+            onClick={() => setShowFeedback(true)}
+            title="Share feedback"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[9px] font-mono tracking-widest transition-all"
+            style={{ color: 'rgba(248,250,252,0.25)', border: '1px solid transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#F59E0B'; e.currentTarget.style.background = 'rgba(245,158,11,0.05)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.2)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(248,250,252,0.25)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}>
+            <Star className="w-3.5 h-3.5" />
+            <span className="hidden sm:block">FEEDBACK</span>
+          </button>
 
           <button
             onClick={handleLogout}
@@ -2167,6 +2181,15 @@ export default function DashboardPage() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showFeedback && (
+          <FeedbackModal
+            onClose={() => setShowFeedback(false)}
+            generationId={result?.id}
+          />
         )}
       </AnimatePresence>
     </div>

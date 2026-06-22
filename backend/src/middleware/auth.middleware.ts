@@ -19,3 +19,15 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
     return res.status(401).json({ error: 'Invalid or expired token' })
   }
 }
+
+export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+  try {
+    const header = req.headers.authorization
+    if (header?.startsWith('Bearer ')) {
+      const token = header.split(' ')[1]
+      const payload = jwt.verify(token, process.env.JWT_SECRET!) as any
+      ;(req as any).user = { userId: payload.userId }
+    }
+  } catch {}
+  next()
+}
