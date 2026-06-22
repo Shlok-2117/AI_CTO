@@ -71,7 +71,7 @@ export default function HistoryPage() {
   if (!mounted) return null
 
   return (
-    <div className="page-jarvis min-h-screen text-white">
+    <div className="hud-deep hud-grid-deep min-h-screen text-white">
       <div className="fixed inset-0 hud-grid opacity-15 pointer-events-none" />
       <div className="scan-line" />
 

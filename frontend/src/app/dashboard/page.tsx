@@ -301,7 +301,7 @@ function ProductTab({ d }: { d: any }) {
   return (
     <div className="space-y-8">
       {d.metrics?.north_star_metric && (
-        <div className="hud-panel rounded-lg p-6 border border-cyan-500/20">
+        <div className="hud-panel hud-card-3d rounded-lg p-6 border border-cyan-500/20">
           <p className="text-xs text-cyan-400 uppercase tracking-widest mb-2">North Star Metric</p>
           <p className="text-2xl font-bold text-white">{d.metrics.north_star_metric}</p>
         </div>
@@ -1128,7 +1128,7 @@ function VerdictTab({ d }: { d: any }) {
   return (
     <div className="space-y-8">
       {ir && (
-        <div className="hud-panel rounded-lg p-6 border border-cyan-500/20">
+        <div className="hud-panel hud-card-3d rounded-lg p-6 border border-cyan-500/20">
           <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Investor Verdict</p>
@@ -1163,7 +1163,7 @@ function VerdictTab({ d }: { d: any }) {
         </div>
       )}
       {d.final_cto_statement && (
-        <div className="hud-panel rounded-lg p-6 border border-cyan-500/30">
+        <div className="hud-panel hud-card-3d rounded-lg p-6 border border-cyan-500/30">
           <p className="text-xs text-cyan-400 uppercase tracking-widest mb-3">Final CTO Statement</p>
           <p className="text-sm text-gray-200 leading-relaxed italic">"{d.final_cto_statement}"</p>
         </div>
@@ -1525,9 +1525,13 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#050a0f] text-white">
+    <div className="hud-deep hud-grid-deep min-h-screen text-white">
       <nav className="hud-panel border-b px-6 py-3.5 flex items-center justify-between sticky top-0 z-50"
-        style={{ borderColor: 'rgba(0,212,255,0.1)' }}>
+        style={{
+          borderColor: 'rgba(0,212,255,0.1)',
+          backdropFilter: 'blur(30px)',
+          boxShadow: '0 1px 0 rgba(0,212,255,0.1), 0 4px 30px rgba(0,0,0,0.3)'
+        }}>
 
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="relative">
@@ -1628,7 +1632,7 @@ export default function DashboardPage() {
           {user && (
             <p className="text-xs text-gray-600 mb-3">Welcome back, <span className="text-cyan-400">{user.name || user.email}</span></p>
           )}
-          <div className="hud-panel rounded-xl p-6 mb-4">
+          <div className="hud-panel hud-glow-border hud-holographic rounded-xl p-6 mb-4">
             <label className="block text-xs text-cyan-400 uppercase tracking-widest mb-3">Startup Idea</label>
             <textarea
               value={problem}
@@ -1643,7 +1647,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => handleGenerate()}
                 disabled={loading || problem.trim().length < 10}
-                className="btn-jarvis flex items-center gap-2 text-xs px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="btn-jarvis btn-3d flex items-center gap-2 text-xs px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
                 {loading ? 'Generating...' : 'Generate Blueprint'}
@@ -1672,53 +1676,98 @@ export default function DashboardPage() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                    transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
                     className="overflow-hidden mb-4"
                   >
-                    <div style={{ border: '1px solid rgba(0,212,255,0.1)', background: 'rgba(3,7,18,0.6)', borderRadius: 12 }}>
-                      <div className="flex overflow-x-auto border-b"
-                        style={{ borderColor: 'rgba(0,212,255,0.08)' }}>
+                    <div className="relative overflow-hidden"
+                      style={{
+                        background: 'rgba(3,7,18,0.8)',
+                        border: '1px solid rgba(0,212,255,0.12)',
+                        borderRadius: 16,
+                        backdropFilter: 'blur(20px)',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,212,255,0.1)'
+                      }}>
+                      <div className="absolute top-0 left-0 right-0 h-px"
+                        style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.4),transparent)' }} />
+                      <div className="flex overflow-x-auto"
+                        style={{ borderBottom: '1px solid rgba(0,212,255,0.06)' }}>
                         {EXAMPLE_CATEGORIES.map((cat, ci) => (
                           <button
                             key={cat.category}
                             onClick={() => setActiveCategory(ci)}
-                            className="flex-shrink-0 px-4 py-2.5 text-[9px] font-mono tracking-widest transition-all whitespace-nowrap relative"
-                            style={{ color: activeCategory === ci ? '#00D4FF' : 'rgba(248,250,252,0.2)', background: 'transparent' }}>
+                            className="flex-shrink-0 relative px-4 py-3 text-[9px] font-mono tracking-[0.15em] transition-all whitespace-nowrap"
+                            style={{
+                              color: activeCategory === ci ? '#00D4FF' : 'rgba(248,250,252,0.2)',
+                              background: activeCategory === ci ? 'rgba(0,212,255,0.06)' : 'transparent',
+                            }}>
                             {activeCategory === ci && (
-                              <motion.div layoutId="activeCatTab" className="absolute bottom-0 left-0 right-0 h-px"
-                                style={{ background: '#00D4FF' }} />
+                              <motion.div layoutId="cat-underline"
+                                className="absolute bottom-0 left-0 right-0 h-px"
+                                style={{ background: '#00D4FF', boxShadow: '0 0 8px rgba(0,212,255,0.8)' }} />
                             )}
                             {cat.category}
                           </button>
                         ))}
                       </div>
-                      <div className="p-3">
+                      <div className="p-4">
                         <AnimatePresence mode="wait">
-                          <motion.div key={activeCategory}
-                            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                          <motion.div
+                            key={activeCategory}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
                             transition={{ duration: 0.2 }}
-                            className="flex flex-col gap-1">
+                            className="grid grid-cols-1 sm:grid-cols-2 gap-2"
+                          >
                             {EXAMPLE_CATEGORIES[activeCategory]?.examples.map((ex, ei) => (
                               <motion.button
                                 key={ex}
-                                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: ei * 0.05 }}
+                                initial={{ opacity: 0, scale: 0.97 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: ei * 0.04 }}
                                 onClick={() => { setProblem(ex); setShowExamples(false) }}
                                 disabled={loading}
-                                className="group flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left transition-all"
-                                style={{ background: 'rgba(0,212,255,0.02)', border: '1px solid rgba(0,212,255,0.06)' }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.07)'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.2)' }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,212,255,0.02)'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.06)' }}
+                                className="group relative text-left overflow-hidden"
+                                style={{
+                                  background: 'rgba(0,212,255,0.02)',
+                                  border: '1px solid rgba(0,212,255,0.07)',
+                                  borderRadius: 10,
+                                  padding: '10px 14px',
+                                  transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={e => {
+                                  e.currentTarget.style.background = 'rgba(0,212,255,0.08)'
+                                  e.currentTarget.style.borderColor = 'rgba(0,212,255,0.25)'
+                                  e.currentTarget.style.transform = 'translateY(-1px)'
+                                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,212,255,0.1)'
+                                }}
+                                onMouseLeave={e => {
+                                  e.currentTarget.style.background = 'rgba(0,212,255,0.02)'
+                                  e.currentTarget.style.borderColor = 'rgba(0,212,255,0.07)'
+                                  e.currentTarget.style.transform = 'translateY(0)'
+                                  e.currentTarget.style.boxShadow = 'none'
+                                }}
                               >
-                                <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0"
-                                  style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.15)' }}>
-                                  <span className="text-[9px]" style={{ color: 'rgba(0,212,255,0.6)' }}>▸</span>
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                                  style={{ background: 'radial-gradient(circle at 50% 50%, rgba(0,212,255,0.06), transparent 70%)' }} />
+                                <div className="flex items-center gap-2.5 relative z-10">
+                                  <div className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center"
+                                    style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)' }}>
+                                    <span style={{ fontSize: 8, color: '#00D4FF' }}>▸</span>
+                                  </div>
+                                  <span className="text-xs leading-relaxed flex-1"
+                                    style={{ color: 'rgba(248,250,252,0.5)' }}>
+                                    {ex}
+                                  </span>
+                                  <span className="flex-shrink-0 text-[8px] font-mono px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                    style={{
+                                      background: 'rgba(0,212,255,0.12)',
+                                      border: '1px solid rgba(0,212,255,0.25)',
+                                      color: '#00D4FF',
+                                    }}>
+                                    USE →
+                                  </span>
                                 </div>
-                                <span className="text-xs flex-1" style={{ color: 'rgba(248,250,252,0.5)' }}>{ex}</span>
-                                <span className="text-[8px] font-mono px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                  style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)', color: '#00D4FF' }}>
-                                  USE
-                                </span>
                               </motion.button>
                             ))}
                           </motion.div>
@@ -2025,17 +2074,19 @@ export default function DashboardPage() {
               </div>
 
               {/* Tab content */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {tabContent[activeTab]}
-                </motion.div>
-              </AnimatePresence>
+              <div className="hud-perspective">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {tabContent[activeTab]}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

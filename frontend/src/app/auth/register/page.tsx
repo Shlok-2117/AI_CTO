@@ -351,13 +351,70 @@ export default function RegisterPage() {
               {/* ── STEP 2: OTP ── */}
               {step === 'otp' && (
                 <motion.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                  <div className="mb-8">
+                  <div className="mb-6">
                     <div className="text-[10px] font-mono tracking-[0.3em] mb-1" style={{ color: 'rgba(0,212,255,0.5)' }}>STEP 02</div>
                     <h1 className="text-xl font-black tracking-tight mb-2">Verify your email</h1>
                     <p className="text-xs" style={{ color: 'rgba(248,250,252,0.3)' }}>
                       6-digit code sent to <span style={{ color: '#00D4FF' }}>{email}</span>
                     </p>
                   </div>
+
+                  {/* SPAM WARNING — prominent banner */}
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="relative overflow-hidden rounded-xl mb-5"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.04))',
+                      border: '1px solid rgba(245,158,11,0.3)',
+                      boxShadow: '0 0 20px rgba(245,158,11,0.08)'
+                    }}
+                  >
+                    <motion.div
+                      animate={{ x: ['-100%', '100%'] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+                      className="absolute top-0 left-0 right-0 h-px"
+                      style={{ background: 'linear-gradient(90deg,transparent,#F59E0B,transparent)' }}
+                    />
+                    <div className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
+                          style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                          <span style={{ fontSize: 16 }}>📬</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[9px] font-mono font-black tracking-[0.25em] mb-1.5"
+                            style={{ color: '#F59E0B' }}>
+                            ⚠ IMPORTANT — CHECK SPAM FOLDER
+                          </div>
+                          <p className="text-[10px] font-mono leading-relaxed"
+                            style={{ color: 'rgba(245,158,11,0.75)' }}>
+                            Your verification code may land in{' '}
+                            <span className="font-bold" style={{ color: '#F59E0B' }}>Spam / Junk</span>
+                            {' '}folder. Please check there if you don&apos;t see it in inbox.
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {[
+                              { icon: '📧', text: 'Check Spam folder' },
+                              { icon: '🔍', text: 'Search: JARVIS_CTO' },
+                              { icon: '⏱', text: 'Expires in 10 min' },
+                            ].map(({ icon, text }) => (
+                              <div key={text}
+                                className="flex items-center gap-1 text-[9px] font-mono px-2 py-1 rounded"
+                                style={{
+                                  background: 'rgba(245,158,11,0.08)',
+                                  border: '1px solid rgba(245,158,11,0.15)',
+                                  color: 'rgba(245,158,11,0.6)'
+                                }}>
+                                <span>{icon}</span> {text}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
 
                   <div className="flex gap-2 justify-center mb-6">
                     {otp.map((digit, i) => (

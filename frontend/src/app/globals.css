@@ -398,3 +398,173 @@
     animation: beam 3s linear infinite;
   }
 }
+
+/* ── JARVIS 3D DEPTH SYSTEM ─────────────────────────────── */
+
+.hud-card-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hud-card-3d:hover {
+  transform: translateY(-3px) rotateX(1deg);
+  box-shadow:
+    0 0 0 1px rgba(0,212,255,0.15),
+    0 8px 32px rgba(0,0,0,0.4),
+    0 0 60px rgba(0,212,255,0.06),
+    0 1px 0 rgba(0,212,255,0.1) inset;
+}
+
+.hud-glow-border {
+  position: relative;
+}
+.hud-glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(0,212,255,0.4) 0%,
+    rgba(0,212,255,0.05) 40%,
+    rgba(129,140,248,0.3) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.hud-holographic {
+  position: relative;
+  overflow: hidden;
+}
+.hud-holographic::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(0,212,255,0.03) 45%,
+    rgba(0,212,255,0.06) 50%,
+    rgba(0,212,255,0.03) 55%,
+    transparent 60%
+  );
+  animation: holographic-sweep 4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes holographic-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.hud-deep {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,212,255,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(129,140,248,0.05) 0%, transparent 50%),
+    #030712;
+}
+
+.text-neon-cyan {
+  color: #00D4FF;
+  text-shadow:
+    0 0 10px rgba(0,212,255,0.8),
+    0 0 20px rgba(0,212,255,0.5),
+    0 0 40px rgba(0,212,255,0.3);
+}
+.text-neon-amber {
+  color: #F59E0B;
+  text-shadow:
+    0 0 10px rgba(245,158,11,0.8),
+    0 0 20px rgba(245,158,11,0.4);
+}
+
+.hud-perspective {
+  perspective: 1000px;
+  perspective-origin: 50% 50%;
+}
+
+.hud-tab-active {
+  position: relative;
+  box-shadow:
+    0 0 20px rgba(0,212,255,0.15),
+    0 4px 15px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(0,212,255,0.2);
+}
+
+@keyframes hud-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-4px); }
+}
+.hud-float {
+  animation: hud-float 3s ease-in-out infinite;
+}
+
+.hud-grid-deep {
+  background-image:
+    linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px),
+    linear-gradient(rgba(0,212,255,0.01) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.01) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+}
+
+.hud-cut-corners {
+  clip-path: polygon(
+    12px 0%, calc(100% - 12px) 0%,
+    100% 12px, 100% calc(100% - 12px),
+    calc(100% - 12px) 100%, 12px 100%,
+    0% calc(100% - 12px), 0% 12px
+  );
+}
+
+.hud-scanlines {
+  position: relative;
+}
+.hud-scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00D4FF;
+  box-shadow: 0 0 6px rgba(0,212,255,0.8), 0 0 12px rgba(0,212,255,0.4);
+  animation: status-pulse 2s ease-in-out infinite;
+}
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(0,212,255,0.8); }
+  50%       { opacity: 0.5; box-shadow: 0 0 2px rgba(0,212,255,0.3); }
+}
+
+.btn-3d {
+  transform: translateY(0);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 0 20px rgba(0,212,255,0.1);
+  transition: all 0.15s ease;
+}
+.btn-3d:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.4), 0 0 30px rgba(0,212,255,0.2);
+}
+.btn-3d:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.4), 0 0 10px rgba(0,212,255,0.1);
+}

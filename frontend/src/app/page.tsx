@@ -66,7 +66,7 @@ export default function LandingPage() {
 
       {booted && (
         <motion.div
-          className="page-jarvis text-white overflow-x-hidden"
+          className="hud-deep text-white overflow-x-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
