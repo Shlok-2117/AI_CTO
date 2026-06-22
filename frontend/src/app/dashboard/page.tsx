@@ -12,6 +12,7 @@ import {
 import Link from 'next/link'
 import MermaidDiagram from '@/components/MermaidDiagram'
 import { FeedbackModal } from '@/components/jarvis/FeedbackModal'
+import { RadialMenu } from '@/components/jarvis/RadialMenu'
 
 const EXAMPLE_CATEGORIES = [
   {
@@ -1528,7 +1529,15 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="hud-deep hud-grid-deep min-h-screen text-white">
+    <div className="hud-deep hud-grid-deep min-h-screen text-white relative web-corner-tl web-corner-tr">
+      {/* City grid perspective floor */}
+      <div className="fixed bottom-0 left-0 right-0 h-48 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        <div className="city-grid w-full h-full" />
+      </div>
+
+      {/* Hex pattern overlay */}
+      <div className="fixed inset-0 hex-pattern pointer-events-none opacity-30" style={{ zIndex: 0 }} />
+
       <nav className="hud-panel border-b px-6 py-3.5 flex items-center justify-between sticky top-0 z-50"
         style={{
           borderColor: 'rgba(0,212,255,0.1)',
@@ -2192,6 +2201,13 @@ export default function DashboardPage() {
           />
         )}
       </AnimatePresence>
+
+      <RadialMenu
+        onGenerate={() => { if (problem.trim().length >= 10) handleGenerate() }}
+        onFeedback={() => setShowFeedback(true)}
+        onPDF={() => { if (result) handleDownloadPDF() }}
+        onVoice={() => setVoiceEnabled(v => !v)}
+      />
     </div>
   )
 }

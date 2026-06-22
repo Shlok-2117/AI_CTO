@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { KeepAlive } from './KeepAlive'
 import { JarvisAssistant } from '@/components/jarvis/JarvisAssistant'
+import { SenseAlert } from '@/components/jarvis/SenseAlert'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors`}>
         <KeepAlive />
         <JarvisAssistant />
+        <SenseAlert />
         {children}
       </body>
     </html>
