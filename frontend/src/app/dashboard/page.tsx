@@ -144,7 +144,7 @@ const AGENT_STEPS = [
 function SectionHeader({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-4">
-      <h3 className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-1">{title}</h3>
+      <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-widest">{title}</h3>
       {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
     </div>
   )
@@ -153,9 +153,9 @@ function SectionHeader({ title, sub }: { title: string; sub?: string }) {
 function DataCard({ label, value }: { label: string; value: any }) {
   const display = value === null || value === undefined ? '—' : String(value)
   return (
-    <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-      <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">{label}</p>
-      <p className="text-sm text-gray-800 font-medium leading-snug">{display}</p>
+    <div className="hud-panel rounded-lg p-4">
+      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-sm text-white font-medium">{display}</p>
     </div>
   )
 }
@@ -164,27 +164,27 @@ function PriorityBadge({ p }: { p: string }) {
   const map: Record<string, string> = {
     critical: 'bg-red-500/20 text-red-400 border-red-500/30',
     high:     'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    medium:   'bg-yellow-500/20 text-amber-600 border-yellow-500/30',
-    low:      'bg-green-500/20 text-green-600 border-green-500/30',
+    medium:   'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    low:      'bg-green-500/20 text-green-400 border-green-500/30',
     P0:       'bg-red-500/20 text-red-400 border-red-500/30',
     P1:       'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    P2:       'bg-yellow-500/20 text-amber-600 border-yellow-500/30',
-    P3:       'bg-green-500/20 text-green-600 border-green-500/30',
+    P2:       'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    P3:       'bg-green-500/20 text-green-400 border-green-500/30',
     High:     'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    Medium:   'bg-yellow-500/20 text-amber-600 border-yellow-500/30',
-    Low:      'bg-green-500/20 text-green-600 border-green-500/30',
+    Medium:   'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    Low:      'bg-green-500/20 text-green-400 border-green-500/30',
   }
   const cls = map[p] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'
   return <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${cls} uppercase shrink-0`}>{p}</span>
 }
 
 function SafeList({ items }: { items: any }) {
-  if (!Array.isArray(items) || items.length === 0) return <p className="text-xs text-gray-400">—</p>
+  if (!Array.isArray(items) || items.length === 0) return <p className="text-xs text-gray-500">—</p>
   return (
-    <ul className="space-y-1.5">
+    <ul className="space-y-1">
       {items.map((item: any, i: number) => (
-        <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-          <span className="text-indigo-400 mt-0.5 shrink-0">›</span>
+        <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+          <span className="text-cyan-500 mt-0.5 shrink-0">›</span>
           <span>{typeof item === 'string' ? item : JSON.stringify(item)}</span>
         </li>
       ))}
@@ -230,7 +230,7 @@ function FounderTab({ d }: { d: any }) {
           <DataCard label="Pricing Strategy" value={d.business_model?.pricing_strategy} />
           <DataCard label="LTV:CAC Ratio" value={d.business_model?.unit_economics?.ltv_cac_ratio} />
         </div>
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+        <div className="hud-panel rounded-lg p-4">
           <SectionHeader title="Revenue Streams" />
           <SafeList items={d.business_model?.revenue_streams} />
         </div>
@@ -247,15 +247,15 @@ function FounderTab({ d }: { d: any }) {
       <div>
         <SectionHeader title="MVP Definition" sub={`Target: ${d.mvp_definition?.mvp_timeline_weeks ?? '?'} weeks`} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-            <p className="text-xs text-indigo-600 uppercase tracking-wider mb-2">Must-Have</p>
+          <div className="hud-panel rounded-lg p-4">
+            <p className="text-xs text-cyan-400 uppercase tracking-wider mb-2">Must-Have</p>
             <SafeList items={d.mvp_definition?.must_have_features} />
           </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-            <p className="text-xs text-amber-600 uppercase tracking-wider mb-2">Should-Have</p>
+          <div className="hud-panel rounded-lg p-4">
+            <p className="text-xs text-yellow-400 uppercase tracking-wider mb-2">Should-Have</p>
             <SafeList items={d.mvp_definition?.should_have_features} />
           </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+          <div className="hud-panel rounded-lg p-4">
             <p className="text-xs text-red-400 uppercase tracking-wider mb-2">Do NOT Build</p>
             <SafeList items={d.mvp_definition?.must_NOT_build} />
           </div>
@@ -266,8 +266,8 @@ function FounderTab({ d }: { d: any }) {
           <SectionHeader title="Competitor Weaknesses" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {d.market.competitors.map((c: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-                <p className="text-sm font-semibold text-gray-900 mb-1">{c.name}</p>
+              <div key={i} className="hud-panel rounded-lg p-4">
+                <p className="text-sm font-semibold text-white mb-1">{c.name}</p>
                 <p className="text-xs text-gray-400">{c.weakness}</p>
               </div>
             ))}
@@ -278,13 +278,13 @@ function FounderTab({ d }: { d: any }) {
         <div>
           <SectionHeader title="Customer Personas" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-              <p className="text-xs text-indigo-600 uppercase tracking-wider mb-2">Primary — {d.customer.primary_persona.name}</p>
+            <div className="hud-panel rounded-lg p-4">
+              <p className="text-xs text-cyan-400 uppercase tracking-wider mb-2">Primary — {d.customer.primary_persona.name}</p>
               <p className="text-xs text-gray-500 mb-2">{d.customer.primary_persona.age_range} · WTP: {d.customer.primary_persona.willingness_to_pay}</p>
               <SafeList items={d.customer.primary_persona.pain_points} />
             </div>
             {d.customer.secondary_persona && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div className="hud-panel rounded-lg p-4">
                 <p className="text-xs text-purple-400 uppercase tracking-wider mb-2">Secondary — {d.customer.secondary_persona.name}</p>
                 <SafeList items={d.customer.secondary_persona.pain_points} />
               </div>
@@ -301,18 +301,18 @@ function ProductTab({ d }: { d: any }) {
   return (
     <div className="space-y-8">
       {d.metrics?.north_star_metric && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 border-l-4 border-l-indigo-400">
-          <p className="text-xs text-indigo-600 uppercase tracking-widest mb-2">North Star Metric</p>
-          <p className="text-2xl font-bold text-gray-900">{d.metrics.north_star_metric}</p>
+        <div className="hud-panel hud-card-3d rounded-lg p-6 border border-cyan-500/20">
+          <p className="text-xs text-cyan-400 uppercase tracking-widest mb-2">North Star Metric</p>
+          <p className="text-2xl font-bold text-white">{d.metrics.north_star_metric}</p>
         </div>
       )}
       <div>
         <SectionHeader title="User Journey (AARRR)" />
         <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
           {(['awareness','activation','retention','revenue','referral'] as const).map((stage) => (
-            <div key={stage} className="bg-white border border-gray-200 shadow-sm rounded-lg p-3">
-              <p className="text-[10px] text-indigo-600 uppercase tracking-wider mb-1">{stage}</p>
-              <p className="text-xs text-gray-600">{d.user_journey?.[stage] || '—'}</p>
+            <div key={stage} className="hud-panel rounded-lg p-3">
+              <p className="text-[10px] text-cyan-400 uppercase tracking-wider mb-1">{stage}</p>
+              <p className="text-xs text-gray-300">{d.user_journey?.[stage] || '—'}</p>
             </div>
           ))}
         </div>
@@ -322,16 +322,16 @@ function ProductTab({ d }: { d: any }) {
           <SectionHeader title="Core Features" />
           <div className="space-y-2">
             {d.core_features.map((f: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4 flex items-start gap-4">
+              <div key={i} className="hud-panel rounded-lg p-4 flex items-start gap-4">
                 <div className="flex flex-col items-center gap-1 shrink-0 w-10">
                   <PriorityBadge p={f.priority} />
                   <span className="text-[10px] text-gray-500">{f.effort}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 mb-0.5">{f.feature}</p>
+                  <p className="text-sm font-semibold text-white mb-0.5">{f.feature}</p>
                   <p className="text-xs text-gray-400">{f.user_story}</p>
                 </div>
-                <span className="text-[10px] text-green-600 shrink-0">{f.impact}</span>
+                <span className="text-[10px] text-green-400 shrink-0">{f.impact}</span>
               </div>
             ))}
           </div>
@@ -344,8 +344,8 @@ function ProductTab({ d }: { d: any }) {
             <DataCard label="Viral Loop" value={d.growth_strategy.viral_loop} />
             <DataCard label="Network Effects" value={d.growth_strategy.network_effects} />
           </div>
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-            <p className="text-xs text-indigo-600 uppercase tracking-wider mb-2">Acquisition Channels</p>
+          <div className="hud-panel rounded-lg p-4">
+            <p className="text-xs text-cyan-400 uppercase tracking-wider mb-2">Acquisition Channels</p>
             <SafeList items={d.growth_strategy.acquisition_channels} />
           </div>
         </div>
@@ -356,20 +356,20 @@ function ProductTab({ d }: { d: any }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200">
+                <tr className="border-b border-white/10">
                   <th className="text-left text-xs text-gray-500 uppercase pb-2 pr-4">Metric</th>
                   <th className="text-left text-xs text-gray-500 uppercase pb-2 pr-4">Definition</th>
                   <th className="text-left text-xs text-gray-500 uppercase pb-2 pr-4">Month 3</th>
                   <th className="text-left text-xs text-gray-500 uppercase pb-2">Month 12</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-white/5">
                 {d.metrics.primary_metrics.map((m: any, i: number) => (
                   <tr key={i}>
-                    <td className="py-2 pr-4 text-gray-900 font-medium">{m.metric}</td>
+                    <td className="py-2 pr-4 text-white font-medium">{m.metric}</td>
                     <td className="py-2 pr-4 text-gray-400 text-xs">{m.definition}</td>
-                    <td className="py-2 pr-4 text-indigo-600 text-xs">{m.target_month_3}</td>
-                    <td className="py-2 text-green-600 text-xs">{m.target_month_12}</td>
+                    <td className="py-2 pr-4 text-cyan-400 text-xs">{m.target_month_3}</td>
+                    <td className="py-2 text-green-400 text-xs">{m.target_month_12}</td>
                   </tr>
                 ))}
               </tbody>
@@ -382,9 +382,9 @@ function ProductTab({ d }: { d: any }) {
           <SectionHeader title="Product Risks" />
           <div className="space-y-2">
             {d.product_risks.map((r: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div key={i} className="hud-panel rounded-lg p-4">
                 <div className="flex items-start justify-between gap-4 mb-1">
-                  <p className="text-sm text-gray-900 font-medium">{r.risk}</p>
+                  <p className="text-sm text-white font-medium">{r.risk}</p>
                   <PriorityBadge p={r.likelihood} />
                 </div>
                 <p className="text-xs text-gray-400">{r.mitigation}</p>
@@ -402,12 +402,12 @@ function ArchitectureTab({ d }: { d: any }) {
   return (
     <div className="space-y-8">
       {d.architecture_style && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-5 border border-indigo-200">
+        <div className="hud-panel rounded-lg p-5 border border-cyan-500/20">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-xs text-indigo-600 uppercase tracking-widest">Pattern</span>
-            <span className="text-lg font-bold text-gray-900">{d.architecture_style.pattern}</span>
+            <span className="text-xs text-cyan-400 uppercase tracking-widest">Pattern</span>
+            <span className="text-lg font-bold text-white">{d.architecture_style.pattern}</span>
           </div>
-          <p className="text-sm text-gray-600 mb-2">{d.architecture_style.justification}</p>
+          <p className="text-sm text-gray-300 mb-2">{d.architecture_style.justification}</p>
           <p className="text-xs text-gray-500">Evolution path: {d.architecture_style.evolution_path}</p>
         </div>
       )}
@@ -416,19 +416,19 @@ function ArchitectureTab({ d }: { d: any }) {
           <SectionHeader title="Services" sub={`${d.services.length} services`} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {d.services.map((s: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div key={i} className="hud-panel rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{s.name}</p>
-                    <p className="text-xs text-indigo-600">{s.technology}{s.port ? ` · :${s.port}` : ''}</p>
+                    <p className="text-sm font-semibold text-white">{s.name}</p>
+                    <p className="text-xs text-cyan-400">{s.technology}{s.port ? ` · :${s.port}` : ''}</p>
                   </div>
-                  <span className="text-[10px] text-gray-500 bg-gray-50 px-2 py-0.5 rounded">{s.type}</span>
+                  <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-0.5 rounded">{s.type}</span>
                 </div>
                 <p className="text-xs text-gray-400 mb-2">{s.responsibility}</p>
-                {s.why_separate && <p className="text-xs text-gray-500 border-t border-gray-200 pt-2">{s.why_separate}</p>}
+                {s.why_separate && <p className="text-xs text-gray-500 border-t border-white/10 pt-2">{s.why_separate}</p>}
                 <div className="flex items-center gap-3 mt-2 text-[10px]">
-                  {s.estimated_rps && <span className="text-green-600">{s.estimated_rps} RPS</span>}
-                  {s.scales_independently && <span className="text-blue-600">Scales independently</span>}
+                  {s.estimated_rps && <span className="text-green-400">{s.estimated_rps} RPS</span>}
+                  {s.scales_independently && <span className="text-blue-400">Scales independently</span>}
                 </div>
               </div>
             ))}
@@ -440,11 +440,11 @@ function ArchitectureTab({ d }: { d: any }) {
           <SectionHeader title="Communication Patterns" />
           <div className="space-y-2">
             {d.communication_patterns.map((c: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-3 flex items-center gap-3 flex-wrap">
-                <span className="text-sm text-indigo-500 font-medium shrink-0">{c.from}</span>
+              <div key={i} className="hud-panel rounded-lg p-3 flex items-center gap-3 flex-wrap">
+                <span className="text-sm text-cyan-300 font-medium shrink-0">{c.from}</span>
                 <ChevronRight className="w-3 h-3 text-gray-600 shrink-0" />
-                <span className="text-sm text-gray-900 shrink-0">{c.to}</span>
-                <span className="ml-auto text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-200 shrink-0">{c.pattern}</span>
+                <span className="text-sm text-white shrink-0">{c.to}</span>
+                <span className="ml-auto text-[10px] px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded border border-cyan-500/20 shrink-0">{c.pattern}</span>
                 <p className="text-xs text-gray-500 hidden md:block">{c.reasoning}</p>
               </div>
             ))}
@@ -456,19 +456,19 @@ function ArchitectureTab({ d }: { d: any }) {
           <SectionHeader title="Technical Decisions (ADRs)" />
           <div className="space-y-3">
             {d.technical_decisions.map((td: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div key={i} className="hud-panel rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <p className="text-sm font-semibold text-gray-900">{td.decision}</p>
+                  <p className="text-sm font-semibold text-white">{td.decision}</p>
                   {td.confidence !== undefined && (
                     <div className="flex items-center gap-1 shrink-0">
-                      <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div className="h-full bg-cyan-500 rounded-full" style={{ width: `${td.confidence}%` }} />
                       </div>
                       <span className="text-[10px] text-gray-500">{td.confidence}%</span>
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-indigo-600 mb-1">Chosen: <span className="text-gray-900">{td.chosen}</span></p>
+                <p className="text-xs text-cyan-400 mb-1">Chosen: <span className="text-white">{td.chosen}</span></p>
                 <p className="text-xs text-gray-400 mb-2">{td.reasoning}</p>
                 {Array.isArray(td.options_considered) && (
                   <p className="text-[10px] text-gray-600">Also considered: {td.options_considered.join(', ')}</p>
@@ -483,10 +483,10 @@ function ArchitectureTab({ d }: { d: any }) {
           <SectionHeader title="Third-party Integrations" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {d.third_party_integrations.map((t: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-                <p className="text-sm font-semibold text-gray-900 mb-1">{t.service}</p>
+              <div key={i} className="hud-panel rounded-lg p-4">
+                <p className="text-sm font-semibold text-white mb-1">{t.service}</p>
                 <p className="text-xs text-gray-400 mb-1">{t.purpose}</p>
-                {t.fallback && <p className="text-[10px] text-amber-600">Fallback: {t.fallback}</p>}
+                {t.fallback && <p className="text-[10px] text-yellow-400">Fallback: {t.fallback}</p>}
               </div>
             ))}
           </div>
@@ -505,11 +505,11 @@ function DatabaseTab({ d }: { d: any }) {
           <SectionHeader title="Tables" sub={`${d.tables.length} tables`} />
           <div className="space-y-4">
             {d.tables.map((t: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-5">
+              <div key={i} className="hud-panel rounded-lg p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-gray-900">{t.name}</p>
+                  <p className="text-sm font-semibold text-white">{t.name}</p>
                   {Array.isArray(t.gdpr_fields) && t.gdpr_fields.length > 0 && (
-                    <span className="text-[10px] text-amber-600 border border-yellow-500/30 px-2 py-0.5 rounded">GDPR sensitive</span>
+                    <span className="text-[10px] text-yellow-400 border border-yellow-500/30 px-2 py-0.5 rounded">GDPR sensitive</span>
                   )}
                 </div>
                 {t.purpose && <p className="text-xs text-gray-400 mb-3">{t.purpose}</p>}
@@ -517,16 +517,16 @@ function DatabaseTab({ d }: { d: any }) {
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="border-b border-gray-200">
+                        <tr className="border-b border-white/10">
                           <th className="text-left text-gray-500 uppercase pb-1 pr-3">Column</th>
                           <th className="text-left text-gray-500 uppercase pb-1 pr-3">Type</th>
                           <th className="text-left text-gray-500 uppercase pb-1">Notes</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-white/5">
                         {t.columns.map((col: any, ci: number) => (
                           <tr key={ci}>
-                            <td className="py-1.5 pr-3 text-indigo-500 font-mono">{typeof col === 'string' ? col : col.name}</td>
+                            <td className="py-1.5 pr-3 text-cyan-300 font-mono">{typeof col === 'string' ? col : col.name}</td>
                             <td className="py-1.5 pr-3 text-gray-400">{col.type || ''}</td>
                             <td className="py-1.5 text-gray-500">{col.notes || col.constraints || ''}</td>
                           </tr>
@@ -545,10 +545,10 @@ function DatabaseTab({ d }: { d: any }) {
           <SectionHeader title="Relationships" />
           <div className="space-y-2">
             {d.relationships.map((r: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-3 flex items-center gap-3 flex-wrap">
-                <span className="text-indigo-500 font-mono text-sm">{r.from || r.table_a}</span>
+              <div key={i} className="hud-panel rounded-lg p-3 flex items-center gap-3 flex-wrap">
+                <span className="text-cyan-300 font-mono text-sm">{r.from || r.table_a}</span>
                 <span className="text-gray-500 text-xs">{r.type || r.relationship}</span>
-                <span className="text-gray-900 font-mono text-sm">{r.to || r.table_b}</span>
+                <span className="text-white font-mono text-sm">{r.to || r.table_b}</span>
                 {r.description && <span className="text-gray-500 text-xs ml-auto">{r.description}</span>}
               </div>
             ))}
@@ -558,7 +558,7 @@ function DatabaseTab({ d }: { d: any }) {
       {Array.isArray(d.indexes) && d.indexes.length > 0 && (
         <div>
           <SectionHeader title="Indexes" />
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+          <div className="hud-panel rounded-lg p-4">
             <SafeList items={d.indexes.map((idx: any) => typeof idx === 'string' ? idx : `${idx.table}.${Array.isArray(idx.columns) ? idx.columns.join(', ') : idx.columns}`)} />
           </div>
         </div>
@@ -573,9 +573,9 @@ function APITab({ d }: { d: any }) {
   return (
     <div className="space-y-8">
       {(d.strategy || d.api_strategy) && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-5 border border-indigo-200">
-          <p className="text-xs text-indigo-600 uppercase tracking-widest mb-2">API Strategy</p>
-          <p className="text-sm text-gray-600">{d.strategy || d.api_strategy}</p>
+        <div className="hud-panel rounded-lg p-5 border border-cyan-500/20">
+          <p className="text-xs text-cyan-400 uppercase tracking-widest mb-2">API Strategy</p>
+          <p className="text-sm text-gray-300">{d.strategy || d.api_strategy}</p>
         </div>
       )}
       {Array.isArray(endpoints) && endpoints.length > 0 && (
@@ -584,19 +584,19 @@ function APITab({ d }: { d: any }) {
           <div className="space-y-2">
             {endpoints.map((ep: any, i: number) => {
               const mc: Record<string, string> = {
-                GET:    'text-green-600 border-green-500/30 bg-green-500/10',
-                POST:   'text-blue-600 border-blue-500/30 bg-blue-500/10',
-                PUT:    'text-amber-600 border-yellow-500/30 bg-yellow-500/10',
+                GET:    'text-green-400 border-green-500/30 bg-green-500/10',
+                POST:   'text-blue-400 border-blue-500/30 bg-blue-500/10',
+                PUT:    'text-yellow-400 border-yellow-500/30 bg-yellow-500/10',
                 PATCH:  'text-orange-400 border-orange-500/30 bg-orange-500/10',
                 DELETE: 'text-red-400 border-red-500/30 bg-red-500/10',
               }
               const cls = mc[ep.method?.toUpperCase()] || 'text-gray-400 border-gray-500/30 bg-gray-500/10'
               return (
-                <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+                <div key={i} className="hud-panel rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-1 flex-wrap">
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${cls} font-mono`}>{ep.method}</span>
-                    <span className="font-mono text-sm text-indigo-500">{ep.path}</span>
-                    {ep.auth_required && <Lock className="w-3 h-3 text-amber-600" />}
+                    <span className="font-mono text-sm text-cyan-300">{ep.path}</span>
+                    {ep.auth_required && <Lock className="w-3 h-3 text-yellow-400" />}
                   </div>
                   <p className="text-xs text-gray-400">{ep.description}</p>
                 </div>
@@ -608,7 +608,7 @@ function APITab({ d }: { d: any }) {
       {d.error_handling && (
         <div>
           <SectionHeader title="Error Handling" />
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+          <div className="hud-panel rounded-lg p-4">
             <SafeList items={Array.isArray(d.error_handling) ? d.error_handling : Object.entries(d.error_handling as Record<string,string>).map(([k, v]) => `${k}: ${v}`)} />
           </div>
         </div>
@@ -637,23 +637,23 @@ function ScalingTab({ d }: { d: any }) {
           <SectionHeader title="Scaling Roadmap" sub="0 → 100M users" />
           <div className="space-y-3">
             {d.scaling_stages.map((s: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div key={i} className="hud-panel rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">Stage {s.stage}: {s.users}</p>
+                    <p className="text-sm font-semibold text-white">Stage {s.stage}: {s.users}</p>
                     {s.monthly_active_users > 0 && <p className="text-xs text-gray-500">{s.monthly_active_users.toLocaleString()} MAU</p>}
                   </div>
                   {s.estimated_monthly_cost_usd > 0 && (
-                    <span className="text-xs text-green-600">${s.estimated_monthly_cost_usd.toLocaleString()}/mo</span>
+                    <span className="text-xs text-green-400">${s.estimated_monthly_cost_usd.toLocaleString()}/mo</span>
                   )}
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                  {s.infrastructure && <div><span className="text-gray-500">Infra: </span><span className="text-gray-700">{s.infrastructure}</span></div>}
-                  {s.database && <div><span className="text-gray-500">DB: </span><span className="text-gray-700">{s.database}</span></div>}
-                  {s.caching && <div><span className="text-gray-500">Cache: </span><span className="text-gray-700">{s.caching}</span></div>}
-                  {s.cdn && <div><span className="text-gray-500">CDN: </span><span className="text-gray-700">{s.cdn}</span></div>}
+                  {s.infrastructure && <div><span className="text-gray-500">Infra: </span><span className="text-gray-300">{s.infrastructure}</span></div>}
+                  {s.database && <div><span className="text-gray-500">DB: </span><span className="text-gray-300">{s.database}</span></div>}
+                  {s.caching && <div><span className="text-gray-500">Cache: </span><span className="text-gray-300">{s.caching}</span></div>}
+                  {s.cdn && <div><span className="text-gray-500">CDN: </span><span className="text-gray-300">{s.cdn}</span></div>}
                 </div>
-                {s.bottleneck && <p className="text-xs text-amber-600 mt-2">Bottleneck: {s.bottleneck}</p>}
+                {s.bottleneck && <p className="text-xs text-yellow-400 mt-2">Bottleneck: {s.bottleneck}</p>}
                 {s.migration_trigger && <p className="text-xs text-gray-500 mt-1">Migrate when: {s.migration_trigger}</p>}
               </div>
             ))}
@@ -671,15 +671,15 @@ function ScalingTab({ d }: { d: any }) {
           {Array.isArray(d.reliability.failure_scenarios) && (
             <div className="space-y-2">
               {d.reliability.failure_scenarios.map((f: any, i: number) => (
-                <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+                <div key={i} className="hud-panel rounded-lg p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <p className="text-sm font-semibold text-gray-900">{f.scenario}</p>
+                    <p className="text-sm font-semibold text-white">{f.scenario}</p>
                     <PriorityBadge p={f.probability} />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                    <div><span className="text-gray-500">Detect: </span><span className="text-gray-700">{f.detection}</span></div>
-                    <div><span className="text-gray-500">Recover: </span><span className="text-gray-700">{f.recovery}</span></div>
-                    <div><span className="text-gray-500">Prevent: </span><span className="text-gray-700">{f.prevention}</span></div>
+                    <div><span className="text-gray-500">Detect: </span><span className="text-gray-300">{f.detection}</span></div>
+                    <div><span className="text-gray-500">Recover: </span><span className="text-gray-300">{f.recovery}</span></div>
+                    <div><span className="text-gray-500">Prevent: </span><span className="text-gray-300">{f.prevention}</span></div>
                   </div>
                 </div>
               ))}
@@ -697,11 +697,11 @@ function SecurityTab({ d }: { d: any }) {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-5 border border-red-500/20">
+        <div className="hud-panel rounded-lg p-5 border border-red-500/20">
           <p className="text-xs text-red-400 uppercase tracking-widest mb-2">Risk Score</p>
-          <p className="text-4xl font-bold text-gray-900">{d.risk_score || '—'}</p>
+          <p className="text-4xl font-bold text-white">{d.risk_score || '—'}</p>
         </div>
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-5 md:col-span-2">
+        <div className="hud-panel rounded-lg p-5 md:col-span-2">
           <p className="text-xs text-red-400 uppercase tracking-widest mb-2">Top 3 Risks</p>
           <SafeList items={d.top_3_risks} />
         </div>
@@ -710,15 +710,15 @@ function SecurityTab({ d }: { d: any }) {
         <div>
           <SectionHeader title="Threat Model" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+            <div className="hud-panel rounded-lg p-4">
               <p className="text-xs text-red-400 uppercase tracking-wider mb-2">Attack Surfaces</p>
               <SafeList items={d.threat_model.attack_surfaces} />
             </div>
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-              <p className="text-xs text-amber-600 uppercase tracking-wider mb-2">Valuable Assets</p>
+            <div className="hud-panel rounded-lg p-4">
+              <p className="text-xs text-yellow-400 uppercase tracking-wider mb-2">Valuable Assets</p>
               <SafeList items={d.threat_model.most_valuable_assets} />
             </div>
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+            <div className="hud-panel rounded-lg p-4">
               <p className="text-xs text-orange-400 uppercase tracking-wider mb-2">Likely Attackers</p>
               <SafeList items={d.threat_model.likely_attackers} />
             </div>
@@ -730,9 +730,9 @@ function SecurityTab({ d }: { d: any }) {
           <SectionHeader title="OWASP Coverage" />
           <div className="space-y-2">
             {d.owasp_coverage.map((o: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div key={i} className="hud-panel rounded-lg p-4">
                 <div className="flex items-start justify-between mb-1">
-                  <p className="text-sm font-semibold text-gray-900">{o.threat}</p>
+                  <p className="text-sm font-semibold text-white">{o.threat}</p>
                   <PriorityBadge p={o.risk_level} />
                 </div>
                 <p className="text-xs text-gray-400">{o.mitigation}</p>
@@ -746,14 +746,14 @@ function SecurityTab({ d }: { d: any }) {
           <SectionHeader title="Security Checklist" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {cats.map((cat) => (
-              <div key={cat} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-                <p className="text-xs text-indigo-600 uppercase tracking-wider mb-3">{cat.replace(/_/g, ' ')}</p>
+              <div key={cat} className="hud-panel rounded-lg p-4">
+                <p className="text-xs text-cyan-400 uppercase tracking-wider mb-3">{cat.replace(/_/g, ' ')}</p>
                 <div className="space-y-2">
                   {(d.checklist[cat] || []).map((item: any, i: number) => (
                     <div key={i} className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
+                      <CheckCircle className="w-3.5 h-3.5 text-green-400 shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-600">{item.item}</p>
+                        <p className="text-xs text-gray-300">{item.item}</p>
                         {item.implementation && <p className="text-[10px] text-gray-500">{item.implementation}</p>}
                       </div>
                       <PriorityBadge p={item.priority} />
@@ -770,8 +770,8 @@ function SecurityTab({ d }: { d: any }) {
           <SectionHeader title="Security Roadmap" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {d.security_roadmap.map((phase: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-                <p className="text-xs text-indigo-600 uppercase tracking-wider mb-2">{phase.phase}</p>
+              <div key={i} className="hud-panel rounded-lg p-4">
+                <p className="text-xs text-cyan-400 uppercase tracking-wider mb-2">{phase.phase}</p>
                 <SafeList items={phase.actions} />
               </div>
             ))}
@@ -793,7 +793,7 @@ function DevOpsTab({ d }: { d: any }) {
             <DataCard label="Strategy" value={d.repository.strategy} />
             <DataCard label="Branching" value={d.repository.branching_model} />
             <DataCard label="Code Review" value={d.repository.code_review_policy} />
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+            <div className="hud-panel rounded-lg p-4">
               <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Branch Protection</p>
               <SafeList items={d.repository.branch_protection} />
             </div>
@@ -806,9 +806,9 @@ function DevOpsTab({ d }: { d: any }) {
           {Array.isArray(d.ci_cd.pipeline_stages) && (
             <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
               {d.ci_cd.pipeline_stages.map((stage: any, i: number) => (
-                <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4 flex-1 min-w-[150px] shrink-0">
+                <div key={i} className="hud-panel rounded-lg p-4 flex-1 min-w-[150px] shrink-0">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold text-indigo-600">{stage.stage}</p>
+                    <p className="text-xs font-semibold text-cyan-400">{stage.stage}</p>
                     <span className="text-[10px] text-gray-500">{stage.estimated_duration_mins}m</span>
                   </div>
                   <SafeList items={stage.actions} />
@@ -838,21 +838,21 @@ function DevOpsTab({ d }: { d: any }) {
           <SectionHeader title="Observability Stack" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {d.observability.logging && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-                <p className="text-xs text-indigo-600 uppercase tracking-wider mb-2">Logging — {d.observability.logging.tool}</p>
+              <div className="hud-panel rounded-lg p-4">
+                <p className="text-xs text-cyan-400 uppercase tracking-wider mb-2">Logging — {d.observability.logging.tool}</p>
                 <p className="text-xs text-gray-500 mb-2">Retention: {d.observability.logging.retention_days} days</p>
                 <SafeList items={d.observability.logging.log_levels} />
               </div>
             )}
             {d.observability.metrics && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-                <p className="text-xs text-indigo-600 uppercase tracking-wider mb-2">Metrics — {d.observability.metrics.tool}</p>
+              <div className="hud-panel rounded-lg p-4">
+                <p className="text-xs text-cyan-400 uppercase tracking-wider mb-2">Metrics — {d.observability.metrics.tool}</p>
                 <SafeList items={d.observability.metrics.key_metrics} />
               </div>
             )}
             {d.observability.alerting && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-                <p className="text-xs text-indigo-600 uppercase tracking-wider mb-2">Alerting — {d.observability.alerting.tool}</p>
+              <div className="hud-panel rounded-lg p-4">
+                <p className="text-xs text-cyan-400 uppercase tracking-wider mb-2">Alerting — {d.observability.alerting.tool}</p>
                 <p className="text-xs text-gray-500 mb-2">{d.observability.alerting.on_call_strategy}</p>
                 <SafeList items={d.observability.alerting.critical_alerts} />
               </div>
@@ -865,8 +865,8 @@ function DevOpsTab({ d }: { d: any }) {
           <SectionHeader title="Environments" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {d.environments.map((env: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-                <p className="text-sm font-semibold text-gray-900 mb-1">{env.name}</p>
+              <div key={i} className="hud-panel rounded-lg p-4">
+                <p className="text-sm font-semibold text-white mb-1">{env.name}</p>
                 <p className="text-xs text-gray-400 mb-2">{env.purpose}</p>
                 <p className="text-xs text-gray-500">Infra: {env.infrastructure}</p>
                 <p className="text-xs text-gray-500">Data: {env.data}</p>
@@ -888,16 +888,16 @@ function FinOpsTab({ d }: { d: any }) {
     scale:  'border-purple-500/30',
   }
   const tierLabel: Record<string, string> = {
-    mvp:    'text-green-600',
-    growth: 'text-blue-600',
+    mvp:    'text-green-400',
+    growth: 'text-blue-400',
     scale:  'text-purple-400',
   }
   return (
     <div className="space-y-8">
       {d.cost_philosophy && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-5 border border-indigo-200">
-          <p className="text-xs text-indigo-600 uppercase tracking-widest mb-2">Cost Philosophy</p>
-          <p className="text-sm text-gray-600">{d.cost_philosophy}</p>
+        <div className="hud-panel rounded-lg p-5 border border-cyan-500/20">
+          <p className="text-xs text-cyan-400 uppercase tracking-widest mb-2">Cost Philosophy</p>
+          <p className="text-sm text-gray-300">{d.cost_philosophy}</p>
         </div>
       )}
       {d.tiers && (
@@ -908,10 +908,10 @@ function FinOpsTab({ d }: { d: any }) {
               const t = d.tiers[tier]
               if (!t) return null
               return (
-                <div key={tier} className={`bg-white border border-gray-200 shadow-sm rounded-lg p-5 border ${tierCls[tier]}`}>
+                <div key={tier} className={`hud-panel rounded-lg p-5 border ${tierCls[tier]}`}>
                   <div className="flex items-center justify-between mb-3">
                     <p className={`text-xs font-bold uppercase tracking-widest ${tierLabel[tier]}`}>{tier}</p>
-                    <p className="text-xl font-bold text-gray-900">${t.monthly_usd}<span className="text-xs text-gray-500">/mo</span></p>
+                    <p className="text-xl font-bold text-white">${t.monthly_usd}<span className="text-xs text-gray-500">/mo</span></p>
                   </div>
                   <p className="text-xs text-gray-400 mb-3">{t.description}</p>
                   {Array.isArray(t.services) && (
@@ -919,14 +919,14 @@ function FinOpsTab({ d }: { d: any }) {
                       {t.services.map((s: any, i: number) => (
                         <div key={i} className="flex items-center justify-between text-xs">
                           <span className="text-gray-400">{s.name}</span>
-                          <span className="text-gray-700">${s.cost_usd ?? 0}</span>
+                          <span className="text-gray-300">${s.cost_usd ?? 0}</span>
                         </div>
                       ))}
                     </div>
                   )}
                   {tier === 'mvp' && Array.isArray(t.free_tier_used) && t.free_tier_used.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-[10px] text-green-600 uppercase tracking-wider mb-1">Free Tier</p>
+                    <div className="mt-3 pt-3 border-t border-white/10">
+                      <p className="text-[10px] text-green-400 uppercase tracking-wider mb-1">Free Tier</p>
                       {t.free_tier_used.map((f: string, i: number) => <p key={i} className="text-[10px] text-gray-500">{f}</p>)}
                     </div>
                   )}
@@ -957,17 +957,17 @@ function FinOpsTab({ d }: { d: any }) {
           <SectionHeader title="Optimization Opportunities" />
           <div className="space-y-2">
             {d.optimization_opportunities.map((o: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div key={i} className="hud-panel rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <p className="text-sm font-semibold text-gray-900">{o.opportunity}</p>
+                  <p className="text-sm font-semibold text-white">{o.opportunity}</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-green-600">-{o.savings_percent}%</span>
+                    <span className="text-xs text-green-400">-{o.savings_percent}%</span>
                     <PriorityBadge p={o.effort} />
                   </div>
                 </div>
                 <div className="flex gap-4 text-xs mb-1">
                   <span className="text-red-400">Before: ${o.current_cost}/mo</span>
-                  <span className="text-green-600">After: ${o.optimized_cost}/mo</span>
+                  <span className="text-green-400">After: ${o.optimized_cost}/mo</span>
                 </div>
                 <p className="text-xs text-gray-500">{o.implementation}</p>
               </div>
@@ -978,7 +978,7 @@ function FinOpsTab({ d }: { d: any }) {
       {Array.isArray(d.cost_saving_tips) && (
         <div>
           <SectionHeader title="Cost Saving Tips" />
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+          <div className="hud-panel rounded-lg p-4">
             <SafeList items={d.cost_saving_tips} />
           </div>
         </div>
@@ -992,9 +992,9 @@ function HiringTab({ d }: { d: any }) {
   return (
     <div className="space-y-8">
       {d.hiring_philosophy && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-5 border border-indigo-200">
-          <p className="text-xs text-indigo-600 uppercase tracking-widest mb-2">Hiring Philosophy</p>
-          <p className="text-sm text-gray-600">{d.hiring_philosophy}</p>
+        <div className="hud-panel rounded-lg p-5 border border-cyan-500/20">
+          <p className="text-xs text-cyan-400 uppercase tracking-widest mb-2">Hiring Philosophy</p>
+          <p className="text-sm text-gray-300">{d.hiring_philosophy}</p>
         </div>
       )}
       {d.year_1 && (
@@ -1002,17 +1002,17 @@ function HiringTab({ d }: { d: any }) {
           <SectionHeader title="Year 1" sub={`Team: ${d.year_1.team_size} · Burn: ${d.year_1.total_salary_burn_usd ? `$${Number(d.year_1.total_salary_burn_usd).toLocaleString()}/yr` : '—'}`} />
           <div className="space-y-2 mb-3">
             {(d.year_1.hires || []).map((h: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div key={i} className="hud-panel rounded-lg p-4">
                 <div className="flex items-start justify-between mb-1">
-                  <p className="text-sm font-semibold text-gray-900">{h.role}</p>
-                  <span className="text-xs text-indigo-600 shrink-0 ml-2">{h.salary_range_usd}</span>
+                  <p className="text-sm font-semibold text-white">{h.role}</p>
+                  <span className="text-xs text-cyan-400 shrink-0 ml-2">{h.salary_range_usd}</span>
                 </div>
                 <p className="text-xs text-gray-500 mb-1">When: {h.when_to_hire}</p>
                 <p className="text-xs text-gray-400 mb-2">{h.why_this_role_now}</p>
                 {Array.isArray(h.skills_required) && (
                   <div className="flex flex-wrap gap-1">
                     {h.skills_required.map((s: string, si: number) => (
-                      <span key={si} className="text-[10px] px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded border border-indigo-200">{s}</span>
+                      <span key={si} className="text-[10px] px-1.5 py-0.5 bg-cyan-500/10 text-cyan-400 rounded border border-cyan-500/20">{s}</span>
                     ))}
                   </div>
                 )}
@@ -1026,18 +1026,18 @@ function HiringTab({ d }: { d: any }) {
           <SectionHeader title="Year 2" sub={`Team: ${d.year_2.team_size}`} />
           <div className="space-y-2 mb-3">
             {(d.year_2.new_hires || []).map((h: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-3 flex items-center justify-between gap-4">
+              <div key={i} className="hud-panel rounded-lg p-3 flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm text-gray-900 font-medium">{h.role}</p>
+                  <p className="text-sm text-white font-medium">{h.role}</p>
                   <p className="text-xs text-gray-500">{h.trigger}</p>
                 </div>
-                <span className="text-xs text-indigo-600 shrink-0">{h.salary_range_usd}</span>
+                <span className="text-xs text-cyan-400 shrink-0">{h.salary_range_usd}</span>
               </div>
             ))}
           </div>
           {Array.isArray(d.year_2.teams_formed) && (
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-              <p className="text-xs text-indigo-600 uppercase tracking-wider mb-2">Teams Formed</p>
+            <div className="hud-panel rounded-lg p-4">
+              <p className="text-xs text-cyan-400 uppercase tracking-wider mb-2">Teams Formed</p>
               <SafeList items={d.year_2.teams_formed} />
             </div>
           )}
@@ -1048,13 +1048,13 @@ function HiringTab({ d }: { d: any }) {
           <SectionHeader title="Year 3" sub={`Team: ${d.year_3.team_size}`} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {Array.isArray(d.year_3.specialized_teams) && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-                <p className="text-xs text-indigo-600 uppercase tracking-wider mb-2">Specialized Teams</p>
+              <div className="hud-panel rounded-lg p-4">
+                <p className="text-xs text-cyan-400 uppercase tracking-wider mb-2">Specialized Teams</p>
                 <SafeList items={d.year_3.specialized_teams} />
               </div>
             )}
             {Array.isArray(d.year_3.leadership_needs) && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div className="hud-panel rounded-lg p-4">
                 <p className="text-xs text-purple-400 uppercase tracking-wider mb-2">Leadership Needs</p>
                 <SafeList items={d.year_3.leadership_needs} />
               </div>
@@ -1067,12 +1067,12 @@ function HiringTab({ d }: { d: any }) {
           <SectionHeader title="Contractor vs Full-time" />
           <div className="space-y-2">
             {d.contractor_vs_fulltime.map((c: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4 flex items-start gap-4">
-                <span className={`text-xs font-semibold px-2 py-1 rounded border shrink-0 ${c.recommendation === 'contractor' ? 'text-amber-600 border-yellow-500/30 bg-yellow-500/10' : 'text-blue-600 border-blue-500/30 bg-blue-500/10'}`}>
+              <div key={i} className="hud-panel rounded-lg p-4 flex items-start gap-4">
+                <span className={`text-xs font-semibold px-2 py-1 rounded border shrink-0 ${c.recommendation === 'contractor' ? 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10' : 'text-blue-400 border-blue-500/30 bg-blue-500/10'}`}>
                   {c.recommendation}
                 </span>
                 <div>
-                  <p className="text-sm text-gray-900 font-medium">{c.function}</p>
+                  <p className="text-sm text-white font-medium">{c.function}</p>
                   <p className="text-xs text-gray-400">{c.reasoning}</p>
                 </div>
               </div>
@@ -1083,7 +1083,7 @@ function HiringTab({ d }: { d: any }) {
       {Array.isArray(d.avoid_early_hiring) && (
         <div>
           <SectionHeader title="Avoid Hiring Early" />
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+          <div className="hud-panel rounded-lg p-4">
             <SafeList items={d.avoid_early_hiring} />
           </div>
         </div>
@@ -1099,19 +1099,19 @@ function DiagramsTab({ d }: { d: any }) {
       {d.architecture && (
         <div>
           <SectionHeader title="System Architecture" />
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4"><MermaidDiagram diagram={d.architecture} title="System Architecture" /></div>
+          <div className="hud-panel rounded-lg p-4"><MermaidDiagram diagram={d.architecture} title="System Architecture" /></div>
         </div>
       )}
       {d.er_diagram && (
         <div>
           <SectionHeader title="Entity Relationship Diagram" />
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4"><MermaidDiagram diagram={d.er_diagram} title="ER Diagram" /></div>
+          <div className="hud-panel rounded-lg p-4"><MermaidDiagram diagram={d.er_diagram} title="ER Diagram" /></div>
         </div>
       )}
       {d.sequence && (
         <div>
           <SectionHeader title="Sequence Diagram" />
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4"><MermaidDiagram diagram={d.sequence} title="Sequence Diagram" /></div>
+          <div className="hud-panel rounded-lg p-4"><MermaidDiagram diagram={d.sequence} title="Sequence Diagram" /></div>
         </div>
       )}
     </div>
@@ -1123,12 +1123,12 @@ function VerdictTab({ d }: { d: any }) {
   const ir = d.investor_review
   const verdictCls =
     ir?.verdict?.includes('NOT') ? 'text-red-400' :
-    ir?.verdict?.includes('INVEST') ? 'text-green-600' :
-    'text-amber-600'
+    ir?.verdict?.includes('INVEST') ? 'text-green-400' :
+    'text-yellow-400'
   return (
     <div className="space-y-8">
       {ir && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 border-l-4 border-l-indigo-400">
+        <div className="hud-panel hud-card-3d rounded-lg p-6 border border-cyan-500/20">
           <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Investor Verdict</p>
@@ -1136,35 +1136,35 @@ function VerdictTab({ d }: { d: any }) {
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Investability Score</p>
-              <p className="text-4xl font-bold text-gray-900">{ir.investability_score}<span className="text-lg text-gray-500">/100</span></p>
+              <p className="text-4xl font-bold text-white">{ir.investability_score}<span className="text-lg text-gray-500">/100</span></p>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mb-4">{ir.reasoning}</p>
+          <p className="text-sm text-gray-300 mb-4">{ir.reasoning}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-3">
-              <p className="text-xs text-blue-600 uppercase tracking-wider mb-1">Technical Moat</p>
-              <p className="text-xs text-gray-600">{ir.technical_moat}</p>
+            <div className="hud-panel rounded-lg p-3">
+              <p className="text-xs text-blue-400 uppercase tracking-wider mb-1">Technical Moat</p>
+              <p className="text-xs text-gray-300">{ir.technical_moat}</p>
             </div>
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-3">
-              <p className="text-xs text-green-600 uppercase tracking-wider mb-1">Biggest Strength</p>
-              <p className="text-xs text-gray-600">{ir.biggest_technical_strength}</p>
+            <div className="hud-panel rounded-lg p-3">
+              <p className="text-xs text-green-400 uppercase tracking-wider mb-1">Biggest Strength</p>
+              <p className="text-xs text-gray-300">{ir.biggest_technical_strength}</p>
             </div>
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-3">
+            <div className="hud-panel rounded-lg p-3">
               <p className="text-xs text-red-400 uppercase tracking-wider mb-1">Biggest Risk</p>
-              <p className="text-xs text-gray-600">{ir.biggest_technical_risk}</p>
+              <p className="text-xs text-gray-300">{ir.biggest_technical_risk}</p>
             </div>
           </div>
           {Array.isArray(ir.conditions) && ir.conditions.length > 0 && (
             <div>
-              <p className="text-xs text-amber-600 uppercase tracking-wider mb-2">Conditions</p>
+              <p className="text-xs text-yellow-400 uppercase tracking-wider mb-2">Conditions</p>
               <SafeList items={ir.conditions} />
             </div>
           )}
         </div>
       )}
       {d.final_cto_statement && (
-        <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-6 border-l-4 border-l-indigo-400">
-          <p className="text-xs text-indigo-600 uppercase tracking-widest mb-3">Final CTO Statement</p>
+        <div className="hud-panel hud-card-3d rounded-lg p-6 border border-cyan-500/30">
+          <p className="text-xs text-cyan-400 uppercase tracking-widest mb-3">Final CTO Statement</p>
           <p className="text-sm text-gray-200 leading-relaxed italic">"{d.final_cto_statement}"</p>
         </div>
       )}
@@ -1173,28 +1173,28 @@ function VerdictTab({ d }: { d: any }) {
           <SectionHeader title="Devil's Advocate" sub="Where this could fail" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
             {Array.isArray(d.devils_advocate.overengineered_components) && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div className="hud-panel rounded-lg p-4">
                 <p className="text-xs text-orange-400 uppercase tracking-wider mb-3">Over-engineered</p>
                 <div className="space-y-3">
                   {d.devils_advocate.overengineered_components.map((c: any, i: number) => (
                     <div key={i}>
-                      <p className="text-sm text-gray-900 font-medium">{c.component}</p>
+                      <p className="text-sm text-white font-medium">{c.component}</p>
                       <p className="text-xs text-gray-400 mb-0.5">{c.issue}</p>
-                      <p className="text-xs text-green-600">→ {c.simpler_alternative}</p>
+                      <p className="text-xs text-green-400">→ {c.simpler_alternative}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
             {Array.isArray(d.devils_advocate.underengineered_components) && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div className="hud-panel rounded-lg p-4">
                 <p className="text-xs text-red-400 uppercase tracking-wider mb-3">Under-engineered</p>
                 <div className="space-y-3">
                   {d.devils_advocate.underengineered_components.map((c: any, i: number) => (
                     <div key={i}>
-                      <p className="text-sm text-gray-900 font-medium">{c.component}</p>
+                      <p className="text-sm text-white font-medium">{c.component}</p>
                       <p className="text-xs text-gray-400 mb-0.5">{c.issue}</p>
-                      <p className="text-xs text-indigo-600">→ {c.recommendation}</p>
+                      <p className="text-xs text-cyan-400">→ {c.recommendation}</p>
                     </div>
                   ))}
                 </div>
@@ -1206,7 +1206,7 @@ function VerdictTab({ d }: { d: any }) {
             {d.devils_advocate.most_dangerous_decision && <DataCard label="Most Dangerous Decision" value={d.devils_advocate.most_dangerous_decision} />}
           </div>
           {Array.isArray(d.devils_advocate.wrong_assumptions) && (
-            <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+            <div className="hud-panel rounded-lg p-4">
               <p className="text-xs text-red-400 uppercase tracking-wider mb-2">Wrong Assumptions</p>
               <SafeList items={d.devils_advocate.wrong_assumptions} />
             </div>
@@ -1215,14 +1215,14 @@ function VerdictTab({ d }: { d: any }) {
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {Array.isArray(d.what_netflix_would_do_differently) && (
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+          <div className="hud-panel rounded-lg p-4">
             <p className="text-xs text-red-400 uppercase tracking-wider mb-2">What Netflix Would Do Differently</p>
             <SafeList items={d.what_netflix_would_do_differently} />
           </div>
         )}
         {Array.isArray(d.what_stripe_would_do_differently) && (
-          <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
-            <p className="text-xs text-blue-600 uppercase tracking-wider mb-2">What Stripe Would Do Differently</p>
+          <div className="hud-panel rounded-lg p-4">
+            <p className="text-xs text-blue-400 uppercase tracking-wider mb-2">What Stripe Would Do Differently</p>
             <SafeList items={d.what_stripe_would_do_differently} />
           </div>
         )}
@@ -1232,12 +1232,12 @@ function VerdictTab({ d }: { d: any }) {
           <SectionHeader title="Confidence Scores" />
           <div className="space-y-2">
             {d.confidence_scores.map((cs: any, i: number) => (
-              <div key={i} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4">
+              <div key={i} className="hud-panel rounded-lg p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm text-gray-900">{cs.recommendation}</p>
-                  <span className="text-sm font-bold text-indigo-600">{cs.confidence}%</span>
+                  <p className="text-sm text-white">{cs.recommendation}</p>
+                  <span className="text-sm font-bold text-cyan-400">{cs.confidence}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1">
+                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-1">
                   <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full" style={{ width: `${cs.confidence}%` }} />
                 </div>
                 <p className="text-xs text-gray-500">{cs.reasoning}</p>
@@ -1251,15 +1251,15 @@ function VerdictTab({ d }: { d: any }) {
           <SectionHeader title="Scenario Analysis" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {d.if_only_10k_left && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4 border border-red-500/20">
+              <div className="hud-panel rounded-lg p-4 border border-red-500/20">
                 <p className="text-xs text-red-400 uppercase tracking-wider mb-2">If Only $10K Left</p>
-                <p className="text-sm text-gray-600">{d.if_only_10k_left}</p>
+                <p className="text-sm text-gray-300">{d.if_only_10k_left}</p>
               </div>
             )}
             {d.if_funding_doubled && (
-              <div className="bg-white border border-gray-200 shadow-sm rounded-lg p-4 border border-green-500/20">
-                <p className="text-xs text-green-600 uppercase tracking-wider mb-2">If Funding Doubled</p>
-                <p className="text-sm text-gray-600">{d.if_funding_doubled}</p>
+              <div className="hud-panel rounded-lg p-4 border border-green-500/20">
+                <p className="text-xs text-green-400 uppercase tracking-wider mb-2">If Funding Doubled</p>
+                <p className="text-sm text-gray-300">{d.if_funding_doubled}</p>
               </div>
             )}
           </div>
@@ -1525,21 +1525,50 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Nav */}
-      <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <Cpu className="w-4 h-4 text-gray-900" />
+    <div className="hud-deep hud-grid-deep min-h-screen text-white">
+      <nav className="hud-panel border-b px-6 py-3.5 flex items-center justify-between sticky top-0 z-50"
+        style={{
+          borderColor: 'rgba(0,212,255,0.1)',
+          backdropFilter: 'blur(30px)',
+          boxShadow: '0 1px 0 rgba(0,212,255,0.1), 0 4px 30px rgba(0,0,0,0.3)'
+        }}>
+
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="relative">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'rgba(0,212,255,0.08)', border: '1px solid rgba(0,212,255,0.3)', boxShadow: '0 0 15px rgba(0,212,255,0.1)' }}>
+              <Cpu className="w-4 h-4" style={{ color: '#00D4FF' }} />
+            </div>
+            <motion.div
+              animate={{ scale: [1, 1.6, 1], opacity: [0.8, 0, 0.8] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+              className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
+              style={{ background: '#00D4FF', boxShadow: '0 0 6px #00D4FF' }} />
           </div>
-          <span className="font-bold text-gray-900 text-sm">JARVIS CTO</span>
+          <div>
+            <div className="text-sm font-black tracking-[0.15em]" style={{ color: '#00D4FF' }}>
+              JARVIS<span style={{ color: 'rgba(248,250,252,0.4)' }}>_</span>CTO
+            </div>
+            <div className="text-[8px] font-mono tracking-widest -mt-0.5"
+              style={{ color: 'rgba(248,250,252,0.15)' }}>
+              ARCHITECTURE SYSTEM
+            </div>
+          </div>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {user && (
-            <span className="hidden sm:block text-sm text-gray-500 mr-2">
-              {user.name || user.email}
-            </span>
+            <div className="hidden sm:flex items-center gap-2 mr-2 px-3 py-1.5 rounded-lg"
+              style={{ background: 'rgba(0,212,255,0.03)', border: '1px solid rgba(0,212,255,0.08)' }}>
+              <motion.div
+                animate={{ opacity: [1, 0.4, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: '#00D4FF', boxShadow: '0 0 4px #00D4FF' }} />
+              <span className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.35)' }}>
+                {user.name || user.email}
+              </span>
+            </div>
           )}
 
           <button
@@ -1547,84 +1576,99 @@ export default function DashboardPage() {
               const next = !voiceEnabled
               setVoiceEnabled(next)
               if (!next) stopSpeaking()
-              else speakText('Voice enabled.')
+              else speakText('JARVIS voice system activated.')
             }}
             title="Toggle Voice (V)"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all border ${
-              voiceEnabled
-                ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
-                : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
-            }`}>
-            <Volume2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:block">Voice</span>
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[9px] font-mono tracking-widest transition-all"
+            style={{
+              color: voiceEnabled ? '#00D4FF' : 'rgba(248,250,252,0.25)',
+              background: voiceEnabled ? 'rgba(0,212,255,0.08)' : 'transparent',
+              border: voiceEnabled ? '1px solid rgba(0,212,255,0.2)' : '1px solid transparent',
+            }}>
+            {isSpeaking
+              ? <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5, repeat: Infinity }}>
+                  <Volume2 className="w-3.5 h-3.5" />
+                </motion.div>
+              : <Volume2 className="w-3.5 h-3.5" />
+            }
+            <span className="hidden sm:block">VOICE</span>
           </button>
 
           <button
             onClick={() => setShowShortcuts(true)}
             title="Shortcuts (?)"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 bg-white border border-gray-200 hover:bg-gray-50 transition-all">
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[9px] font-mono tracking-widest transition-all"
+            style={{ color: 'rgba(248,250,252,0.25)', border: '1px solid transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#00D4FF'; e.currentTarget.style.background = 'rgba(0,212,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.15)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(248,250,252,0.25)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}>
             <Keyboard className="w-3.5 h-3.5" />
-            <span className="hidden sm:block">Keys</span>
+            <span className="hidden sm:block">KEYS</span>
           </button>
 
           <Link href="/history"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 bg-white border border-gray-200 hover:bg-gray-50 transition-all">
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[9px] font-mono tracking-widest transition-all"
+            style={{ color: 'rgba(248,250,252,0.25)', border: '1px solid transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#00D4FF'; e.currentTarget.style.background = 'rgba(0,212,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.15)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(248,250,252,0.25)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' }}>
             <History className="w-3.5 h-3.5" />
-            <span className="hidden sm:block">History</span>
+            <span className="hidden sm:block">HISTORY</span>
           </Link>
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-red-600 bg-white border border-red-200 hover:bg-red-50 transition-all ml-1">
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[9px] font-mono tracking-widest transition-all ml-1"
+            style={{ color: 'rgba(245,158,11,0.6)', border: '1px solid rgba(245,158,11,0.15)', background: 'rgba(245,158,11,0.03)' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#F59E0B'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.35)'; e.currentTarget.style.background = 'rgba(245,158,11,0.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(245,158,11,0.6)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.15)'; e.currentTarget.style.background = 'rgba(245,158,11,0.03)' }}>
             <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:block">Logout</span>
+            <span className="hidden sm:block">LOGOUT</span>
           </button>
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        {/* Input card */}
-        <div className="mb-8">
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Input */}
+        <div className="mb-10">
           {user && (
-            <p className="text-sm text-gray-500 mb-3">
-              Welcome back, <span className="text-indigo-600 font-medium">{user.name || user.email}</span>
-            </p>
+            <p className="text-xs text-gray-600 mb-3">Welcome back, <span className="text-cyan-400">{user.name || user.email}</span></p>
           )}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-3">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Describe your startup idea
-            </label>
+          <div className="hud-panel hud-glow-border hud-holographic rounded-xl p-6 mb-4">
+            <label className="block text-xs text-cyan-400 uppercase tracking-widest mb-3">Startup Idea</label>
             <textarea
               value={problem}
               onChange={e => setProblem(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && e.metaKey && handleGenerate()}
-              placeholder="e.g. Build a food delivery app like Swiggy with real-time tracking and restaurant analytics"
-              className="w-full text-sm text-gray-800 placeholder-gray-400 resize-none outline-none h-28 leading-relaxed"
+              placeholder="Describe your startup idea... e.g. 'Build a food delivery app like Swiggy with real-time tracking'"
+              className="w-full bg-transparent text-sm text-white placeholder-gray-600 resize-none outline-none h-24 leading-relaxed"
               disabled={loading}
             />
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-              <span className="text-xs text-gray-400">{problem.length} chars · ⌘+Enter to generate</span>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+              <span className="text-[10px] text-gray-600">{problem.length} chars · ⌘+Enter to generate</span>
               <button
                 onClick={() => handleGenerate()}
                 disabled={loading || problem.trim().length < 10}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-indigo-600 text-gray-900 text-sm font-medium hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="btn-jarvis btn-3d flex items-center gap-2 text-xs px-5 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
                 {loading ? 'Generating...' : 'Generate Blueprint'}
               </button>
             </div>
           </div>
-
-          {/* Examples toggle */}
           {!result && !loading && (
             <div>
               <button
                 onClick={() => setShowExamples(!showExamples)}
-                className="flex items-center gap-2 text-xs font-medium text-gray-500 hover:text-indigo-600 mb-2 transition-colors"
+                className="flex items-center gap-2 text-[9px] font-mono tracking-widest mb-3 transition-all duration-300"
+                style={{ color: showExamples ? '#00D4FF' : 'rgba(248,250,252,0.25)' }}
               >
-                <motion.span animate={{ rotate: showExamples ? 90 : 0 }} transition={{ duration: 0.2 }} className="inline-block text-[10px]">▶</motion.span>
-                Quick examples
-                <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 text-[10px] font-normal">40+</span>
+                <motion.span animate={{ rotate: showExamples ? 90 : 0 }} transition={{ duration: 0.2 }} className="inline-block">▶</motion.span>
+                QUICK EXAMPLES
+                <span className="px-1.5 py-0.5 rounded text-[8px]"
+                  style={{
+                    background: showExamples ? 'rgba(0,212,255,0.1)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${showExamples ? 'rgba(0,212,255,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                    color: showExamples ? '#00D4FF' : 'rgba(248,250,252,0.2)'
+                  }}>40+</span>
               </button>
               <AnimatePresence>
                 {showExamples && (
@@ -1632,53 +1676,98 @@ export default function DashboardPage() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                    className="overflow-hidden"
+                    transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+                    className="overflow-hidden mb-4"
                   >
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-4">
-                      {/* Category tabs */}
-                      <div className="flex overflow-x-auto border-b border-gray-100">
+                    <div className="relative overflow-hidden"
+                      style={{
+                        background: 'rgba(3,7,18,0.8)',
+                        border: '1px solid rgba(0,212,255,0.12)',
+                        borderRadius: 16,
+                        backdropFilter: 'blur(20px)',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,212,255,0.1)'
+                      }}>
+                      <div className="absolute top-0 left-0 right-0 h-px"
+                        style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.4),transparent)' }} />
+                      <div className="flex overflow-x-auto"
+                        style={{ borderBottom: '1px solid rgba(0,212,255,0.06)' }}>
                         {EXAMPLE_CATEGORIES.map((cat, ci) => (
                           <button
                             key={cat.category}
                             onClick={() => setActiveCategory(ci)}
-                            className="flex-shrink-0 relative px-4 py-2.5 text-[11px] font-medium whitespace-nowrap transition-colors"
-                            style={{ color: activeCategory === ci ? '#4F46E5' : '#9CA3AF' }}>
+                            className="flex-shrink-0 relative px-4 py-3 text-[9px] font-mono tracking-[0.15em] transition-all whitespace-nowrap"
+                            style={{
+                              color: activeCategory === ci ? '#00D4FF' : 'rgba(248,250,252,0.2)',
+                              background: activeCategory === ci ? 'rgba(0,212,255,0.06)' : 'transparent',
+                            }}>
                             {activeCategory === ci && (
                               <motion.div layoutId="cat-underline"
-                                className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                                style={{ background: '#4F46E5' }} />
+                                className="absolute bottom-0 left-0 right-0 h-px"
+                                style={{ background: '#00D4FF', boxShadow: '0 0 8px rgba(0,212,255,0.8)' }} />
                             )}
                             {cat.category}
                           </button>
                         ))}
                       </div>
-                      {/* Example grid */}
                       <div className="p-4">
                         <AnimatePresence mode="wait">
                           <motion.div
                             key={activeCategory}
-                            initial={{ opacity: 0, y: 4 }}
+                            initial={{ opacity: 0, y: 6 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            transition={{ duration: 0.15 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.2 }}
                             className="grid grid-cols-1 sm:grid-cols-2 gap-2"
                           >
                             {EXAMPLE_CATEGORIES[activeCategory]?.examples.map((ex, ei) => (
                               <motion.button
                                 key={ex}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: ei * 0.03 }}
+                                initial={{ opacity: 0, scale: 0.97 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: ei * 0.04 }}
                                 onClick={() => { setProblem(ex); setShowExamples(false) }}
                                 disabled={loading}
-                                className="group flex items-center gap-2.5 text-left px-3 py-2.5 rounded-lg border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 transition-all text-xs text-gray-600 hover:text-indigo-700"
+                                className="group relative text-left overflow-hidden"
+                                style={{
+                                  background: 'rgba(0,212,255,0.02)',
+                                  border: '1px solid rgba(0,212,255,0.07)',
+                                  borderRadius: 10,
+                                  padding: '10px 14px',
+                                  transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={e => {
+                                  e.currentTarget.style.background = 'rgba(0,212,255,0.08)'
+                                  e.currentTarget.style.borderColor = 'rgba(0,212,255,0.25)'
+                                  e.currentTarget.style.transform = 'translateY(-1px)'
+                                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,212,255,0.1)'
+                                }}
+                                onMouseLeave={e => {
+                                  e.currentTarget.style.background = 'rgba(0,212,255,0.02)'
+                                  e.currentTarget.style.borderColor = 'rgba(0,212,255,0.07)'
+                                  e.currentTarget.style.transform = 'translateY(0)'
+                                  e.currentTarget.style.boxShadow = 'none'
+                                }}
                               >
-                                <ChevronRight className="w-3.5 h-3.5 text-gray-600 group-hover:text-indigo-400 flex-shrink-0 transition-colors" />
-                                <span className="flex-1 leading-relaxed">{ex}</span>
-                                <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded bg-indigo-100 text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
-                                  Use
-                                </span>
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                                  style={{ background: 'radial-gradient(circle at 50% 50%, rgba(0,212,255,0.06), transparent 70%)' }} />
+                                <div className="flex items-center gap-2.5 relative z-10">
+                                  <div className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center"
+                                    style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.2)' }}>
+                                    <span style={{ fontSize: 8, color: '#00D4FF' }}>▸</span>
+                                  </div>
+                                  <span className="text-xs leading-relaxed flex-1"
+                                    style={{ color: 'rgba(248,250,252,0.5)' }}>
+                                    {ex}
+                                  </span>
+                                  <span className="flex-shrink-0 text-[8px] font-mono px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                    style={{
+                                      background: 'rgba(0,212,255,0.12)',
+                                      border: '1px solid rgba(0,212,255,0.25)',
+                                      color: '#00D4FF',
+                                    }}>
+                                    USE →
+                                  </span>
+                                </div>
                               </motion.button>
                             ))}
                           </motion.div>
@@ -1694,9 +1783,9 @@ export default function DashboardPage() {
 
         {/* Error */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="mb-6 hud-panel rounded-lg p-4 border border-red-500/30 flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-red-300">{error}</p>
           </div>
         )}
 
@@ -1704,76 +1793,207 @@ export default function DashboardPage() {
         <AnimatePresence>
           {loading && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
+              exit={{ opacity: 0, y: -20 }}
               className="mb-6"
             >
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-10 flex flex-col items-center text-center">
-                {/* Spinner */}
-                <div className="relative mb-6">
-                  <div className="w-16 h-16 rounded-full border-4 border-gray-100 border-t-indigo-600 animate-spin" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Cpu className="w-5 h-5 text-indigo-600" />
-                  </div>
-                </div>
+              <div className="hud-panel rounded-2xl overflow-hidden relative"
+                style={{ borderColor: 'rgba(0,212,255,0.12)', minHeight: 420 }}>
 
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentStep}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.3 }}
-                    className="mb-6"
-                  >
-                    <p className="text-base font-semibold text-gray-800 mb-1">
-                      {currentStep === 0
-                        ? 'Initializing agents...'
-                        : completedSteps.length === 12
-                        ? 'Blueprint complete!'
-                        : AGENT_STEPS[currentStep - 1]?.name
-                      }
-                    </p>
-                    <p className="text-sm text-gray-400">
-                      {currentStep === 0
-                        ? 'Preparing 12 specialized AI agents'
-                        : completedSteps.length === 12
-                        ? 'Compiling your technical blueprint'
-                        : AGENT_STEPS[currentStep - 1]?.desc
-                      }
-                    </p>
-                  </motion.div>
-                </AnimatePresence>
+                {/* Top beam */}
+                <div className="absolute top-0 left-0 right-0 h-px"
+                  style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.6),transparent)' }} />
 
-                {/* Progress bar */}
-                <div className="w-full max-w-xs bg-gray-100 rounded-full h-1.5 mb-4">
+                {/* Ambient glow */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
                   <motion.div
-                    className="bg-indigo-600 h-1.5 rounded-full"
-                    animate={{ width: `${(completedSteps.length / 12) * 100}%` }}
-                    transition={{ duration: 0.4 }}
+                    animate={{ scale: [1, 1.3, 1], opacity: [0.03, 0.07, 0.03] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full"
+                    style={{ background: 'radial-gradient(circle, #00D4FF 0%, transparent 70%)' }}
                   />
                 </div>
 
-                {/* Step dots */}
-                <div className="flex gap-1.5 mb-4">
-                  {AGENT_STEPS.map((step) => {
-                    const isDone = completedSteps.includes(step.id)
-                    const isActive = currentStep === step.id
-                    return (
-                      <div
-                        key={step.id}
-                        className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                          isDone ? 'bg-green-500' : isActive ? 'bg-indigo-600 scale-125' : 'bg-gray-200'
-                        }`}
+                <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center">
+
+                  {/* System label */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex items-center gap-2 mb-10"
+                  >
+                    <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: '#00D4FF', boxShadow: '0 0 6px #00D4FF' }} />
+                    <span className="text-[9px] font-mono tracking-[0.4em]" style={{ color: 'rgba(0,212,255,0.5)' }}>
+                      JARVIS_CTO INTELLIGENCE ACTIVE
+                    </span>
+                    <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.75 }}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: '#00D4FF', boxShadow: '0 0 6px #00D4FF' }} />
+                  </motion.div>
+
+                  {/* 220×220 JARVIS clock */}
+                  <div className="relative mb-10" style={{ width: 220, height: 220 }}>
+
+                    <svg className="absolute inset-0" width="220" height="220">
+                      <circle cx="110" cy="110" r="100" fill="none"
+                        stroke="rgba(0,212,255,0.04)" strokeWidth="1" strokeDasharray="3 6" />
+                    </svg>
+
+                    <motion.svg className="absolute inset-0" width="220" height="220"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}>
+                      <circle cx="110" cy="110" r="104" fill="none"
+                        stroke="rgba(0,212,255,0.12)" strokeWidth="1" strokeDasharray="20 8 4 8" />
+                      <circle cx="110" cy="6" r="3" fill="#00D4FF"
+                        style={{ filter: 'drop-shadow(0 0 4px #00D4FF)' }} />
+                    </motion.svg>
+
+                    <motion.svg className="absolute inset-0" width="220" height="220"
+                      animate={{ rotate: -360 }}
+                      transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}>
+                      <circle cx="110" cy="110" r="86" fill="none"
+                        stroke="rgba(56,189,248,0.15)" strokeWidth="1" strokeDasharray="12 8" />
+                      <circle cx="110" cy="24" r="2.5" fill="#38BDF8"
+                        style={{ filter: 'drop-shadow(0 0 3px #38BDF8)' }} />
+                    </motion.svg>
+
+                    {/* 30-second countdown arc */}
+                    <svg className="absolute inset-0" width="220" height="220"
+                      style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx="110" cy="110" r="96" fill="none"
+                        stroke="rgba(0,212,255,0.06)" strokeWidth="3" />
+                      <motion.circle
+                        cx="110" cy="110" r="96"
+                        fill="none" stroke="#00D4FF" strokeWidth="3" strokeLinecap="round"
+                        style={{
+                          filter: 'drop-shadow(0 0 6px rgba(0,212,255,0.5))',
+                          strokeDasharray: `${2 * Math.PI * 96}`,
+                        }}
+                        animate={{ strokeDashoffset: [0, 2 * Math.PI * 96] }}
+                        transition={{ duration: 30, ease: 'linear', repeat: Infinity }}
                       />
-                    )
-                  })}
+                    </svg>
+
+                    <motion.svg className="absolute inset-0" width="220" height="220"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
+                      <circle cx="110" cy="110" r="68" fill="none"
+                        stroke="rgba(245,158,11,0.1)" strokeWidth="1" strokeDasharray="6 10" />
+                      <circle cx="110" cy="42" r="2" fill="#F59E0B"
+                        style={{ filter: 'drop-shadow(0 0 3px #F59E0B)' }} />
+                    </motion.svg>
+
+                    {/* Center */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="text-5xl font-black font-mono leading-none"
+                        style={{ color: '#00D4FF', textShadow: '0 0 30px rgba(0,212,255,0.5)', letterSpacing: '0.05em' }}>
+                        {formatTime(elapsedTime)}
+                      </div>
+                      <motion.div
+                        animate={{ opacity: [0.4, 0.9, 0.4] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="text-[9px] font-mono mt-2 tracking-[0.3em]"
+                        style={{ color: 'rgba(0,212,255,0.4)' }}>
+                        ELAPSED
+                      </motion.div>
+                    </div>
+
+                    {/* 8 tick marks */}
+                    {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+                      <div key={angle} className="absolute"
+                        style={{
+                          width: 1, height: 8,
+                          background: 'rgba(0,212,255,0.25)',
+                          top: '50%', left: '50%',
+                          transformOrigin: '50% 110px',
+                          transform: `rotate(${angle}deg) translateX(-50%) translateY(-110px)`,
+                          borderRadius: 1
+                        }} />
+                    ))}
+                  </div>
+
+                  {/* Agent name — blur in/out */}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentStep}
+                      initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
+                      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                      exit={{ opacity: 0, y: -12, filter: 'blur(6px)' }}
+                      transition={{ duration: 0.5 }}
+                      className="text-center mb-6"
+                    >
+                      <div className="text-sm font-mono font-black tracking-[0.2em] mb-1.5"
+                        style={{ color: currentStep === 0 ? 'rgba(0,212,255,0.6)' : completedSteps.length === 12 ? '#4ADE80' : '#F8FAFC' }}>
+                        {currentStep === 0
+                          ? '▸ INITIALIZING SYSTEM'
+                          : completedSteps.length === 12
+                          ? '✓ BLUEPRINT COMPLETE'
+                          : `▸ ${AGENT_STEPS[currentStep - 1]?.name?.toUpperCase()}`
+                        }
+                      </div>
+                      <div className="text-xs font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>
+                        {currentStep === 0
+                          ? 'Preparing 12 specialized agents...'
+                          : completedSteps.length === 12
+                          ? 'Compiling your technical blueprint...'
+                          : AGENT_STEPS[currentStep - 1]?.desc
+                        }
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* EQ bars */}
+                  <div className="flex items-end gap-1.5 h-10 mb-6">
+                    {AGENT_STEPS.map((step, i) => {
+                      const isDone = completedSteps.includes(step.id)
+                      const isActive = currentStep === step.id
+                      return (
+                        <motion.div
+                          key={step.id}
+                          className="w-1.5 rounded-full"
+                          animate={{
+                            height: isDone ? '100%' :
+                              isActive ? ['15%', '100%', '40%', '80%', '25%', '90%', '50%', '100%'] :
+                              ['10%', '15%', '10%', '20%', '10%']
+                          }}
+                          transition={{
+                            duration: isActive ? 0.5 : 2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                            delay: i * 0.08
+                          }}
+                          style={{
+                            background: isDone ? '#4ADE80' : isActive ? '#00D4FF' : 'rgba(255,255,255,0.06)',
+                            boxShadow: isDone ? '0 0 6px rgba(74,222,128,0.4)' : isActive ? '0 0 8px rgba(0,212,255,0.6)' : 'none',
+                            minHeight: 3
+                          }}
+                        />
+                      )
+                    })}
+                  </div>
+
+                  {/* Live log — single line */}
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg w-full max-w-sm"
+                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,212,255,0.06)' }}>
+                    <motion.div
+                      animate={{ opacity: [1, 0.2, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity }}
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      style={{ background: '#00D4FF', boxShadow: '0 0 4px #00D4FF' }} />
+                    <span className="text-[9px] font-mono truncate flex-1 text-left"
+                      style={{ color: 'rgba(0,212,255,0.35)' }}>
+                      {logs[logs.length - 1] || 'Booting intelligence system...'}
+                    </span>
+                  </div>
                 </div>
 
-                <p className="text-xs text-gray-400">
-                  {completedSteps.length} / 12 phases · {formatTime(elapsedTime)} elapsed
-                </p>
+                {/* Bottom beam */}
+                <div className="absolute bottom-0 left-0 right-0 h-px"
+                  style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent)' }} />
               </div>
             </motion.div>
           )}
@@ -1783,43 +2003,50 @@ export default function DashboardPage() {
         <AnimatePresence>
           {result && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
+              transition={{ duration: 0.5 }}
             >
-              {/* Result header */}
-              <div className="flex items-start justify-between mb-5 flex-wrap gap-3">
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
                 <div>
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">Blueprint Generated</p>
-                  <h2 className="text-xl font-bold text-gray-900">{result.projectName}</h2>
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Blueprint Generated</p>
+                  <h2 className="text-xl font-bold text-white">{result.projectName}</h2>
+                  <div className="flex items-center gap-2 mt-1">
                     {result.from_cache && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 font-medium">Cached</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded border border-yellow-500/30 text-yellow-400 bg-yellow-500/10">Cached</span>
                     )}
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200 font-medium">12 Phases Complete</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded border border-green-500/30 text-green-400 bg-green-500/10">12 Phases Complete</span>
                     {elapsedTime > 0 && !result.from_cache && (
-                      <span className="text-xs text-gray-400">Generated in {formatTime(elapsedTime)}</span>
+                      <span className="text-[10px] font-mono" style={{ color: 'rgba(245,158,11,0.5)' }}>
+                        Generated in {formatTime(elapsedTime)}
+                      </span>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleGenerate(true)}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-1.5 text-[10px] font-mono px-3 py-2 rounded transition-all"
+                    style={{ color: 'rgba(248,250,252,0.3)', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#00D4FF'; e.currentTarget.style.borderColor = 'rgba(0,212,255,0.25)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(248,250,252,0.3)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
                   >
-                    <RefreshCw className="w-3.5 h-3.5" /> Regenerate
+                    <RefreshCw className="w-3.5 h-3.5" /> REGENERATE
                   </button>
                   <button
                     onClick={handleDownloadPDF}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-lg bg-indigo-600 text-gray-900 hover:bg-indigo-700 transition-colors shadow-sm"
+                    className="flex items-center gap-1.5 text-[10px] font-mono px-4 py-2 rounded transition-all"
+                    style={{ color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.05)', boxShadow: '0 0 12px rgba(245,158,11,0.1)' }}
+                    onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 20px rgba(245,158,11,0.25)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.5)' }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 12px rgba(245,158,11,0.1)'; e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)' }}
                   >
-                    <Download className="w-3.5 h-3.5" /> Download PDF
+                    <Download className="w-3.5 h-3.5" /> DOWNLOAD PDF
                   </button>
                 </div>
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1 overflow-x-auto pb-1 mb-1 border-b border-gray-200">
+              <div className="flex gap-1 overflow-x-auto pb-2 mb-6">
                 {TABS.map((tab, i) => {
                   const Icon = tab.icon
                   const isActive = activeTab === i
@@ -1832,12 +2059,13 @@ export default function DashboardPage() {
                           setTimeout(() => speakText(getTabSummary(i, result)), 300)
                         }
                       }}
-                      className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium whitespace-nowrap transition-all shrink-0 border-b-2 -mb-px ${
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
                         isActive
-                          ? 'border-indigo-600 text-indigo-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                          : 'text-gray-500 border border-transparent hover:text-gray-300 hover:border-white/10'
                       }`}
                     >
+                      <span className="text-[10px] opacity-50 font-mono">{tab.num}</span>
                       <Icon className="w-3.5 h-3.5" />
                       {tab.label}
                     </button>
@@ -1846,14 +2074,14 @@ export default function DashboardPage() {
               </div>
 
               {/* Tab content */}
-              <div className="pt-6">
+              <div className="hud-perspective">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
-                    initial={{ opacity: 0, y: 6 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
                   >
                     {tabContent[activeTab]}
                   </motion.div>
@@ -1864,55 +2092,67 @@ export default function DashboardPage() {
         </AnimatePresence>
       </main>
 
-      {/* Shortcuts modal */}
       <AnimatePresence>
         {showShortcuts && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            style={{ background: 'rgba(3,7,18,0.85)', backdropFilter: 'blur(12px)' }}
             onClick={() => setShowShortcuts(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 16 }}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="bg-white rounded-2xl shadow-xl p-7 max-w-sm w-full"
+              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+              className="hud-panel rounded-2xl p-8 max-w-md w-full relative"
+              style={{ borderColor: 'rgba(0,212,255,0.2)' }}
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                  <Keyboard className="w-5 h-5 text-indigo-600" />
+              <div className="absolute top-0 left-0 right-0 h-px rounded-t-2xl"
+                style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.5),transparent)' }} />
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.25)' }}>
+                  <Keyboard className="w-5 h-5" style={{ color: '#00D4FF' }} />
                 </div>
                 <div>
-                  <div className="font-semibold text-gray-900 text-sm">Keyboard Shortcuts</div>
-                  <div className="text-xs text-gray-400">Quick navigation</div>
+                  <div className="font-black tracking-widest text-sm" style={{ color: '#00D4FF' }}>KEYBOARD SHORTCUTS</div>
+                  <div className="text-[9px] font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>JARVIS COMMAND INTERFACE</div>
                 </div>
                 <button onClick={() => setShowShortcuts(false)}
-                  className="ml-auto p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+                  className="ml-auto p-1.5 rounded-lg transition-all"
+                  style={{ color: 'rgba(248,250,252,0.3)' }}>
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="space-y-1">
                 {[
-                  { keys: ['1', '–', '9'], action: 'Switch to tab 1–9' },
-                  { keys: ['0'], action: 'Switch to Verdict tab (12)' },
-                  { keys: ['G'], action: 'Generate blueprint' },
-                  { keys: ['P'], action: 'Download PDF report' },
-                  { keys: ['V'], action: 'Toggle voice' },
-                  { keys: ['?'], action: 'Show shortcuts panel' },
-                  { keys: ['Esc'], action: 'Close this panel' },
-                ].map(({ keys, action }) => (
+                  { keys: ['1', '–', '9'], action: 'Switch to tab 1–9', color: '#00D4FF' },
+                  { keys: ['0'], action: 'Switch to Verdict tab (12)', color: '#00D4FF' },
+                  { keys: ['G'], action: 'Generate blueprint', color: '#4ADE80' },
+                  { keys: ['P'], action: 'Download PDF report', color: '#F59E0B' },
+                  { keys: ['V'], action: 'Toggle JARVIS voice', color: '#A78BFA' },
+                  { keys: ['?'], action: 'Show this shortcuts panel', color: 'rgba(248,250,252,0.4)' },
+                  { keys: ['Esc'], action: 'Close this panel', color: 'rgba(248,250,252,0.4)' },
+                ].map(({ keys, action, color }) => (
                   <div key={action}
-                    className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50">
-                    <span className="text-xs text-gray-600">{action}</span>
+                    className="flex items-center justify-between py-2.5 px-3 rounded-lg"
+                    style={{ borderBottom: '1px solid rgba(0,212,255,0.05)' }}>
+                    <span className="text-xs font-mono" style={{ color: 'rgba(248,250,252,0.4)' }}>{action}</span>
                     <div className="flex gap-1">
                       {keys.map((k, idx) => (
                         <span key={idx}
-                          className="text-[11px] font-medium px-2 py-0.5 rounded bg-gray-100 border border-gray-200 text-gray-600">
+                          className="text-[10px] font-mono font-bold px-2 py-1 rounded"
+                          style={{
+                            background: 'rgba(0,212,255,0.08)',
+                            border: '1px solid rgba(0,212,255,0.2)',
+                            color
+                          }}>
                           {k}
                         </span>
                       ))}
@@ -1921,8 +2161,9 @@ export default function DashboardPage() {
                 ))}
               </div>
 
-              <div className="mt-5 pt-4 text-center text-xs text-gray-400 border-t border-gray-100">
-                Press ? or / anytime to toggle this panel
+              <div className="mt-6 pt-4 text-center text-[9px] font-mono"
+                style={{ borderTop: '1px solid rgba(0,212,255,0.08)', color: 'rgba(248,250,252,0.15)' }}>
+                PRESS ? OR / ANYTIME TO TOGGLE THIS PANEL
               </div>
             </motion.div>
           </motion.div>
