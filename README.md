@@ -1,180 +1,449 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0B1120,50:00D4FF,100:0B1120&height=120&section=header&text=&fontSize=0" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0B1120,50:00D4FF,100:0B1120&height=140&section=header&text=JARVIS_CTO&fontSize=52&fontColor=00D4FF&fontAlignY=55&desc=Your%20AI%20Chief%20Technology%20Officer&descAlignY=78&descSize=16&descColor=7dd3fc" width="100%"/>
 
-```
-INITIALIZING SHLOK.GOHEL.SYSTEM...
+<br/>
 
-▸ Full-Stack Developer
+[![Live Demo](https://img.shields.io/badge/🚀_LIVE_DEMO-ai--cto--two.vercel.app-00D4FF?style=for-the-badge)](https://ai-cto-two.vercel.app)
+[![GitHub Stars](https://img.shields.io/github/stars/Shlok-2117/AI_CTO?style=for-the-badge&color=F59E0B&logo=github)](https://github.com/Shlok-2117/AI_CTO/stargazers)
+[![License](https://img.shields.io/badge/License-MIT-4ADE80?style=for-the-badge)](LICENSE)
+[![Deploy](https://img.shields.io/badge/Frontend-Vercel-000000?style=for-the-badge&logo=vercel)](https://vercel.com)
+[![Deploy](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render)](https://render.com)
+[![Cost](https://img.shields.io/badge/Infrastructure_Cost-$0%2Fmonth-4ADE80?style=for-the-badge)](https://github.com/Shlok-2117/AI_CTO)
 
-▸ AI Engineer
+<br/>
 
-▸ Building real products that ship to production
-
-▸ B.Tech IT · Dhirubhai Ambani Institute · 2024–2028
-
-SYSTEM READY ✓
-```
-
-# Hey, I'm Shlok Gohel 👋
-
-**Full-Stack Developer · AI Engineer · B.Tech IT @ DAU, Ahmedabad**
-
-*I don't just write code — I ship products.*
-
-[![Portfolio](https://img.shields.io/badge/🚀_JARVIS__CTO-Live_Demo-00D4FF?style=for-the-badge)](https://ai-cto-two.vercel.app)
-[![GitHub](https://img.shields.io/badge/GitHub-Shlok--2117-181717?style=for-the-badge&logo=github)](https://github.com/Shlok-2117)
-[![Location](https://img.shields.io/badge/📍_Anand,_Gujarat-India-F59E0B?style=for-the-badge)](https://github.com/Shlok-2117)
-
-</div>
-
----
-
-## 🧑‍💻 About Me
-
-```typescript
-const shlok = {
-  location:    "Anand, Gujarat 🇮🇳",
-  education:   "B.Tech IT · Dhirubhai Ambani University · 2024–2028",
-  focus:       ["Full-Stack Development", "AI Engineering", "System Design"],
-  currentlyBuilding: "JARVIS_CTO — 12-phase AI architecture generator",
-  languages:   ["TypeScript", "JavaScript", "Python", "SQL"],
-  lookingFor:  "Internship in Full-Stack / AI / Backend Engineering",
-  funFact:     "I build products that run at $0/month infra cost 💀"
-}
-```
-
----
-
-## 🛠️ Tech Stack
-
-### 🌐 Frontend
-![Next.js](https://img.shields.io/badge/Next.js_14-000000?style=flat-square&logo=next.js)
-![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black)
+![Next.js](https://img.shields.io/badge/Next.js_14-000000?style=flat-square&logo=next.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=flat-square&logo=framer)
-
-### ⚙️ Backend
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
-![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat-square&logo=prisma)
-![REST API](https://img.shields.io/badge/REST_API-FF6C37?style=flat-square)
-
-### 🗄️ Database & Infrastructure
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
-
-### 🤖 AI & Integrations
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat-square&logo=prisma&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Framer](https://img.shields.io/badge/Framer_Motion-0055FF?style=flat-square&logo=framer&logoColor=white)
 ![Groq](https://img.shields.io/badge/Groq_AI-F55036?style=flat-square)
-![OpenRouter](https://img.shields.io/badge/OpenRouter-000000?style=flat-square)
-![SendGrid](https://img.shields.io/badge/SendGrid-1A82E2?style=flat-square&logo=twilio)
-![Puppeteer](https://img.shields.io/badge/Puppeteer-40B5A4?style=flat-square&logo=puppeteer)
 
-### 🚀 DevOps & Tools
-![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel)
-![Render](https://img.shields.io/badge/Render-46E3B7?style=flat-square&logo=render)
-![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=github-actions&logoColor=white)
-![VS Code](https://img.shields.io/badge/VS_Code-007ACC?style=flat-square&logo=visual-studio-code)
+<br/>
 
----
-
-## 🚀 Featured Projects
-
-### ⬡ JARVIS_CTO — AI Architecture Generator
-> *12 AI agents analyze your startup idea from Founder Mindset to VC Verdict in under 60 seconds*
-
-**Stack:** `Next.js 14` `Node.js` `TypeScript` `PostgreSQL` `Groq AI` `Prisma` `Supabase` `SendGrid` `Puppeteer`
-
-```
-Phase 01 → Founder Mindset    (business model, personas, revenue)
-Phase 02 → Product Strategy   (AARRR, metrics, growth loops)
-Phase 03 → Architecture       (services, ADRs, tech stack)
-Phase 04 → Database Design    (schema, indexes, GDPR)
-Phase 05 → API Design         (endpoints, auth, webhooks)
-Phase 06 → Scaling Roadmap    (0 → 100M users, AWS costs)
-Phase 07 → Security Audit     (OWASP, threat model)
-Phase 08 → DevOps Pipeline    (CI/CD, observability)
-Phase 09 → FinOps Analysis    (cloud costs, break-even)
-Phase 10 → Hiring Plan        (3-year team roadmap)
-Phase 11 → Architecture Diagrams (Mermaid: system, ER, sequence)
-Phase 12 → CTO Verdict        (VC investability score 0-100)
-```
-
-**Key Technical Achievements:**
-- Built 12-phase sequential AI agent pipeline — each agent gets ALL previous outputs as context
-- 11-model fallback chain (6 Groq + 5 OpenRouter) — zero downtime on rate limits
-- JWT auth with refresh tokens + email OTP verification via SendGrid HTTP API
-- 7-day in-memory cache with SHA-256 key hashing (sub-100ms cache hits)
-- Puppeteer + @sparticuz/chromium PDF export on serverless infrastructure
-- JARVIS-themed UI: voice assistant (Web Speech API), keyboard shortcuts, cinematic boot screen
-- **$0 infrastructure cost** — all free tiers
-
-[![Live Demo](https://img.shields.io/badge/🔴_LIVE-ai--cto--two.vercel.app-00D4FF?style=flat-square)](https://ai-cto-two.vercel.app)
-[![GitHub](https://img.shields.io/badge/GitHub-Source_Code-181717?style=flat-square&logo=github)](https://github.com/Shlok-2117/AI_CTO)
-
----
-
-## 📊 GitHub Stats
-
-<div align="center">
-
-![Shlok's GitHub Stats](https://github-readme-stats.vercel.app/api?username=Shlok-2117&show_icons=true&theme=tokyonight&hide_border=true&bg_color=0B1120&title_color=00D4FF&icon_color=00D4FF&text_color=F8FAFC)
-
-![Top Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=Shlok-2117&layout=compact&theme=tokyonight&hide_border=true&bg_color=0B1120&title_color=00D4FF&text_color=F8FAFC)
-
-[![GitHub Streak](https://streak-stats.demolab.com?user=Shlok-2117&theme=tokyonight&hide_border=true&background=0B1120&ring=00D4FF&fire=F59E0B&currStreakLabel=00D4FF)](https://git.io/streak-stats)
+> **Generic AI gives you an answer.**
+> **JARVIS_CTO gives you a company.**
 
 </div>
 
 ---
 
-## 🎯 What I'm Currently Doing
+## 🎯 What is JARVIS_CTO?
 
-- 🔨 **Shipping JARVIS_CTO** — adding Stripe payments, Share Blueprint, Compare Mode
-- 📚 **Learning** — System Design, DSA, AWS architecture
-- 🔍 **Actively seeking** — Internship in Full-Stack / AI / Backend Engineering
-- 🏗️ **Building** — Products that solve real problems and actually go live
+When a founder needs to architect a product, they either:
+- 💸 Hire a CTO consultant ($300–$500/hour)
+- 😤 Ask ChatGPT and get *"use React + Node + MongoDB"*
+- 🤷 Spend weeks planning alone
+
+**JARVIS_CTO replaces all of this** with 12 specialized AI agents that think sequentially — each building on the previous output — to produce a complete, investor-grade technical blueprint **in under 60 seconds, completely free.**
+
+```
+Input:  "Build a telemedicine platform like Practo"
+Output:
+
+✓ Business model + revenue milestones
+✓ System architecture with justified decisions
+✓ PostgreSQL schema with GDPR compliance
+✓ 10+ REST API endpoints
+✓ Scaling roadmap from 0 → 100M users
+✓ AWS cost estimation per stage
+✓ Security audit (OWASP Top 10)
+✓ CI/CD pipeline design
+✓ 3-year hiring plan with salary ranges
+✓ VC investability score (0–100)
+✓ 3 Mermaid diagrams (architecture, ER, sequence)
+✓ Devil's advocate CTO critique
+```
 
 ---
 
-## 💼 What I Bring
+## ✨ Features
 
-✅ End-to-end product development — idea to live production
+<table>
+<tr>
+<td width="50%">
 
-✅ Full-stack TypeScript — Next.js frontend + Node.js backend
+### 🤖 12-Phase AI Pipeline
 
-✅ AI integration — multi-agent pipelines, LLM APIs, fallback chains
+| # | Agent | Output |
+|---|-------|--------|
+| 01 | Founder Mindset | Business model, personas, MVP |
+| 02 | Product Strategy | AARRR, metrics, growth |
+| 03 | Architecture | Services, ADRs, tech stack |
+| 04 | Database | Schema, indexes, GDPR |
+| 05 | API Design | Endpoints, auth, webhooks |
+| 06 | Scaling | 0→100M roadmap, AWS costs |
+| 07 | Security | OWASP, threat model |
+| 08 | DevOps | CI/CD, observability |
+| 09 | FinOps | Cloud costs, break-even |
+| 10 | Hiring | 3-year team plan |
+| 11 | Diagrams | Mermaid: arch, ER, sequence |
+| 12 | CTO Verdict | VC score, devil's advocate |
 
-✅ Database design — PostgreSQL, Prisma ORM, Supabase
+</td>
+<td width="50%">
 
-✅ Authentication — JWT, refresh tokens, OTP, OAuth
+### 🎮 JARVIS Experience
 
-✅ Deployment — Vercel + Render + Supabase at $0 infrastructure cost
+**Voice & Interaction**
+- 🔊 JARVIS voice assistant (speak → AI responds)
+- ⌨️ Keyboard shortcuts (1–9, G, P, V, ?)
+- 🎤 Full-screen voice chat with orb animation
+- 🤖 Web Speech API + Groq AI + TTS
 
-✅ Real problem solving — 10+ production bugs documented and fixed
+**UI & Design**
+- 🌑 Cinematic dark glassmorphism UI
+- 🎬 Terminal boot screen on first visit
+- ⏱️ Live generation timer with clock
+- 🕸️ Radial quick-action menu
+- 💫 Framer Motion animations throughout
 
-✅ System design thinking — built by studying how real CTOs think
+**Platform**
+- 📄 PDF export (professional 6-page report)
+- 📚 Blueprint history with search
+- ⭐ 5-star feedback system
+- 🔐 Email OTP verification
+- ⚡ 7-day smart caching
+
+</td>
+</tr>
+</table>
 
 ---
 
-## 📬 Let's Connect
+## 🏗️ Tech Stack
 
-*Open to internships, collaborations, and interesting problems.*
+```
+┌──────────────────────────────────────────────────────────────┐
+│                      JARVIS_CTO STACK                        │
+├──────────────────┬───────────────────────────────────────────┤
+│ Frontend         │ Next.js 14 + TypeScript + Tailwind CSS    │
+│ Animations       │ Framer Motion                             │
+│ Backend          │ Node.js + Express + TypeScript            │
+│ ORM              │ Prisma 5.22                               │
+│ Database         │ PostgreSQL via Supabase (pgbouncer)       │
+│ AI Primary       │ Groq (llama-3.1-8b, llama-3.3-70b, +4)   │
+│ AI Fallback      │ OpenRouter (5 free models)                │
+│ Auth             │ JWT (15min) + Refresh (7d) + bcrypt(12)  │
+│ Email            │ SendGrid HTTP API                         │
+│ PDF Export       │ Puppeteer + @sparticuz/chromium           │
+│ Deploy Frontend  │ Vercel (auto-deploy on push)              │
+│ Deploy Backend   │ Render (auto-deploy on push)              │
+│ Monthly Cost     │ $0.00                                     │
+└──────────────────┴───────────────────────────────────────────┘
+```
 
-[![Email](https://img.shields.io/badge/Email-shlokgohel2117@gmail.com-EA4335?style=flat-square&logo=gmail&logoColor=white)](mailto:shlokgohel2117@gmail.com)
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+```bash
+node --version   # v18+
+npm --version    # v9+
+```
+
+Free accounts needed:
+- [Supabase](https://supabase.com) — PostgreSQL database
+- [Groq](https://console.groq.com) — AI API (free tier)
+- [SendGrid](https://app.sendgrid.com) — Email (free: 100/day)
+- [OpenRouter](https://openrouter.ai) — AI fallback (free)
+
+### Installation
+
+```bash
+# Clone
+git clone https://github.com/Shlok-2117/AI_CTO.git
+cd AI_CTO
+
+# Install dependencies
+cd frontend && npm install
+cd ../backend && npm install
+
+# Push database schema
+cd backend && npx prisma db push
+
+# Start development
+# Terminal 1
+cd backend && npm run dev
+
+# Terminal 2
+cd frontend && npm run dev
+
+# Open http://localhost:3000
+```
+
+### Environment Variables
+
+**`backend/.env`**
+```env
+DATABASE_URL="postgresql://...@pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://...@db.supabase.com:5432/postgres"
+
+JWT_SECRET="your-64-char-random-string"
+REFRESH_SECRET="your-other-64-char-random-string"
+
+GROQ_API_KEY="gsk_..."
+OPENROUTER_API_KEY="sk-or-..."
+
+SENDGRID_API_KEY="SG...."
+
+FRONTEND_URL="http://localhost:3000"
+BACKEND_URL="http://localhost:5000"
+NODE_ENV="development"
+```
+
+**`frontend/.env.local`**
+```env
+NEXT_PUBLIC_API_URL="http://localhost:5000"
+```
+
+---
+
+## 📁 Project Structure
+
+```
+AI_CTO/
+├── frontend/                      # Next.js 14 App
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── page.tsx           # Landing page
+│   │   │   ├── dashboard/         # Blueprint generator (12 tabs)
+│   │   │   ├── auth/              # Login + Register with OTP
+│   │   │   ├── history/           # Saved blueprints
+│   │   │   ├── features/          # All 12 agents explained
+│   │   │   └── pricing/           # Free vs Pro
+│   │   └── components/
+│   │       └── jarvis/
+│   │           ├── BootScreen.tsx      # Terminal boot animation
+│   │           ├── JarvisNav.tsx       # Navigation bar
+│   │           ├── JarvisAssistant.tsx # Voice AI chat
+│   │           ├── FeedbackModal.tsx   # 3-step feedback form
+│   │           ├── RadialMenu.tsx      # Web-style quick menu
+│   │           └── SenseAlert.tsx      # Click ripple effect
+│   └── tailwind.config.js
+│
+└── backend/                       # Node.js + Express API
+    ├── src/
+    │   ├── agents/                # 12 AI phases + orchestrator
+    │   │   ├── phase1_founder.agent.ts
+    │   │   ├── phase2_product.agent.ts
+    │   │   ├── phase3_architecture.agent.ts
+    │   │   ├── phase4_database.agent.ts
+    │   │   ├── phase5_api.agent.ts
+    │   │   ├── phase6_scaling.agent.ts
+    │   │   ├── phase7_security.agent.ts
+    │   │   ├── phase8_devops.agent.ts
+    │   │   ├── phase9_finops.agent.ts
+    │   │   ├── phase10_hiring.agent.ts
+    │   │   ├── phase11_diagrams.agent.ts
+    │   │   ├── phase12_cto_verdict.agent.ts
+    │   │   └── cto.orchestrator.ts
+    │   ├── controllers/
+    │   │   └── auth.controller.ts
+    │   ├── middleware/
+    │   │   └── auth.middleware.ts
+    │   ├── routes/
+    │   │   ├── auth.routes.ts
+    │   │   ├── generate.routes.ts
+    │   │   ├── history.routes.ts
+    │   │   ├── otp.routes.ts
+    │   │   ├── jarvis.routes.ts
+    │   │   └── feedback.routes.ts
+    │   ├── services/
+    │   │   ├── ai.service.ts       # callAI() with fallback chain
+    │   │   ├── email.service.ts    # SendGrid OTP + welcome
+    │   │   ├── cache.service.ts    # 7-day in-memory cache
+    │   │   └── pdf.service.ts      # Puppeteer PDF generation
+    │   └── prompts/
+    │       └── master.system.prompt.ts
+    └── prisma/
+        └── schema.prisma           # User, Generation, RefreshToken, OtpCode, Feedback
+```
+
+---
+
+## 🔌 API Reference
+
+```
+AUTH
+POST   /api/auth/register          Register + OTP verification
+POST   /api/auth/login             Login → JWT access token
+POST   /api/auth/logout            Revoke refresh token
+POST   /api/auth/refresh           Refresh access token
+
+OTP
+POST   /api/otp/send               Send 6-digit OTP to email
+POST   /api/otp/verify             Verify OTP code
+
+GENERATE
+POST   /api/generate               Run 12-agent AI pipeline
+GET    /api/generate/:id/pdf       Download PDF blueprint
+
+HISTORY
+GET    /api/history                Get all blueprints (paginated)
+DELETE /api/history/:id            Delete a blueprint
+
+JARVIS
+POST   /api/jarvis/chat            Voice assistant AI response
+
+FEEDBACK
+POST   /api/feedback               Submit 5-star feedback
+GET    /api/feedback/stats         Get aggregated stats
+
+HEALTH
+GET    /health                     Server status check
+```
+
+---
+
+## 🤖 How the AI Pipeline Works
+
+```
+User: "Build a food delivery app like Swiggy"
+│
+▼
+┌─────────────────────┐
+│   CTO Orchestrator  │
+│                     │
+│  [01] Founder   ────────────────────────────────────┐
+│  [02] Product   ◄── founder                         │
+│  [03] Arch      ◄── founder + product               │
+│  [04] Database  ◄── architecture                    │
+│  [05] API       ◄── arch + database                 │
+│  [06] Scaling   ◄── all above                       │
+│  [07] Security  ◄── all above                       │
+│  [08] DevOps    ◄── all above                       │
+│  [09] FinOps    ◄── all above                       │
+│  [10] Hiring    ◄── all above                       │
+│  [11] Diagrams  ◄── all above                       │
+│  [12] Verdict   ◄── ALL 11 phases as context ───────┘
+└─────────────────────┘
+│
+▼
+Complete Blueprint → Saved to PostgreSQL → Rendered in 12 tabs
+```
+
+**Each agent uses `callAI()` which:**
+1. Tries **Groq** → 6 models with exponential backoff retry
+2. Falls back to **OpenRouter** → 5 free models if Groq rate-limits
+3. Returns **static fallback object** if all AI calls fail — never crashes
+
+---
+
+## 🚢 Deployment
+
+### Vercel (Frontend)
+
+```bash
+# 1. Connect GitHub repo to vercel.com
+# 2. Root Directory: frontend
+# 3. Framework: Next.js (auto-detected)
+# 4. Add env var: NEXT_PUBLIC_API_URL = https://your-backend.onrender.com
+# 5. Deploy — auto-deploys on every git push to main
+```
+
+### Render (Backend)
+
+```bash
+# 1. Connect GitHub repo to render.com
+# 2. Root Directory: backend
+# 3. Build Command: npm install && npm run build
+# 4. Start Command: node dist/index.js
+# 5. Add all environment variables
+# 6. Deploy — auto-deploys on every git push to main
+```
+
+### Supabase (Database)
+
+```bash
+# 1. Create project at supabase.com
+# 2. Copy connection strings from Settings → Database
+# 3. npx prisma db push  →  creates all 5 tables automatically
+```
+
+---
+
+## 🐛 Real Problems Solved
+
+| # | Problem | Root Cause | Fix |
+|---|---------|------------|-----|
+| 1 | Render blocks SMTP | Free tier firewall | Switched to SendGrid HTTP API |
+| 2 | AI returns invalid JSON | LLM adds markdown/text | Built `extractJSON()` + 4 retries |
+| 3 | Port scan timeout | Bound to localhost | `app.listen(PORT, '0.0.0.0')` |
+| 4 | TypeScript build fails | `@types` in devDeps | Moved to dependencies |
+| 5 | Mermaid ChunkLoadError | Next.js webpack conflict | Load via CDN script injection |
+| 6 | Voice `no-speech` error | Missing mic permission | `getUserMedia()` before SpeechRecognition |
+| 7 | JARVIS chat 413 error | 48K tokens sent | Truncate to last 4 messages × 100 chars |
+| 8 | JARVIS chat HTTP 400 | JSON mode needs "json" in prompt | Separate route without json mode |
+| 9 | PDF Chrome not found | No Chrome on Render | `puppeteer-core` + `@sparticuz/chromium` |
+| 10 | Prisma v7 breaking | Major DSL changes | Pinned to v5.22 |
+
+---
+
+## 📊 Stats
+
+```
+Total Files         →  46 TypeScript files
+Lines of Code       →  12,000+
+AI Agents           →  12 sequential phases
+AI Model Chain      →  11 models (6 Groq + 5 OpenRouter)
+API Endpoints       →  15 endpoints
+Database Tables     →  5 (User, Generation, RefreshToken, OtpCode, Feedback)
+JWT Expiry          →  15min access / 7d refresh
+bcrypt Cost Factor  →  12
+Cache TTL           →  7 days (SHA-256 key)
+Infrastructure Cost →  $0 / month
+Build Time          →  ~3 weeks (solo)
+```
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] **Stripe payments** — Pro tier with GPT-4o powered agents
+- [ ] **Share Blueprint** — Public `/share/[id]` URL for portfolios
+- [ ] **Compare Mode** — Side-by-side blueprint comparison
+- [ ] **Ask Your Blueprint** — Chat with your generated architecture
+- [ ] **Export to Notion** — One-click Notion page creation
+- [ ] **Google OAuth** — Backend routes ready, needs credentials
+- [ ] **Regenerate Phase** — Redo a single phase without full regeneration
+- [ ] **Team Collaboration** — Shared workspaces with comments
+- [ ] **Mobile App** — React Native (Expo) version
+- [ ] **Custom Domain** — jarviscto.com
+
+---
+
+## 👨‍💻 Built By
+
+**Shlok Gohel**
+B.Tech IT · Dhirubhai Ambani University · 2024–2028
+
+[![Email](https://img.shields.io/badge/Email-shlokgohel2117@gmail.com-EA4335?style=flat-square&logo=gmail)](mailto:shlokgohel2117@gmail.com)
 [![GitHub](https://img.shields.io/badge/GitHub-Shlok--2117-181717?style=flat-square&logo=github)](https://github.com/Shlok-2117)
-[![JARVIS_CTO](https://img.shields.io/badge/Project-JARVIS__CTO-00D4FF?style=flat-square)](https://ai-cto-two.vercel.app)
+
+---
+
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0B1120,50:00D4FF,100:0B1120&height=80&section=footer" width="100%"/>
+<br/>
 
-*"I don't just learn technologies — I ship products with them."*
+**If JARVIS_CTO helped you — drop a ⭐ on the repo!**
+
+[![Star](https://img.shields.io/github/stars/Shlok-2117/AI_CTO?style=for-the-badge&color=F59E0B&logo=github&label=⭐%20Star%20this%20repo)](https://github.com/Shlok-2117/AI_CTO/stargazers)
+
+[![Live Demo](https://img.shields.io/badge/Try_JARVIS__CTO_Now-00D4FF?style=for-the-badge)](https://ai-cto-two.vercel.app)
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0B1120,50:00D4FF,100:0B1120&height=100&section=footer" width="100%"/>
 
 </div>
