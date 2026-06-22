@@ -1406,7 +1406,6 @@ export default function DashboardPage() {
       setCurrentStep(0)
       setCompletedSteps(AGENT_STEPS.map(s => s.id))
       setResult(data)
-      setTimeout(() => setShowFeedback(true), 3000)
       if (voiceEnabled) {
         setTimeout(() => speakText(
           `Blueprint generation complete. Project: ${data.projectName}. All 12 phases analyzed successfully. Your technical blueprint is ready, sir.`
@@ -1436,6 +1435,7 @@ export default function DashboardPage() {
     a.download = `${result.projectName || 'CTO-Blueprint'}.pdf`
     a.click()
     URL.revokeObjectURL(url)
+    setTimeout(() => setShowFeedback(true), 1500)
   }
 
   const handleLogout = () => {

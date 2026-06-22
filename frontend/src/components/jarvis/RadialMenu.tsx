@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import { Zap, History, Star, Volume2, Download, Home } from 'lucide-react'
 
 const MENU_ITEMS = [
-  { icon: Zap,      label: 'GENERATE', angle: -90,  color: '#00D4FF', action: 'generate' },
-  { icon: History,  label: 'HISTORY',  angle: -30,  color: '#38BDF8', action: 'history'  },
-  { icon: Star,     label: 'FEEDBACK', angle: 30,   color: '#F59E0B', action: 'feedback' },
+  { icon: Home,     label: 'HOME',     angle: -90,  color: '#F87171', action: 'home'     },
+  { icon: Zap,      label: 'GENERATE', angle: -45,  color: '#00D4FF', action: 'generate' },
+  { icon: History,  label: 'HISTORY',  angle: 0,    color: '#38BDF8', action: 'history'  },
+  { icon: Star,     label: 'FEEDBACK', angle: 45,   color: '#F59E0B', action: 'feedback' },
   { icon: Download, label: 'PDF',      angle: 90,   color: '#4ADE80', action: 'pdf'      },
-  { icon: Volume2,  label: 'VOICE',    angle: 150,  color: '#A78BFA', action: 'voice'    },
-  { icon: Home,     label: 'HOME',     angle: -150, color: '#F87171', action: 'home'     },
+  { icon: Volume2,  label: 'VOICE',    angle: 135,  color: '#A78BFA', action: 'voice'    },
 ] as const
 
 const RADIUS = 90
@@ -39,7 +39,7 @@ export function RadialMenu({ onGenerate, onFeedback, onPDF, onVoice }: RadialMen
   }
 
   return (
-    <div className="fixed bottom-24 right-6 z-[998]">
+    <div className="fixed bottom-6 left-6 z-[998]">
       <AnimatePresence>
         {open && (
           <>
@@ -66,7 +66,7 @@ export function RadialMenu({ onGenerate, onFeedback, onPDF, onVoice }: RadialMen
                   animate={{ opacity: 1, x, y, scale: 1 }}
                   exit={{ opacity: 0, x: 0, y: 0, scale: 0 }}
                   transition={{ delay: i * 0.05, type: 'spring', stiffness: 300, damping: 20 }}
-                  style={{ position: 'absolute', bottom: 0, right: 0 }}
+                  style={{ position: 'absolute', bottom: 0, left: 0 }}
                 >
                   <button
                     onClick={() => handleAction(item.action)}
@@ -107,10 +107,10 @@ export function RadialMenu({ onGenerate, onFeedback, onPDF, onVoice }: RadialMen
             <svg
               className="absolute pointer-events-none"
               style={{
-                bottom: 24, right: 24,
+                bottom: 24, left: 24,
                 width: (RADIUS + 30) * 2,
                 height: (RADIUS + 30) * 2,
-                transform: 'translate(50%, 50%)',
+                transform: 'translate(-50%, 50%)',
                 opacity: 0.15,
               }}
               viewBox={`${-(RADIUS + 30)} ${-(RADIUS + 30)} ${(RADIUS + 30) * 2} ${(RADIUS + 30) * 2}`}
