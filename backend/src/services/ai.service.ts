@@ -144,10 +144,9 @@ async function callOpenRouter(prompt: string, systemPrompt: string): Promise<str
 // maxTokens is conservative relative to each model's total context limit
 // so large phase prompts don't overflow the input+output budget.
 const GROQ_MODELS: Array<{ name: string; maxTokens: number }> = [
-  { name: 'llama-3.3-70b-versatile', maxTokens: 6000 }, // 128K ctx, 32K out
-  { name: 'mixtral-8x7b-32768',      maxTokens: 4096 }, // 32K ctx
-  { name: 'llama-3.1-8b-instant',    maxTokens: 3000 }, // 128K ctx, 8K out
-  { name: 'gemma2-9b-it',            maxTokens: 2048 }, // 8K ctx — small output only
+  { name: 'llama-3.3-70b-versatile', maxTokens: 6000 }, // primary — best quality, 128K ctx
+  { name: 'llama-3.1-8b-instant',    maxTokens: 3000 }, // fast fallback, 128K ctx
+  { name: 'llama-3.1-8b-instant',    maxTokens: 2000 }, // emergency — reduced tokens
 ]
 
 export async function callAI(prompt: string, systemPrompt: string): Promise<string> {
