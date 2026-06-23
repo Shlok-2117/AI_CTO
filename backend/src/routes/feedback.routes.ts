@@ -79,4 +79,20 @@ router.get('/stats', async (_req: Request, res: Response) => {
   }
 })
 
+router.get('/all', async (_req: Request, res: Response) => {
+  try {
+    const feedbacks = await prisma.feedback.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { email: true, name: true }
+        }
+      }
+    })
+    return res.json({ feedbacks, total: feedbacks.length })
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message })
+  }
+})
+
 export default router
