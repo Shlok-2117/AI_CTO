@@ -4,6 +4,7 @@ import './globals.css'
 import { KeepAlive } from './KeepAlive'
 import { JarvisAssistant } from '@/components/jarvis/JarvisAssistant'
 import { SenseAlert } from '@/components/jarvis/SenseAlert'
+import { WebBackground } from '@/components/jarvis/WebBackground'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors`}>
+        <WebBackground />
         <KeepAlive />
         <JarvisAssistant />
         <SenseAlert />

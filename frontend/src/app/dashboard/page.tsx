@@ -1393,6 +1393,8 @@ export default function DashboardPage() {
   const [showExamples, setShowExamples] = useState(false)
   const [activeCategory, setActiveCategory] = useState(0)
   const [scrollProgress, setScrollProgress] = useState(0)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [pdfTimer, setPdfTimer] = useState(30)
   const timerRefs = useRef<NodeJS.Timeout[]>([])
   const logsRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -1473,6 +1475,17 @@ export default function DashboardPage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    if (!pdfLoading) { setPdfTimer(30); return }
+    const interval = setInterval(() => {
+      setPdfTimer(prev => {
+        if (prev <= 1) { clearInterval(interval); return 0 }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [pdfLoading])
+
   const startAgentSimulation = () => {
     timerRefs.current.forEach(t => clearTimeout(t))
     timerRefs.current = []
@@ -1545,19 +1558,34 @@ export default function DashboardPage() {
 
   const handleDownloadPDF = async () => {
     if (!result?.id) return
-    const token = localStorage.getItem('token')
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/generate/${result.id}/pdf`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!res.ok) { setError('PDF download failed'); return }
-    const blob = await res.blob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${result.projectName || 'CTO-Blueprint'}.pdf`
-    a.click()
-    URL.revokeObjectURL(url)
-    setTimeout(() => setShowFeedback(true), 1500)
+    setPdfLoading(true)
+    setPdfTimer(30)
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/generate/${result.id}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include'
+      })
+      if (!res.ok) {
+        setPdfLoading(false)
+        alert('PDF generation failed')
+        return
+      }
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${result.projectName || 'CTO-Blueprint'}-CTO-Blueprint.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      setTimeout(() => setShowFeedback(true), 1500)
+    } catch {
+      alert('PDF download failed')
+    } finally {
+      setPdfLoading(false)
+    }
   }
 
   const handleLogout = () => {
@@ -2377,6 +2405,126 @@ export default function DashboardPage() {
         onPDF={() => { if (result) handleDownloadPDF() }}
         onVoice={() => setVoiceEnabled(v => !v)}
       />
+
+      {/* PDF Loading Modal */}
+      <AnimatePresence>
+        {pdfLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9995] flex items-center justify-center"
+            style={{ background: 'rgba(3,7,18,0.9)', backdropFilter: 'blur(20px)' }}
+          >
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <svg width="100%" height="100%" className="opacity-10">
+                {[...Array(12)].map((_, i) => {
+                  const angle = (i * 30 * Math.PI) / 180
+                  return (
+                    <line key={i}
+                      x1="50%" y1="50%"
+                      x2={`${50 + Math.cos(angle) * 60}%`}
+                      y2={`${50 + Math.sin(angle) * 60}%`}
+                      stroke="#00D4FF" strokeWidth="0.5"
+                      strokeDasharray="4 8"
+                    />
+                  )
+                })}
+                {[8, 16, 24, 32, 40].map(r => (
+                  <circle key={r} cx="50%" cy="50%"
+                    r={`${r}%`}
+                    fill="none" stroke="#00D4FF"
+                    strokeWidth="0.3" strokeDasharray="4 12" />
+                ))}
+              </svg>
+            </div>
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+              className="relative text-center"
+              style={{
+                background: 'rgba(11,17,32,0.98)',
+                border: '1px solid rgba(0,212,255,0.2)',
+                borderRadius: 24,
+                padding: '48px 56px',
+                maxWidth: 400,
+                width: '90%',
+                boxShadow: '0 0 80px rgba(0,212,255,0.12), 0 40px 100px rgba(0,0,0,0.7)',
+              }}
+            >
+              <div className="absolute top-0 left-0 right-0 h-px rounded-t-3xl"
+                style={{ background: 'linear-gradient(90deg,transparent,#00D4FF,transparent)' }} />
+
+              <div className="relative w-24 h-24 mx-auto mb-6">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-0 rounded-full"
+                  style={{ border: '1px solid rgba(0,212,255,0.3)', borderTopColor: '#00D4FF' }} />
+                <motion.div
+                  animate={{ rotate: -360 }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-2 rounded-full"
+                  style={{ border: '1px solid rgba(245,158,11,0.2)', borderBottomColor: '#F59E0B' }} />
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-4 rounded-full"
+                  style={{ border: '1px solid rgba(129,140,248,0.2)', borderLeftColor: '#818CF8' }} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span style={{ fontSize: 28 }}>📄</span>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <div className="text-4xl font-black font-mono"
+                  style={{
+                    color: pdfTimer > 15 ? '#00D4FF' : pdfTimer > 8 ? '#F59E0B' : '#4ADE80',
+                    textShadow: `0 0 20px ${pdfTimer > 15 ? 'rgba(0,212,255,0.5)' : pdfTimer > 8 ? 'rgba(245,158,11,0.5)' : 'rgba(74,222,128,0.5)'}`
+                  }}>
+                  {String(pdfTimer).padStart(2, '0')}s
+                </div>
+                <div className="text-[9px] font-mono mt-1" style={{ color: 'rgba(248,250,252,0.2)' }}>
+                  ESTIMATED TIME REMAINING
+                </div>
+              </div>
+
+              <div className="h-1 rounded-full overflow-hidden mb-5"
+                style={{ background: 'rgba(255,255,255,0.05)' }}>
+                <motion.div
+                  className="h-full rounded-full"
+                  animate={{ width: `${((30 - pdfTimer) / 30) * 100}%` }}
+                  transition={{ duration: 0.5 }}
+                  style={{ background: 'linear-gradient(90deg,#00D4FF,#818CF8)', boxShadow: '0 0 8px rgba(0,212,255,0.5)' }} />
+              </div>
+
+              <div className="text-base font-black mb-2" style={{ color: '#F8FAFC' }}>
+                Generating Your Blueprint PDF
+              </div>
+              <div className="text-xs font-mono leading-relaxed" style={{ color: 'rgba(248,250,252,0.3)' }}>
+                JARVIS is compiling all 12 phases into a<br />
+                professional report. Please wait...
+              </div>
+
+              <div className="flex justify-center gap-1.5 mt-5">
+                {[0, 1, 2].map(i => (
+                  <motion.div key={i}
+                    animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1, 0.8] }}
+                    transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }}
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: '#00D4FF' }} />
+                ))}
+              </div>
+
+              <div className="absolute bottom-0 left-0 right-0 h-px rounded-b-3xl"
+                style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent)' }} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
