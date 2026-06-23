@@ -100,10 +100,10 @@ async function callGemini(prompt: string, systemPrompt: string): Promise<string>
     throw new Error('GEMINI_API_KEY not set')
   }
 
-  console.log('[Gemini] Calling gemini-1.5-flash...')
+  console.log('[Gemini] Calling gemini-2.0-flash...')
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -150,7 +150,13 @@ async function callOpenRouter(prompt: string, systemPrompt: string): Promise<str
     throw new Error('OPENROUTER_API_KEY not set')
   }
 
-  console.log('[OpenRouter] Attempting final fallback...')
+  const OR_MODELS = [
+    'mistralai/mistral-7b-instruct:free',
+    'google/gemma-2-9b-it:free',
+    'meta-llama/llama-3.1-8b-instruct:free',
+  ]
+  const orModel = OR_MODELS[Math.floor(Math.random() * OR_MODELS.length)]
+  console.log(`[OpenRouter] Attempting final fallback with ${orModel}...`)
 
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -161,12 +167,12 @@ async function callOpenRouter(prompt: string, systemPrompt: string): Promise<str
       'X-Title': 'JARVIS CTO',
     },
     body: JSON.stringify({
-      model: 'meta-llama/llama-3.3-70b-instruct:free',
+      model: orModel,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt },
       ],
-      max_tokens: 4096,
+      max_tokens: 2000,
       temperature: 0,
     }),
   })
@@ -194,9 +200,9 @@ async function callOpenRouter(prompt: string, systemPrompt: string): Promise<str
 // maxTokens is conservative relative to each model's total context limit
 // so large phase prompts don't overflow the input+output budget.
 const GROQ_MODELS: Array<{ name: string; maxTokens: number }> = [
-  { name: 'llama-3.3-70b-versatile', maxTokens: 6000 }, // primary — best quality, 128K ctx
-  { name: 'llama-3.1-8b-instant',    maxTokens: 3000 }, // fast fallback, 128K ctx
-  { name: 'llama-3.1-8b-instant',    maxTokens: 2000 }, // emergency — reduced tokens
+  { name: 'llama-3.3-70b-versatile', maxTokens: 2500 }, // primary — best quality, 128K ctx
+  { name: 'llama-3.1-8b-instant',    maxTokens: 1500 }, // fast fallback, 128K ctx
+  { name: 'llama-3.1-8b-instant',    maxTokens: 1000 }, // emergency — reduced tokens
 ]
 
 function isRateLimit(msg: string) {
