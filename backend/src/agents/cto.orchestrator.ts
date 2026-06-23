@@ -30,6 +30,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 1: Founder Mindset',
     () => runFounderPhase(problem),
     {
+      _status: 'failed',
       phase: 'founder_mindset',
       startup_identity: { one_line_pitch: 'Analysis unavailable', problem_statement: '', why_now: '', unfair_advantage: '' },
       market: { tam: 'N/A', sam: 'N/A', som: 'N/A', competitors: [] },
@@ -44,6 +45,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 2: Product Strategy',
     () => runProductPhase(problem, founder),
     {
+      _status: 'failed',
       phase: 'product_strategy',
       user_journey: { awareness: '', activation: '', retention: '', revenue: '', referral: '' },
       core_features: [],
@@ -57,6 +59,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 3: System Architecture',
     () => runArchitecturePhase(problem, founder, product),
     {
+      _status: 'failed',
       phase: 'system_architecture',
       architecture_style: { pattern: 'N/A', justification: 'Analysis unavailable', evolution_path: '' },
       services: [],
@@ -70,6 +73,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 4: Data Modeling',
     () => runDatabasePhase(problem, architecture),
     {
+      _status: 'failed',
       phase: 'data_modeling',
       database_strategy: { primary_database: 'N/A', primary_reasoning: '' },
       tables: [],
@@ -82,6 +86,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 5: API Design',
     () => runAPIPhase(problem, architecture, database),
     {
+      _status: 'failed',
       phase: 'api_design',
       api_strategy: { style: 'REST', versioning: '/v1/', authentication: 'JWT', base_url: '/api/v1' },
       endpoints: [],
@@ -93,6 +98,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 6: Scaling & Reliability',
     () => runScalingPhase(problem, architecture, founder),
     {
+      _status: 'failed',
       phase: 'scaling_reliability',
       scaling_stages: [],
       reliability: { rto: 'N/A', rpo: 'N/A', target_uptime: 'N/A', failure_scenarios: [] },
@@ -104,6 +110,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 7: Security Review',
     () => runSecurityPhase(problem, architecture, api),
     {
+      _status: 'failed',
       phase: 'security_review',
       risk_score: 'N/A',
       top_3_risks: [],
@@ -118,6 +125,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 8: DevOps',
     () => runDevOpsPhase(problem, architecture),
     {
+      _status: 'failed',
       phase: 'devops',
       repository: null,
       ci_cd: null,
@@ -131,6 +139,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 9: FinOps',
     () => runFinOpsPhase(problem, architecture, founder),
     {
+      _status: 'failed',
       phase: 'finops',
       cost_philosophy: 'Analysis unavailable',
       tiers: null,
@@ -145,6 +154,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 10: Hiring Plan',
     () => runHiringPhase(problem, architecture, founder),
     {
+      _status: 'failed',
       phase: 'hiring_plan',
       hiring_philosophy: 'Analysis unavailable',
       year_1: null,
@@ -159,6 +169,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 11: Diagrams',
     () => runDiagramsPhase(problem, architecture, database),
     {
+      _status: 'failed',
       phase: 'diagrams',
       architecture: 'graph TD\n    Client-->API\n    API-->DB',
       er_diagram: 'erDiagram\n    USER ||--o{ SESSION : has',
@@ -172,7 +183,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     startup: {
       idea: problem,
       identity: founder?.startup_identity,
-      market: founder?.market_reality,
+      market: founder?.market,
     },
     product: {
       core_features: product?.mvp_scope?.core_features,
@@ -208,6 +219,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     'Phase 12: CTO Verdict',
     () => runCTOVerdictPhase(problem, verdictContext),
     {
+      _status: 'failed',
       phase: 'cto_verdict',
       investor_review: null,
       devils_advocate: null,

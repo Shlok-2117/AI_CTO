@@ -2333,10 +2333,34 @@ export default function DashboardPage() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.2 }}
                   >
+                    {r[TABS[activeTab].id]?._status === 'failed' && (
+                      <div className="mb-4 flex items-start gap-3 rounded-lg p-4" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.25)' }}>
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#F59E0B' }} />
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: '#FCD34D' }}>Phase analysis failed</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'rgba(248,250,252,0.4)' }}>
+                            The AI could not generate data for this phase. Click <strong>REGENERATE</strong> to try again.
+                            Check Render logs for GROQ errors if this persists.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                     {tabContent[activeTab]}
                   </motion.div>
                 </AnimatePresence>
               </div>
+
+              {/* Raw debug panel — always visible, collapsed by default */}
+              {r[TABS[activeTab].id] && (
+                <details className="mt-3 rounded-lg overflow-hidden" style={{ border: '1px solid rgba(0,212,255,0.06)', background: 'rgba(0,0,0,0.15)' }}>
+                  <summary className="px-4 py-2.5 cursor-pointer text-[9px] font-mono tracking-widest select-none list-none" style={{ color: 'rgba(0,212,255,0.25)' }}>
+                    ▸ RAW DATA — {TABS[activeTab].label.toUpperCase()} (click to inspect)
+                  </summary>
+                  <pre className="px-4 pb-4 overflow-auto max-h-64 text-[8px] font-mono leading-relaxed whitespace-pre-wrap break-all" style={{ color: 'rgba(0,212,255,0.45)' }}>
+                    {JSON.stringify(r[TABS[activeTab].id], null, 2)}
+                  </pre>
+                </details>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
