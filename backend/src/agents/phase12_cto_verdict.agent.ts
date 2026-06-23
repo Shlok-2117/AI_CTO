@@ -77,8 +77,15 @@ function cleanJSON(text: string): string {
   return text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
 }
 
-export async function runCTOVerdictPhase(problem: string, allPreviousData: any): Promise<any> {
-  const prompt = `STARTUP IDEA: ${problem}\n\nCOMPLETE TECHNICAL PLAN PRODUCED SO FAR:\n${JSON.stringify(allPreviousData, null, 2)}\n\nYou are now the external VC technical advisor. Be ruthless. Find every weakness. Then give the final verdict. Output ONLY the JSON structure specified.`
+export async function runCTOVerdictPhase(problem: string, summaryData: any): Promise<any> {
+  const prompt = `STARTUP IDEA: ${problem}\n\nARCHITECTURE SUMMARY:\n${JSON.stringify(summaryData, null, 2)}\n\nYou are the external VC technical advisor. Be ruthless. Find every weakness. Give the final verdict. Output ONLY the JSON structure specified.`
   const raw = await callAI(prompt, VERDICT_PROMPT)
-  return JSON.parse(cleanJSON(raw))
+  const cleaned = cleanJSON(raw)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/)
+    if (match) return JSON.parse(match[0])
+    throw new Error('Verdict JSON parse failed')
+  }
 }

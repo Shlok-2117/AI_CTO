@@ -99,9 +99,45 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const allData = { founder, product, architecture, database, api, scaling, security, devops, finops, hiring, diagrams }
 
+  const verdictContext = {
+    startup: {
+      idea: problem,
+      identity: founder?.startup_identity,
+      market: founder?.market_reality,
+    },
+    product: {
+      core_features: product?.mvp_scope?.core_features,
+      positioning: product?.positioning,
+    },
+    architecture: {
+      recommended_stack: architecture?.recommended_stack,
+      key_services: architecture?.core_services?.map((s: any) => s?.name || s),
+      deployment: architecture?.deployment_architecture,
+    },
+    database: {
+      primary_db: database?.primary_database,
+      key_entities: database?.schema?.map((t: any) => t?.table_name || t?.name || t),
+    },
+    scaling: {
+      bottlenecks: scaling?.bottlenecks?.slice(0, 3),
+      approach: scaling?.scaling_approach,
+    },
+    security: {
+      risk_level: security?.overall_risk_level,
+      critical_risks: security?.critical_risks?.slice(0, 3),
+    },
+    finops: {
+      mvp_cost: finops?.tiers?.mvp?.monthly_total,
+      growth_cost: finops?.tiers?.growth?.monthly_total,
+    },
+    hiring: {
+      first_hires: hiring?.immediate_hires?.slice(0, 3)?.map((h: any) => h?.role || h),
+    },
+  }
+
   const verdict = await runPhaseWithFallback(
     'Phase 12: CTO Verdict',
-    () => runCTOVerdictPhase(problem, allData),
+    () => runCTOVerdictPhase(problem, verdictContext),
     { error: 'Phase failed', phase: 'cto_verdict' }
   )
 
