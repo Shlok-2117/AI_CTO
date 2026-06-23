@@ -1398,6 +1398,8 @@ export default function DashboardPage() {
   const timerRefs = useRef<NodeJS.Timeout[]>([])
   const logsRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const tabScrollRef = useRef<HTMLDivElement>(null)
+  const activeTabRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -1485,6 +1487,19 @@ export default function DashboardPage() {
     }, 1000)
     return () => clearInterval(interval)
   }, [pdfLoading])
+
+  useEffect(() => {
+    if (!activeTabRef.current || !tabScrollRef.current) return
+    const container = tabScrollRef.current
+    const activeEl = activeTabRef.current
+    const containerRect = container.getBoundingClientRect()
+    const elRect = activeEl.getBoundingClientRect()
+    const isLeft = elRect.left < containerRect.left
+    const isRight = elRect.right > containerRect.right
+    if (isLeft || isRight) {
+      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    }
+  }, [activeTab])
 
   const startAgentSimulation = () => {
     timerRefs.current.forEach(t => clearTimeout(t))
@@ -2248,7 +2263,7 @@ export default function DashboardPage() {
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                 )}
-                <div className="overflow-x-auto pb-1 flex-1">
+                <div ref={tabScrollRef} className="overflow-x-auto pb-1 flex-1" style={{ scrollBehavior: 'smooth' }}>
                   <div className="flex gap-1 min-w-max">
                     {TABS.map((tab, i) => {
                       const Icon = tab.icon
@@ -2256,6 +2271,7 @@ export default function DashboardPage() {
                       return (
                         <button
                           key={tab.id}
+                          ref={isActive ? activeTabRef : null}
                           onClick={() => {
                             setActiveTab(i)
                             if (voiceEnabled && result) {
