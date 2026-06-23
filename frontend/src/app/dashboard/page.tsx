@@ -6,7 +6,7 @@ import {
   Cpu, Loader2, LogOut, History, CheckCircle, Database, Code,
   DollarSign, Shield, GitBranch, Download, Activity,
   Layers, Users, Cloud, Target, Brain, TrendingUp, Award,
-  AlertTriangle, ChevronRight, Zap, Lock, RefreshCw,
+  AlertTriangle, ChevronRight, ChevronLeft, Zap, Lock, RefreshCw,
   Volume2, Keyboard, X, Star
 } from 'lucide-react'
 import Link from 'next/link'
@@ -571,47 +571,116 @@ function DatabaseTab({ d }: { d: any }) {
 
 function APITab({ d }: { d: any }) {
   if (!d) return <EmptyPhase />
-  const endpoints = d.endpoints || d.api_endpoints || []
+  const endpoints: any[] = Array.isArray(d.endpoints) ? d.endpoints
+    : Array.isArray(d.api_endpoints) ? d.api_endpoints : []
+  const strategy = d.api_strategy && typeof d.api_strategy === 'object' ? d.api_strategy : null
+  const strategyStr = typeof d.strategy === 'string' ? d.strategy
+    : typeof d.api_strategy === 'string' ? d.api_strategy : null
+
+  const methodStyle = (method: string) => {
+    const m = (method || '').toUpperCase()
+    if (m === 'GET')    return { color: '#4ADE80', bg: 'rgba(74,222,128,0.1)',  border: 'rgba(74,222,128,0.2)' }
+    if (m === 'POST')   return { color: '#38BDF8', bg: 'rgba(56,189,248,0.1)',  border: 'rgba(56,189,248,0.2)' }
+    if (m === 'PUT' || m === 'PATCH')
+                        return { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)' }
+    if (m === 'DELETE') return { color: '#F87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.2)' }
+    return { color: '#A78BFA', bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.2)' }
+  }
+
   return (
-    <div className="space-y-8">
-      {(d.strategy || d.api_strategy) && (
-        <div className="hud-panel rounded-lg p-5 border border-cyan-500/20">
-          <p className="text-xs text-cyan-400 uppercase tracking-widest mb-2">API Strategy</p>
-          <p className="text-sm text-gray-300">{d.strategy || d.api_strategy}</p>
+    <div className="space-y-6">
+      {strategy && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'STYLE',       val: strategy.style },
+            { label: 'AUTH',        val: strategy.authentication },
+            { label: 'VERSIONING',  val: strategy.versioning },
+            { label: 'BASE URL',    val: strategy.base_url },
+          ].filter(x => x.val).map(({ label, val }) => (
+            <DataCard key={label} label={label} value={String(val)} />
+          ))}
         </div>
       )}
-      {Array.isArray(endpoints) && endpoints.length > 0 && (
-        <div>
-          <SectionHeader title="Endpoints" sub={`${endpoints.length} endpoints`} />
+      {strategyStr && (
+        <div className="hud-panel rounded-lg p-5 border border-cyan-500/20">
+          <p className="text-xs text-cyan-400 uppercase tracking-widest mb-2">API Strategy</p>
+          <p className="text-sm text-gray-300">{strategyStr}</p>
+        </div>
+      )}
+
+      {endpoints.length > 0 && (
+        <div className="hud-panel rounded-lg p-6">
+          <div className="text-[9px] font-mono tracking-widest mb-4"
+            style={{ color: 'rgba(0,212,255,0.4)' }}>
+            ENDPOINTS ({endpoints.length})
+          </div>
           <div className="space-y-2">
             {endpoints.map((ep: any, i: number) => {
-              const mc: Record<string, string> = {
-                GET:    'text-green-400 border-green-500/30 bg-green-500/10',
-                POST:   'text-blue-400 border-blue-500/30 bg-blue-500/10',
-                PUT:    'text-yellow-400 border-yellow-500/30 bg-yellow-500/10',
-                PATCH:  'text-orange-400 border-orange-500/30 bg-orange-500/10',
-                DELETE: 'text-red-400 border-red-500/30 bg-red-500/10',
-              }
-              const cls = mc[ep.method?.toUpperCase()] || 'text-gray-400 border-gray-500/30 bg-gray-500/10'
+              const ms = methodStyle(ep.method)
               return (
-                <div key={i} className="hud-panel rounded-lg p-4">
-                  <div className="flex items-center gap-3 mb-1 flex-wrap">
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${cls} font-mono`}>{ep.method}</span>
-                    <span className="font-mono text-sm text-cyan-300">{ep.path}</span>
-                    {ep.auth_required && <Lock className="w-3 h-3 text-yellow-400" />}
+                <div key={i}
+                  className="flex items-start gap-3 p-3 rounded-lg"
+                  style={{ background: 'rgba(0,212,255,0.02)', border: '1px solid rgba(0,212,255,0.06)' }}>
+                  <span className="text-[9px] font-black px-2 py-1 rounded flex-shrink-0 font-mono"
+                    style={{ color: ms.color, background: ms.bg, border: `1px solid ${ms.border}` }}>
+                    {ep.method || 'GET'}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <code className="text-xs font-mono" style={{ color: 'rgba(248,250,252,0.8)' }}>
+                      {ep.path || ep.endpoint || '—'}
+                    </code>
+                    <p className="text-[10px] mt-0.5" style={{ color: 'rgba(248,250,252,0.3)' }}>
+                      {ep.description || ep.desc || ''}
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-400">{ep.description}</p>
+                  <div className="flex gap-1 flex-shrink-0">
+                    {ep.auth_required && <span className="text-[10px]" style={{ color: '#F59E0B' }}>🔒</span>}
+                    {ep.idempotent && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                        style={{ color: 'rgba(0,212,255,0.5)', border: '1px solid rgba(0,212,255,0.15)' }}>
+                        IDEM
+                      </span>
+                    )}
+                  </div>
                 </div>
               )
             })}
           </div>
         </div>
       )}
-      {d.error_handling && (
-        <div>
-          <SectionHeader title="Error Handling" />
-          <div className="hud-panel rounded-lg p-4">
-            <SafeList items={Array.isArray(d.error_handling) ? d.error_handling : Object.entries(d.error_handling as Record<string,string>).map(([k, v]) => `${k}: ${v}`)} />
+
+      {d.webhook_design && (
+        <div className="hud-panel rounded-lg p-5">
+          <div className="text-[9px] font-mono tracking-widest mb-3"
+            style={{ color: 'rgba(0,212,255,0.4)' }}>WEBHOOK DESIGN</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <div className="text-[9px] font-mono mb-1" style={{ color: 'rgba(248,250,252,0.2)' }}>EVENTS</div>
+              {Array.isArray(d.webhook_design?.events) && d.webhook_design.events.map((e: string, i: number) => (
+                <div key={i} className="text-xs font-mono py-0.5" style={{ color: 'rgba(0,212,255,0.6)' }}>• {e}</div>
+              ))}
+            </div>
+            <div>
+              <div className="text-[9px] font-mono mb-1" style={{ color: 'rgba(248,250,252,0.2)' }}>SECURITY</div>
+              <div className="text-xs" style={{ color: 'rgba(248,250,252,0.4)' }}>{d.webhook_design?.security || '—'}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {Array.isArray(d.error_handling?.error_codes) && d.error_handling.error_codes.length > 0 && (
+        <div className="hud-panel rounded-lg p-5">
+          <div className="text-[9px] font-mono tracking-widest mb-3"
+            style={{ color: 'rgba(248,113,113,0.4)' }}>ERROR CODES</div>
+          <div className="space-y-2">
+            {d.error_handling.error_codes.slice(0, 6).map((e: any, i: number) => (
+              <div key={i} className="flex items-center gap-3 text-xs py-1"
+                style={{ borderBottom: '1px solid rgba(0,212,255,0.05)' }}>
+                <span className="font-mono font-bold" style={{ color: '#F87171', minWidth: 80 }}>{e.code}</span>
+                <span className="font-mono" style={{ color: 'rgba(245,158,11,0.6)', minWidth: 40 }}>{e.http_status}</span>
+                <span style={{ color: 'rgba(248,250,252,0.3)' }}>{e.description}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -1122,149 +1191,181 @@ function DiagramsTab({ d }: { d: any }) {
 
 function VerdictTab({ d }: { d: any }) {
   if (!d) return <EmptyPhase />
-  const ir = d.investor_review
-  const verdictCls =
-    ir?.verdict?.includes('NOT') ? 'text-red-400' :
-    ir?.verdict?.includes('INVEST') ? 'text-green-400' :
-    'text-yellow-400'
+  const ir = d?.investor_review
+
+  const verdictColor = (v: string) =>
+    v?.includes('NOT') || v === 'PASS' ? '#F87171' :
+    v?.includes('CONDITION') ? '#F59E0B' : '#4ADE80'
+
+  const scoreColor = (s: number) =>
+    s >= 80 ? '#4ADE80' : s >= 60 ? '#F59E0B' : '#F87171'
+
   return (
-    <div className="space-y-8">
-      {ir && (
-        <div className="hud-panel hud-card-3d rounded-lg p-6 border border-cyan-500/20">
-          <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Investor Verdict</p>
-              <p className={`text-2xl font-bold ${verdictCls}`}>{ir.verdict?.replace(/_/g, ' ')}</p>
+    <div className="space-y-4">
+      {ir ? (
+        <div className="hud-panel rounded-lg p-6 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-px"
+            style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.5),transparent)' }} />
+          <div className="flex items-start gap-6 flex-wrap">
+            <div className="text-center flex-shrink-0">
+              <div className="text-5xl font-black mb-1"
+                style={{ color: scoreColor(ir?.investability_score ?? 0) }}>
+                {ir?.investability_score ?? '—'}
+              </div>
+              <div className="text-[9px] font-mono" style={{ color: 'rgba(0,212,255,0.4)' }}>/ 100 INVEST SCORE</div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Investability Score</p>
-              <p className="text-4xl font-bold text-white">{ir.investability_score}<span className="text-lg text-gray-500">/100</span></p>
+            <div className="flex-1 min-w-0">
+              {ir?.verdict && (
+                <div className="inline-block mb-3 px-3 py-1.5 rounded font-black text-sm font-mono"
+                  style={{
+                    color: verdictColor(ir.verdict),
+                    background: `${verdictColor(ir.verdict)}18`,
+                    border: `1px solid ${verdictColor(ir.verdict)}40`,
+                  }}>
+                  {ir.verdict.replace(/_/g, ' ')}
+                </div>
+              )}
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(248,250,252,0.5)' }}>
+                {ir?.reasoning || '—'}
+              </p>
             </div>
           </div>
-          <p className="text-sm text-gray-300 mb-4">{ir.reasoning}</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-            <div className="hud-panel rounded-lg p-3">
-              <p className="text-xs text-blue-400 uppercase tracking-wider mb-1">Technical Moat</p>
-              <p className="text-xs text-gray-300">{ir.technical_moat}</p>
+          {(ir?.technical_moat || ir?.biggest_technical_strength || ir?.biggest_technical_risk) && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+              {ir.technical_moat && <DataCard label="Technical Moat" value={ir.technical_moat} />}
+              {ir.biggest_technical_strength && <DataCard label="Biggest Strength" value={ir.biggest_technical_strength} />}
+              {ir.biggest_technical_risk && <DataCard label="Biggest Risk" value={ir.biggest_technical_risk} />}
             </div>
-            <div className="hud-panel rounded-lg p-3">
-              <p className="text-xs text-green-400 uppercase tracking-wider mb-1">Biggest Strength</p>
-              <p className="text-xs text-gray-300">{ir.biggest_technical_strength}</p>
-            </div>
-            <div className="hud-panel rounded-lg p-3">
-              <p className="text-xs text-red-400 uppercase tracking-wider mb-1">Biggest Risk</p>
-              <p className="text-xs text-gray-300">{ir.biggest_technical_risk}</p>
-            </div>
-          </div>
-          {Array.isArray(ir.conditions) && ir.conditions.length > 0 && (
-            <div>
-              <p className="text-xs text-yellow-400 uppercase tracking-wider mb-2">Conditions</p>
+          )}
+          {Array.isArray(ir?.conditions) && ir.conditions.length > 0 && (
+            <div className="mt-4">
+              <p className="text-[9px] font-mono tracking-widest mb-2" style={{ color: 'rgba(245,158,11,0.5)' }}>CONDITIONS</p>
               <SafeList items={ir.conditions} />
             </div>
           )}
         </div>
-      )}
-      {d.final_cto_statement && (
-        <div className="hud-panel hud-card-3d rounded-lg p-6 border border-cyan-500/30">
-          <p className="text-xs text-cyan-400 uppercase tracking-widest mb-3">Final CTO Statement</p>
-          <p className="text-sm text-gray-200 leading-relaxed italic">"{d.final_cto_statement}"</p>
+      ) : (
+        <div className="hud-panel rounded-lg p-6 text-center">
+          <p className="text-xs font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>
+            Investor review not available.
+          </p>
         </div>
       )}
-      {d.devils_advocate && (
-        <div>
-          <SectionHeader title="Devil's Advocate" sub="Where this could fail" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-            {Array.isArray(d.devils_advocate.overengineered_components) && (
-              <div className="hud-panel rounded-lg p-4">
-                <p className="text-xs text-orange-400 uppercase tracking-wider mb-3">Over-engineered</p>
-                <div className="space-y-3">
-                  {d.devils_advocate.overengineered_components.map((c: any, i: number) => (
-                    <div key={i}>
-                      <p className="text-sm text-white font-medium">{c.component}</p>
-                      <p className="text-xs text-gray-400 mb-0.5">{c.issue}</p>
-                      <p className="text-xs text-green-400">→ {c.simpler_alternative}</p>
-                    </div>
-                  ))}
+
+      {d?.devils_advocate && (
+        <div className="hud-panel rounded-lg p-6">
+          <div className="text-[9px] font-mono tracking-widest mb-4"
+            style={{ color: 'rgba(248,113,113,0.5)' }}>⚠ DEVIL&apos;S ADVOCATE — CRITICAL REVIEW</div>
+          {d.devils_advocate?.most_dangerous_decision && (
+            <div className="px-4 py-3 rounded-lg mb-4"
+              style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)' }}>
+              <div className="text-[9px] font-mono mb-1" style={{ color: 'rgba(248,113,113,0.5)' }}>MOST DANGEROUS DECISION</div>
+              <p className="text-xs" style={{ color: 'rgba(248,113,113,0.8)' }}>
+                {d.devils_advocate.most_dangerous_decision}
+              </p>
+            </div>
+          )}
+          {Array.isArray(d.devils_advocate?.overengineered_components) && d.devils_advocate.overengineered_components.length > 0 && (
+            <div className="mb-4">
+              <div className="text-[9px] font-mono mb-2" style={{ color: 'rgba(245,158,11,0.5)' }}>OVERENGINEERED</div>
+              {d.devils_advocate.overengineered_components.map((item: any, i: number) => (
+                <div key={i} className="py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <div className="text-xs font-semibold" style={{ color: '#F59E0B' }}>
+                    {typeof item === 'string' ? item : item?.component || ''}
+                  </div>
+                  {item?.issue && <div className="text-[10px]" style={{ color: 'rgba(248,250,252,0.3)' }}>{item.issue}</div>}
+                  {item?.simpler_alternative && (
+                    <div className="text-[9px] font-mono mt-1" style={{ color: 'rgba(0,212,255,0.5)' }}>→ {item.simpler_alternative}</div>
+                  )}
                 </div>
-              </div>
-            )}
-            {Array.isArray(d.devils_advocate.underengineered_components) && (
-              <div className="hud-panel rounded-lg p-4">
-                <p className="text-xs text-red-400 uppercase tracking-wider mb-3">Under-engineered</p>
-                <div className="space-y-3">
-                  {d.devils_advocate.underengineered_components.map((c: any, i: number) => (
-                    <div key={i}>
-                      <p className="text-sm text-white font-medium">{c.component}</p>
-                      <p className="text-xs text-gray-400 mb-0.5">{c.issue}</p>
-                      <p className="text-xs text-cyan-400">→ {c.recommendation}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-            {d.devils_advocate.first_bottleneck && <DataCard label="First Bottleneck" value={d.devils_advocate.first_bottleneck} />}
-            {d.devils_advocate.most_dangerous_decision && <DataCard label="Most Dangerous Decision" value={d.devils_advocate.most_dangerous_decision} />}
-          </div>
-          {Array.isArray(d.devils_advocate.wrong_assumptions) && (
-            <div className="hud-panel rounded-lg p-4">
-              <p className="text-xs text-red-400 uppercase tracking-wider mb-2">Wrong Assumptions</p>
-              <SafeList items={d.devils_advocate.wrong_assumptions} />
+              ))}
+            </div>
+          )}
+          {Array.isArray(d.devils_advocate?.wrong_assumptions) && d.devils_advocate.wrong_assumptions.length > 0 && (
+            <div>
+              <div className="text-[9px] font-mono mb-2" style={{ color: 'rgba(248,113,113,0.5)' }}>WRONG ASSUMPTIONS</div>
+              <ul className="space-y-1">
+                {d.devils_advocate.wrong_assumptions.map((a: string, i: number) => (
+                  <li key={i} className="text-xs flex items-start gap-2" style={{ color: 'rgba(248,250,252,0.4)' }}>
+                    <span style={{ color: '#F87171', flexShrink: 0 }}>▸</span>{a}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Array.isArray(d.what_netflix_would_do_differently) && (
-          <div className="hud-panel rounded-lg p-4">
-            <p className="text-xs text-red-400 uppercase tracking-wider mb-2">What Netflix Would Do Differently</p>
-            <SafeList items={d.what_netflix_would_do_differently} />
-          </div>
-        )}
-        {Array.isArray(d.what_stripe_would_do_differently) && (
-          <div className="hud-panel rounded-lg p-4">
-            <p className="text-xs text-blue-400 uppercase tracking-wider mb-2">What Stripe Would Do Differently</p>
-            <SafeList items={d.what_stripe_would_do_differently} />
-          </div>
-        )}
-      </div>
-      {Array.isArray(d.confidence_scores) && (
-        <div>
-          <SectionHeader title="Confidence Scores" />
-          <div className="space-y-2">
-            {d.confidence_scores.map((cs: any, i: number) => (
-              <div key={i} className="hud-panel rounded-lg p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm text-white">{cs.recommendation}</p>
-                  <span className="text-sm font-bold text-cyan-400">{cs.confidence}%</span>
+
+      {Array.isArray(d?.confidence_scores) && d.confidence_scores.length > 0 && (
+        <div className="hud-panel rounded-lg p-6">
+          <div className="text-[9px] font-mono tracking-widest mb-4" style={{ color: 'rgba(0,212,255,0.4)' }}>CONFIDENCE SCORES</div>
+          <div className="space-y-3">
+            {d.confidence_scores.map((item: any, i: number) => {
+              const pct = item?.confidence ?? 0
+              const barColor = pct > 80
+                ? 'linear-gradient(90deg,#4ADE80,#22D3EE)'
+                : pct > 60
+                ? 'linear-gradient(90deg,#F59E0B,#FCD34D)'
+                : 'linear-gradient(90deg,#F87171,#FB923C)'
+              return (
+                <div key={i}>
+                  <div className="flex justify-between text-[10px] font-mono mb-1">
+                    <span style={{ color: 'rgba(248,250,252,0.5)' }}>{item?.recommendation || item?.phase || `Phase ${i + 1}`}</span>
+                    <span style={{ color: pct > 80 ? '#4ADE80' : pct > 60 ? '#F59E0B' : '#F87171' }}>{pct}%</span>
+                  </div>
+                  <div className="h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: barColor }} />
+                  </div>
+                  {item?.reasoning && (
+                    <p className="text-[9px] mt-1" style={{ color: 'rgba(248,250,252,0.25)' }}>{item.reasoning}</p>
+                  )}
                 </div>
-                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-1">
-                  <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full" style={{ width: `${cs.confidence}%` }} />
-                </div>
-                <p className="text-xs text-gray-500">{cs.reasoning}</p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
-      {(d.if_only_10k_left || d.if_funding_doubled) && (
-        <div>
-          <SectionHeader title="Scenario Analysis" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {d.if_only_10k_left && (
-              <div className="hud-panel rounded-lg p-4 border border-red-500/20">
-                <p className="text-xs text-red-400 uppercase tracking-wider mb-2">If Only $10K Left</p>
-                <p className="text-sm text-gray-300">{d.if_only_10k_left}</p>
-              </div>
-            )}
-            {d.if_funding_doubled && (
-              <div className="hud-panel rounded-lg p-4 border border-green-500/20">
-                <p className="text-xs text-green-400 uppercase tracking-wider mb-2">If Funding Doubled</p>
-                <p className="text-sm text-gray-300">{d.if_funding_doubled}</p>
-              </div>
-            )}
-          </div>
+
+      {(Array.isArray(d?.what_netflix_would_do_differently) || Array.isArray(d?.what_stripe_would_do_differently)) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {Array.isArray(d.what_netflix_would_do_differently) && d.what_netflix_would_do_differently.length > 0 && (
+            <div className="hud-panel rounded-lg p-5">
+              <div className="text-[9px] font-mono tracking-widest mb-3" style={{ color: 'rgba(239,68,68,0.5)' }}>🔴 WHAT NETFLIX WOULD DO</div>
+              <SafeList items={d.what_netflix_would_do_differently} />
+            </div>
+          )}
+          {Array.isArray(d.what_stripe_would_do_differently) && d.what_stripe_would_do_differently.length > 0 && (
+            <div className="hud-panel rounded-lg p-5">
+              <div className="text-[9px] font-mono tracking-widest mb-3" style={{ color: 'rgba(99,102,241,0.5)' }}>⚡ WHAT STRIPE WOULD DO</div>
+              <SafeList items={d.what_stripe_would_do_differently} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {(d?.if_only_10k_left || d?.if_funding_doubled) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {d.if_only_10k_left && (
+            <div className="hud-panel rounded-lg p-4" style={{ border: '1px solid rgba(248,113,113,0.15)' }}>
+              <p className="text-[9px] font-mono tracking-widest mb-2" style={{ color: 'rgba(248,113,113,0.5)' }}>IF ONLY $10K LEFT</p>
+              <p className="text-sm text-gray-300">{d.if_only_10k_left}</p>
+            </div>
+          )}
+          {d.if_funding_doubled && (
+            <div className="hud-panel rounded-lg p-4" style={{ border: '1px solid rgba(74,222,128,0.15)' }}>
+              <p className="text-[9px] font-mono tracking-widest mb-2" style={{ color: 'rgba(74,222,128,0.5)' }}>IF FUNDING DOUBLED</p>
+              <p className="text-sm text-gray-300">{d.if_funding_doubled}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {d?.final_cto_statement && (
+        <div className="hud-panel rounded-lg p-6" style={{ borderColor: 'rgba(0,212,255,0.2)' }}>
+          <div className="text-[9px] font-mono tracking-widest mb-3" style={{ color: 'rgba(0,212,255,0.5)' }}>FINAL CTO STATEMENT</div>
+          <p className="text-sm leading-relaxed italic" style={{ color: 'rgba(248,250,252,0.6)' }}>
+            &ldquo;{d.final_cto_statement}&rdquo;
+          </p>
         </div>
       )}
     </div>
@@ -1343,6 +1444,14 @@ export default function DashboardPage() {
       }
       if (e.key === '?' || e.key === '/') {
         setShowShortcuts(prev => !prev); e.preventDefault()
+      }
+      if (e.key === 'ArrowRight' && result) {
+        setActiveTab(prev => Math.min(prev + 1, 11))
+        e.preventDefault()
+      }
+      if (e.key === 'ArrowLeft' && result) {
+        setActiveTab(prev => Math.max(prev - 1, 0))
+        e.preventDefault()
       }
       if (e.key === 'Escape') {
         setShowShortcuts(false)
@@ -2096,31 +2205,63 @@ export default function DashboardPage() {
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1 overflow-x-auto pb-2 mb-6">
-                {TABS.map((tab, i) => {
-                  const Icon = tab.icon
-                  const isActive = activeTab === i
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        setActiveTab(i)
-                        if (voiceEnabled && result) {
-                          setTimeout(() => speakText(getTabSummary(i, result)), 300)
-                        }
-                      }}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
-                        isActive
-                          ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                          : 'text-gray-500 border border-transparent hover:text-gray-300 hover:border-white/10'
-                      }`}
-                    >
-                      <span className="text-[10px] opacity-50 font-mono">{tab.num}</span>
-                      <Icon className="w-3.5 h-3.5" />
-                      {tab.label}
-                    </button>
-                  )
-                })}
+              <div className="flex items-center gap-2 mb-6">
+                {result && (
+                  <button
+                    onClick={() => setActiveTab(prev => Math.max(prev - 1, 0))}
+                    disabled={activeTab === 0}
+                    className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                    style={{
+                      background: activeTab === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(0,212,255,0.08)',
+                      border: `1px solid ${activeTab === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(0,212,255,0.2)'}`,
+                      color: activeTab === 0 ? 'rgba(255,255,255,0.1)' : '#00D4FF',
+                      cursor: activeTab === 0 ? 'not-allowed' : 'pointer',
+                    }}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                )}
+                <div className="overflow-x-auto pb-1 flex-1">
+                  <div className="flex gap-1 min-w-max">
+                    {TABS.map((tab, i) => {
+                      const Icon = tab.icon
+                      const isActive = activeTab === i
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => {
+                            setActiveTab(i)
+                            if (voiceEnabled && result) {
+                              setTimeout(() => speakText(getTabSummary(i, result)), 300)
+                            }
+                          }}
+                          className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+                            isActive
+                              ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                              : 'text-gray-500 border border-transparent hover:text-gray-300 hover:border-white/10'
+                          }`}
+                        >
+                          <span className="text-[10px] opacity-50 font-mono">{tab.num}</span>
+                          <Icon className="w-3.5 h-3.5" />
+                          {tab.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                {result && (
+                  <button
+                    onClick={() => setActiveTab(prev => Math.min(prev + 1, 11))}
+                    disabled={activeTab === 11}
+                    className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                    style={{
+                      background: activeTab === 11 ? 'rgba(255,255,255,0.02)' : 'rgba(0,212,255,0.08)',
+                      border: `1px solid ${activeTab === 11 ? 'rgba(255,255,255,0.05)' : 'rgba(0,212,255,0.2)'}`,
+                      color: activeTab === 11 ? 'rgba(255,255,255,0.1)' : '#00D4FF',
+                      cursor: activeTab === 11 ? 'not-allowed' : 'pointer',
+                    }}>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                )}
               </div>
 
               {/* Tab content */}
@@ -2187,6 +2328,7 @@ export default function DashboardPage() {
                   { keys: ['G'], action: 'Generate blueprint', color: '#4ADE80' },
                   { keys: ['P'], action: 'Download PDF report', color: '#F59E0B' },
                   { keys: ['V'], action: 'Toggle JARVIS voice', color: '#A78BFA' },
+                  { keys: ['←', '→'], action: 'Navigate tabs left / right', color: '#00D4FF' },
                   { keys: ['?'], action: 'Show this shortcuts panel', color: 'rgba(248,250,252,0.4)' },
                   { keys: ['Esc'], action: 'Close this panel', color: 'rgba(248,250,252,0.4)' },
                 ].map(({ keys, action, color }) => (
