@@ -29,61 +29,130 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
   const founder = await runPhaseWithFallback(
     'Phase 1: Founder Mindset',
     () => runFounderPhase(problem),
-    { error: 'Phase failed', phase: 'founder_mindset' }
+    {
+      phase: 'founder_mindset',
+      startup_identity: { one_line_pitch: 'Analysis unavailable', problem_statement: '', why_now: '', unfair_advantage: '' },
+      market: { tam: 'N/A', sam: 'N/A', som: 'N/A', competitors: [] },
+      business_model: { primary_model: 'N/A', pricing_strategy: 'N/A', revenue_streams: [], unit_economics: {} },
+      revenue_milestones: { first_100_dollars: 'N/A', first_10k_monthly: 'N/A', first_100k_monthly: 'N/A', first_1m_arr: 'N/A' },
+      mvp_definition: { must_have_features: [], should_have_features: [], must_NOT_build: [], mvp_timeline_weeks: 0 },
+      customer: { primary_persona: null }
+    }
   )
 
   const product = await runPhaseWithFallback(
     'Phase 2: Product Strategy',
     () => runProductPhase(problem, founder),
-    { error: 'Phase failed', phase: 'product_strategy' }
+    {
+      phase: 'product_strategy',
+      user_journey: { awareness: '', activation: '', retention: '', revenue: '', referral: '' },
+      core_features: [],
+      growth_strategy: { acquisition_channels: [], viral_loop: '', network_effects: '' },
+      metrics: { north_star_metric: '', primary_metrics: [] },
+      product_risks: []
+    }
   )
 
   const architecture = await runPhaseWithFallback(
     'Phase 3: System Architecture',
     () => runArchitecturePhase(problem, founder, product),
-    { error: 'Phase failed', phase: 'system_architecture' }
+    {
+      phase: 'system_architecture',
+      architecture_style: { pattern: 'N/A', justification: 'Analysis unavailable', evolution_path: '' },
+      services: [],
+      communication_patterns: [],
+      technical_decisions: [],
+      third_party_integrations: []
+    }
   )
 
   const database = await runPhaseWithFallback(
     'Phase 4: Data Modeling',
     () => runDatabasePhase(problem, architecture),
-    { error: 'Phase failed', phase: 'data_modeling' }
+    {
+      phase: 'data_modeling',
+      database_strategy: { primary_database: 'N/A', primary_reasoning: '' },
+      tables: [],
+      relationships: [],
+      indexes: []
+    }
   )
 
   const api = await runPhaseWithFallback(
     'Phase 5: API Design',
     () => runAPIPhase(problem, architecture, database),
-    { error: 'Phase failed', phase: 'api_design' }
+    {
+      phase: 'api_design',
+      api_strategy: { style: 'REST', versioning: '/v1/', authentication: 'JWT', base_url: '/api/v1' },
+      endpoints: [],
+      error_handling: { error_codes: [] }
+    }
   )
 
   const scaling = await runPhaseWithFallback(
     'Phase 6: Scaling & Reliability',
     () => runScalingPhase(problem, architecture, founder),
-    { error: 'Phase failed', phase: 'scaling_reliability' }
+    {
+      phase: 'scaling_reliability',
+      scaling_stages: [],
+      reliability: { rto: 'N/A', rpo: 'N/A', target_uptime: 'N/A', failure_scenarios: [] },
+      performance_targets: { api_p99_latency_ms: 500, api_p95_latency_ms: 200, page_load_time_ms: 3000, database_query_p99_ms: 100 }
+    }
   )
 
   const security = await runPhaseWithFallback(
     'Phase 7: Security Review',
     () => runSecurityPhase(problem, architecture, api),
-    { error: 'Phase failed', phase: 'security_review' }
+    {
+      phase: 'security_review',
+      risk_score: 'N/A',
+      top_3_risks: [],
+      threat_model: { attack_surfaces: [], most_valuable_assets: [], likely_attackers: [] },
+      owasp_coverage: [],
+      checklist: {},
+      security_roadmap: []
+    }
   )
 
   const devops = await runPhaseWithFallback(
     'Phase 8: DevOps',
     () => runDevOpsPhase(problem, architecture),
-    { error: 'Phase failed', phase: 'devops' }
+    {
+      phase: 'devops',
+      repository: null,
+      ci_cd: null,
+      infrastructure: null,
+      observability: null,
+      environments: []
+    }
   )
 
   const finops = await runPhaseWithFallback(
     'Phase 9: FinOps',
     () => runFinOpsPhase(problem, architecture, founder),
-    { error: 'Phase failed', phase: 'finops' }
+    {
+      phase: 'finops',
+      cost_philosophy: 'Analysis unavailable',
+      tiers: null,
+      cost_per_user: { at_1k_users: 'N/A', at_10k_users: 'N/A', at_100k_users: 'N/A' },
+      revenue_vs_infra: { break_even_users: 0, target_infra_as_percent_revenue: 'N/A' },
+      optimization_opportunities: [],
+      cost_saving_tips: []
+    }
   )
 
   const hiring = await runPhaseWithFallback(
     'Phase 10: Hiring Plan',
     () => runHiringPhase(problem, architecture, founder),
-    { error: 'Phase failed', phase: 'hiring_plan' }
+    {
+      phase: 'hiring_plan',
+      hiring_philosophy: 'Analysis unavailable',
+      year_1: null,
+      year_2: null,
+      year_3: null,
+      contractor_vs_fulltime: [],
+      avoid_early_hiring: []
+    }
   )
 
   const diagrams = await runPhaseWithFallback(
@@ -127,8 +196,8 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       critical_risks: security?.critical_risks?.slice(0, 3),
     },
     finops: {
-      mvp_cost: finops?.tiers?.mvp?.monthly_total,
-      growth_cost: finops?.tiers?.growth?.monthly_total,
+      mvp_cost: finops?.tiers?.mvp?.monthly_usd,
+      growth_cost: finops?.tiers?.growth?.monthly_usd,
     },
     hiring: {
       first_hires: hiring?.immediate_hires?.slice(0, 3)?.map((h: any) => h?.role || h),
@@ -138,7 +207,17 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
   const verdict = await runPhaseWithFallback(
     'Phase 12: CTO Verdict',
     () => runCTOVerdictPhase(problem, verdictContext),
-    { error: 'Phase failed', phase: 'cto_verdict' }
+    {
+      phase: 'cto_verdict',
+      investor_review: null,
+      devils_advocate: null,
+      confidence_scores: [],
+      what_netflix_would_do_differently: [],
+      what_stripe_would_do_differently: [],
+      if_only_10k_left: '',
+      if_funding_doubled: '',
+      final_cto_statement: 'Verdict analysis unavailable. Please regenerate.'
+    }
   )
 
   console.log('\n[CTO SYSTEM] Blueprint generation complete!\n')

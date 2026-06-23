@@ -76,5 +76,12 @@ function cleanJSON(text: string): string {
 export async function runFounderPhase(problem: string): Promise<any> {
   const prompt = `STARTUP IDEA: ${problem}\n\nAnalyze this as the Founder. Think deeply about the business before any technology. Output ONLY the JSON structure specified.`
   const raw = await callAI(prompt, FOUNDER_PROMPT)
-  return JSON.parse(cleanJSON(raw))
+  const cleaned = cleanJSON(raw)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/)
+    if (match) return JSON.parse(match[0])
+    throw new Error('Phase 1 JSON parse failed')
+  }
 }

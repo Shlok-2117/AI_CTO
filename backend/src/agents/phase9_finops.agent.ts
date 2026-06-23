@@ -92,5 +92,12 @@ function cleanJSON(text: string): string {
 export async function runFinOpsPhase(problem: string, architectureData: any, founderData: any): Promise<any> {
   const prompt = `STARTUP IDEA: ${problem}\nARCHITECTURE: ${JSON.stringify(architectureData, null, 2)}\nBUSINESS MODEL: ${JSON.stringify(founderData?.business_model, null, 2)}\n\nDesign the complete cost strategy. Every dollar must make business sense. Output ONLY the JSON structure specified.`
   const raw = await callAI(prompt, FINOPS_PROMPT)
-  return JSON.parse(cleanJSON(raw))
+  const cleaned = cleanJSON(raw)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/)
+    if (match) return JSON.parse(match[0])
+    throw new Error('Phase 9 JSON parse failed')
+  }
 }

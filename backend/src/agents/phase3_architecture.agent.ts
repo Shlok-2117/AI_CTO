@@ -68,5 +68,12 @@ function cleanJSON(text: string): string {
 export async function runArchitecturePhase(problem: string, founderData: any, productData: any): Promise<any> {
   const prompt = `STARTUP IDEA: ${problem}\n\nFOUNDER ANALYSIS: ${JSON.stringify(founderData, null, 2)}\nPRODUCT STRATEGY: ${JSON.stringify(productData, null, 2)}\n\nDesign the complete system architecture. Every decision must serve the business goals. Output ONLY the JSON structure specified.`
   const raw = await callAI(prompt, ARCHITECTURE_PROMPT)
-  return JSON.parse(cleanJSON(raw))
+  const cleaned = cleanJSON(raw)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/)
+    if (match) return JSON.parse(match[0])
+    throw new Error('Phase 3 JSON parse failed')
+  }
 }

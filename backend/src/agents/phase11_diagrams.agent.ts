@@ -35,5 +35,12 @@ export async function runDiagramsPhase(problem: string, architectureData: any, d
   const tableNames = databaseData?.tables?.map((t: any) => t.name).join(', ') || 'Tables'
   const prompt = `STARTUP IDEA: ${problem}\nSERVICES: ${serviceNames}\nTABLES: ${tableNames}\n\nGenerate valid Mermaid diagrams for this system. Output ONLY the JSON structure specified.`
   const raw = await callAI(prompt, DIAGRAMS_PROMPT)
-  return JSON.parse(cleanJSON(raw))
+  const cleaned = cleanJSON(raw)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/)
+    if (match) return JSON.parse(match[0])
+    throw new Error('Phase 11 JSON parse failed')
+  }
 }

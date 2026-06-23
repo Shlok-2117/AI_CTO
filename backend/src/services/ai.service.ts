@@ -22,7 +22,7 @@ async function callGroq(prompt: string, systemPrompt: string, model: string): Pr
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 4096,
+        max_tokens: 6000,
         temperature: 0,
         response_format: { type: 'json_object' }
       })
@@ -46,7 +46,14 @@ async function callGroq(prompt: string, systemPrompt: string, model: string): Pr
     }
 
     console.log(`[GROQ] Success! Content length: ${text.length}`)
-    return text.replace(/```json\n?|```\n?/g, '').trim()
+    let cleaned = text.replace(/```json\n?|```\n?/g, '').trim()
+    // Extract just the JSON object in case the model added preamble/postamble text
+    const braceStart = cleaned.indexOf('{')
+    const braceEnd = cleaned.lastIndexOf('}')
+    if (braceStart !== -1 && braceEnd > braceStart) {
+      cleaned = cleaned.slice(braceStart, braceEnd + 1)
+    }
+    return cleaned
 
   } catch (e: any) {
     console.error(`[GROQ] Caught error: ${e.message}`)

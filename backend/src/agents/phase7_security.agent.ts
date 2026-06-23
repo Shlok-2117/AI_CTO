@@ -85,5 +85,12 @@ function cleanJSON(text: string): string {
 export async function runSecurityPhase(problem: string, architectureData: any, apiData: any): Promise<any> {
   const prompt = `STARTUP IDEA: ${problem}\nARCHITECTURE: ${JSON.stringify(architectureData, null, 2)}\nAPI DESIGN: ${JSON.stringify(apiData, null, 2)}\n\nThink like a hacker, then like a security architect. Output ONLY the JSON structure specified.`
   const raw = await callAI(prompt, SECURITY_PROMPT)
-  return JSON.parse(cleanJSON(raw))
+  const cleaned = cleanJSON(raw)
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/)
+    if (match) return JSON.parse(match[0])
+    throw new Error('Phase 7 JSON parse failed')
+  }
 }
