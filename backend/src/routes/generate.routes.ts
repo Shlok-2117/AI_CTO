@@ -128,10 +128,7 @@ router.get('/:id/pdf', authMiddleware, async (req: AuthRequest, res) => {
     if (!generation) return res.status(404).json({ error: 'Not found' })
 
     const { generatePDF } = await import('../services/pdf.service')
-    const pdfBuffer = await generatePDF({
-      projectName: generation.projectName,
-      result: JSON.parse(generation.output)
-    })
+    const pdfBuffer = await generatePDF(generation.id)
 
     const safeFilename = generation.projectName.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-')
     res.setHeader('Content-Type', 'application/pdf')
