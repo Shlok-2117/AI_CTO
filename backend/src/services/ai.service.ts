@@ -94,6 +94,56 @@ async function callGroqModel(
   return extracted
 }
 
+async function callGemini(prompt: string, systemPrompt: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY not set')
+  }
+
+  console.log('[Gemini] Calling gemini-1.5-flash...')
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 2000,
+          temperature: 0.7,
+          responseMimeType: 'application/json',
+        },
+      }),
+    }
+  )
+
+  console.log(`[Gemini] HTTP ${response.status}`)
+
+  if (!response.ok) {
+    const errText = await response.text()
+    console.error('[Gemini] Error:', errText.slice(0, 300))
+    throw new Error(`Gemini HTTP ${response.status}: ${errText.slice(0, 200)}`)
+  }
+
+  const data = (await response.json()) as any
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+
+  if (!text) {
+    console.error('[Gemini] Empty content. Full response:', JSON.stringify(data).slice(0, 300))
+    throw new Error('Gemini returned empty content')
+  }
+
+  const extracted = extractJSON(text)
+  if (!extracted) {
+    throw new Error('Gemini response is not parseable JSON')
+  }
+
+  console.log(`[Gemini] ✓ (${extracted.length} chars extracted)`)
+  return extracted
+}
+
 async function callOpenRouter(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY
   if (!apiKey) {
@@ -149,39 +199,45 @@ const GROQ_MODELS: Array<{ name: string; maxTokens: number }> = [
   { name: 'llama-3.1-8b-instant',    maxTokens: 2000 }, // emergency — reduced tokens
 ]
 
+function isRateLimit(msg: string) {
+  return msg.includes('429') || msg.includes('rate_limit') || msg.includes('rate limit') || msg.includes('RESOURCE_EXHAUSTED')
+}
+
 export async function callAI(prompt: string, systemPrompt: string): Promise<string> {
-  console.log(`\n[AI] Starting model chain. GROQ_API_KEY set: ${!!process.env.GROQ_API_KEY}, OPENROUTER_API_KEY set: ${!!process.env.OPENROUTER_API_KEY}`)
+  console.log(
+    `\n[AI] Chain: Groq → Gemini → OpenRouter | keys: GROQ=${!!process.env.GROQ_API_KEY} GEMINI=${!!process.env.GEMINI_API_KEY} OR=${!!process.env.OPENROUTER_API_KEY}`
+  )
 
+  // 1. Try Groq models. Any 429 immediately skips the rest of the Groq chain.
   for (const { name, maxTokens } of GROQ_MODELS) {
-    // Each model gets up to 2 attempts (immediate + 1 retry for rate limits)
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        if (attempt > 0) await sleep(2000)
-        return await callGroqModel(prompt, systemPrompt, name, maxTokens)
-      } catch (e: any) {
-        const isRateLimit =
-          e.message?.includes('429') ||
-          e.message?.includes('rate_limit') ||
-          e.message?.includes('rate limit')
-
-        if (isRateLimit && attempt === 0) {
-          console.log(`[AI] Rate limited on ${name} — waiting 3s then retrying once...`)
-          await sleep(3000)
-          continue
-        }
-
-        console.log(`[AI] ${name} attempt ${attempt + 1} failed:`, e.message?.slice(0, 150))
+    try {
+      return await callGroqModel(prompt, systemPrompt, name, maxTokens)
+    } catch (e: any) {
+      if (isRateLimit(e.message ?? '')) {
+        console.log(`[AI] Groq rate limited on ${name} — jumping to Gemini`)
         break
       }
+      console.log(`[AI] Groq ${name} failed:`, e.message?.slice(0, 150))
     }
   }
 
-  // True final fallback: OpenRouter (free Llama tier)
+  // 2. Try Gemini (1M tokens/day free). 429 skips straight to OpenRouter.
+  try {
+    return await callGemini(prompt, systemPrompt)
+  } catch (e: any) {
+    if (isRateLimit(e.message ?? '')) {
+      console.log('[AI] Gemini rate limited — jumping to OpenRouter')
+    } else {
+      console.error('[AI] Gemini failed:', e.message)
+    }
+  }
+
+  // 3. Final fallback: OpenRouter free tier.
   try {
     return await callOpenRouter(prompt, systemPrompt)
   } catch (e: any) {
-    console.error('[AI] OpenRouter fallback failed:', e.message)
+    console.error('[AI] OpenRouter failed:', e.message)
   }
 
-  throw new Error('All AI providers failed (Groq x4 + OpenRouter). Check API keys in Render env vars.')
+  throw new Error('All AI providers failed (Groq + Gemini + OpenRouter). Check API keys in Render env vars.')
 }
