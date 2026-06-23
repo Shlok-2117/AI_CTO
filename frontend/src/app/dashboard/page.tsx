@@ -1291,6 +1291,7 @@ export default function DashboardPage() {
   const [showFeedback, setShowFeedback] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
   const [activeCategory, setActiveCategory] = useState(0)
+  const [scrollProgress, setScrollProgress] = useState(0)
   const timerRefs = useRef<NodeJS.Timeout[]>([])
   const logsRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -1350,6 +1351,18 @@ export default function DashboardPage() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [result, loading, problem])
+
+  useEffect(() => {
+    function handleScroll() {
+      const el = document.documentElement
+      const scrollTop = el.scrollTop || document.body.scrollTop
+      const scrollHeight = el.scrollHeight - el.clientHeight
+      const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0
+      setScrollProgress(Math.min(100, Math.round(progress)))
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const startAgentSimulation = () => {
     timerRefs.current.forEach(t => clearTimeout(t))
@@ -1537,6 +1550,20 @@ export default function DashboardPage() {
 
       {/* Hex pattern overlay */}
       <div className="fixed inset-0 hex-pattern pointer-events-none opacity-30" style={{ zIndex: 0 }} />
+
+      {/* Scroll progress bar */}
+      <div className="fixed top-0 left-0 right-0 z-[999] h-0.5"
+        style={{background:'rgba(0,212,255,0.08)'}}>
+        <motion.div
+          className="h-full"
+          style={{
+            width:`${scrollProgress}%`,
+            background:'linear-gradient(90deg, #00D4FF, #38BDF8, #818CF8)',
+            boxShadow:'0 0 8px rgba(0,212,255,0.6)',
+          }}
+          transition={{duration:0.1}}
+        />
+      </div>
 
       <nav className="hud-panel border-b px-6 py-3.5 flex items-center justify-between sticky top-0 z-50"
         style={{
