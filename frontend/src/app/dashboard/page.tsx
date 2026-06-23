@@ -1368,6 +1368,21 @@ function VerdictTab({ d }: { d: any }) {
           </p>
         </div>
       )}
+
+      {d && (
+        <details className="hud-panel rounded-lg overflow-hidden">
+          <summary className="px-5 py-3 cursor-pointer text-[9px] font-mono tracking-widest select-none list-none"
+            style={{ color: 'rgba(0,212,255,0.4)' }}>
+            ▸ VIEW RAW VERDICT DATA
+          </summary>
+          <div className="px-5 pb-4">
+            <pre className="text-[8px] font-mono overflow-auto max-h-64 leading-relaxed whitespace-pre-wrap break-all"
+              style={{ color: 'rgba(0,212,255,0.5)' }}>
+              {JSON.stringify(d, null, 2)}
+            </pre>
+          </div>
+        </details>
+      )}
     </div>
   )
 }

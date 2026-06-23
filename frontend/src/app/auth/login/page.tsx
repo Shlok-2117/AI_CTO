@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false)
   const [focused, setFocused] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [showComingSoon, setShowComingSoon] = useState(false)
   useEffect(() => setMounted(true), [])
 
   useEffect(() => {
@@ -164,7 +165,7 @@ export default function LoginPage() {
 
               {/* Google button */}
               <button
-                onClick={() => { window.location.href = `${API}/api/auth/google` }}
+                onClick={() => setShowComingSoon(true)}
                 className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl mb-5 text-xs font-mono transition-all duration-300"
                 style={{
                   background: 'rgba(255,255,255,0.02)',
@@ -299,6 +300,84 @@ export default function LoginPage() {
         </motion.div>
       </motion.div>
 
+      <AnimatePresence>
+        {showComingSoon && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(3,7,18,0.85)', backdropFilter: 'blur(12px)' }}
+            onClick={() => setShowComingSoon(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+              className="hud-panel rounded-2xl p-8 max-w-sm w-full text-center relative"
+              style={{ borderColor: 'rgba(245,158,11,0.3)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="absolute top-0 left-0 right-0 h-px rounded-t-2xl"
+                style={{ background: 'linear-gradient(90deg,transparent,#F59E0B,transparent)' }} />
+
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+                style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+                <span style={{ fontSize: 28 }}>🔧</span>
+              </div>
+
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4"
+                style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                <motion.div
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: '#F59E0B' }} />
+                <span className="text-[9px] font-mono tracking-[0.2em]" style={{ color: '#F59E0B' }}>
+                  WORK IN PROGRESS
+                </span>
+              </div>
+
+              <h3 className="text-lg font-black mb-2" style={{ color: '#F8FAFC' }}>
+                Google Sign-In
+              </h3>
+              <p className="text-xs leading-relaxed mb-6" style={{ color: 'rgba(248,250,252,0.4)' }}>
+                Google authentication is currently under development
+                and will be available soon. Please use email and
+                password to sign in for now.
+              </p>
+
+              <div className="text-left space-y-2 mb-6 p-4 rounded-xl"
+                style={{ background: 'rgba(0,212,255,0.03)', border: '1px solid rgba(0,212,255,0.08)' }}>
+                <div className="text-[9px] font-mono tracking-widest mb-3" style={{ color: 'rgba(0,212,255,0.4)' }}>
+                  USE EMAIL INSTEAD
+                </div>
+                {['Enter your email address', 'Enter your password', 'Click Authenticate'].map((step, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs font-mono"
+                    style={{ color: 'rgba(248,250,252,0.35)' }}>
+                    <span className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 text-[8px] font-bold"
+                      style={{ background: 'rgba(0,212,255,0.1)', color: '#00D4FF' }}>
+                      {i + 1}
+                    </span>
+                    {step}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setShowComingSoon(false)}
+                className="btn-jarvis w-full justify-center">
+                USE EMAIL LOGIN
+              </button>
+
+              <p className="text-[9px] font-mono mt-4" style={{ color: 'rgba(248,250,252,0.15)' }}>
+                Google auth coming soon ✦ Stay tuned
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

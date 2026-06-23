@@ -104,6 +104,34 @@ app.use('/api/otp', otpRoutes)
 app.use('/api/jarvis', jarvisRoutes)
 app.use('/api/feedback', feedbackRoutes)
 
+app.get('/debug-verdict/:id', async (req: Request, res: Response) => {
+  try {
+    const { PrismaClient } = require('@prisma/client')
+    const prisma = new PrismaClient()
+    const gen = await prisma.generation.findUnique({ where: { id: req.params.id } })
+    if (!gen) return res.json({ error: 'not found' })
+    const result = JSON.parse(gen.output)
+    return res.json({
+      has_verdict: !!result.verdict,
+      verdict_keys: result.verdict ? Object.keys(result.verdict) : [],
+      verdict_sample: result.verdict ? {
+        has_investor_review: !!result.verdict.investor_review,
+        investor_review_keys: result.verdict.investor_review ? Object.keys(result.verdict.investor_review) : [],
+        has_devils_advocate: !!result.verdict.devils_advocate,
+        has_confidence_scores: !!result.verdict.confidence_scores,
+        confidence_is_array: Array.isArray(result.verdict.confidence_scores),
+        confidence_length: Array.isArray(result.verdict.confidence_scores) ? result.verdict.confidence_scores.length : 0,
+        has_final_statement: !!result.verdict.final_cto_statement,
+        score: result.verdict.investor_review?.investability_score,
+        verdict_value: result.verdict.investor_review?.verdict,
+      } : null,
+      all_top_keys: Object.keys(result),
+    })
+  } catch (err: any) {
+    return res.json({ error: err.message })
+  }
+})
+
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' })
 })
