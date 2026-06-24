@@ -30,16 +30,28 @@ function extractJSON(text: string): string | null {
     try { JSON.parse(slice); return slice } catch {}
   }
 
-  console.error('[extractJSON] All 4 strategies failed. Preview:', text.slice(0, 400))
+  // Strategy 5: strip JS comments, trailing commas, control chars then parse
+  try {
+    const cleaned = t
+      .replace(/\/\/[^\n]*/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/,(\s*[}\]])/g, '$1')
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+      .trim()
+    JSON.parse(cleaned)
+    return cleaned
+  } catch {}
+
+  console.error('[extractJSON] All 5 strategies failed. Preview:', text.slice(0, 400))
   return null
 }
 
 // Per-provider in-memory cooldown tracking (resets on server restart)
 const cooldownUntil = new Map<string, number>()
-const ONE_HOUR_MS   = 60 * 60 * 1000
-const NINETY_SEC_MS = 90 * 1000
-const TWO_MIN_MS    =  2 * 60 * 1000
-const ONE_MIN_MS    =  1 * 60 * 1000
+const ONE_HOUR_MS       = 60 * 60 * 1000
+const SIXTY_FIVE_SEC_MS = 65 * 1000
+const TWO_MIN_MS        =  2 * 60 * 1000
+const ONE_MIN_MS        =  1 * 60 * 1000
 
 function isOnCooldown(provider: string): boolean {
   const until = cooldownUntil.get(provider)
@@ -51,14 +63,10 @@ function setCooldown(provider: string, ms: number): void {
   console.log(`[AI] ${provider} cooldown: ${Math.round(ms / 60000)}min`)
 }
 
-export function isGroqOnCooldown(): boolean {
-  return isOnCooldown('Groq')
-}
-
 // Returns cooldown duration in ms, or null for no cooldown (config/404 errors).
 function cooldownForError(providerName: string, errorMsg: string): number | null {
   if (isRateLimit(errorMsg)) {
-    return providerName === 'Groq' ? NINETY_SEC_MS : ONE_HOUR_MS
+    return providerName === 'Groq' ? SIXTY_FIVE_SEC_MS : ONE_HOUR_MS
   }
   if (errorMsg.includes('404')) return null
   if (errorMsg.includes('500')) return TWO_MIN_MS
@@ -165,7 +173,7 @@ async function callMistralModel(
       messages: [
         {
           role: 'user',
-          content: `${systemPrompt}\n\n${prompt}\n\nIMPORTANT: Your entire response must be a single valid JSON object. Start with { and end with }. No other text.`,
+          content: systemPrompt + '\n\n' + prompt + '\n\nReturn ONLY a valid JSON object. No comments, no trailing commas, no explanation. Start with { end with }.',
         },
       ],
       max_tokens: 1500,
@@ -318,6 +326,10 @@ export async function callAI(prompt: string, systemPrompt: string): Promise<stri
     { name: 'MistralFallback',fn: () => callMistralFallback(prompt, systemPrompt) },
   ]
 
+  if (!process.env.SAMBANOVA_API_KEY) {
+    console.warn('[AI] REMINDER: Add SAMBANOVA_API_KEY from cloud.sambanova.ai to Render env vars')
+  }
+
   for (const { name, fn } of providers) {
     if (isOnCooldown(name)) {
       const remaining = Math.ceil(((cooldownUntil.get(name) ?? 0) - Date.now()) / 60000)
@@ -334,6 +346,25 @@ export async function callAI(prompt: string, systemPrompt: string): Promise<stri
       } else {
         console.error(`[AI] ${name} failed: ${msg.slice(0, 150)}`)
         setCooldown(name, cd)
+      }
+    }
+  }
+
+  // If all providers are on cooldown, wait for the shortest reset then retry once
+  const allCooling = providers.every(({ name }) => isOnCooldown(name))
+  if (allCooling) {
+    const shortestWait = Math.min(
+      ...providers.map(({ name }) => Math.max(0, (cooldownUntil.get(name) ?? 0) - Date.now()))
+    ) + 500
+    console.log(`[AI] All providers cooling — waiting ${Math.round(shortestWait / 1000)}s for fastest reset`)
+    await new Promise(r => setTimeout(r, shortestWait))
+    for (const { name, fn } of providers) {
+      if (isOnCooldown(name)) continue
+      try {
+        console.log(`[AI] Retrying ${name} after cooldown wait`)
+        return await fn()
+      } catch (e: any) {
+        console.error(`[AI] ${name} failed after wait: ${(e.message ?? '').slice(0, 150)}`)
       }
     }
   }
