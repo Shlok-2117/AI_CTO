@@ -52,8 +52,8 @@ async function runPhaseWithFallback(phaseName: string, phaseFunction: () => Prom
   // If Groq hit its TPM limit on the previous phase, wait 3s to let the
   // 60s bucket partially refill before hammering it again.
   if (isGroqOnCooldown()) {
-    console.log(`[CTO] Groq on cooldown — waiting 3s before ${phaseName}`)
-    await new Promise(r => setTimeout(r, 3000))
+    console.log(`[CTO] Groq rate limited — waiting 95s for TPM reset before ${phaseName}...`)
+    await new Promise(r => setTimeout(r, 95000))
   }
   try {
     console.log(`[CTO] Running ${phaseName}...`)

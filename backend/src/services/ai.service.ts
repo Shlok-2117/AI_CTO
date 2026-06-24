@@ -36,10 +36,10 @@ function extractJSON(text: string): string | null {
 
 // Per-provider in-memory cooldown tracking (resets on server restart)
 const cooldownUntil = new Map<string, number>()
-const ONE_HOUR_MS    = 60 * 60 * 1000
-const NINETY_SEC_MS  = 90 * 1000
-const TWO_MIN_MS     =  2 * 60 * 1000
-const ONE_MIN_MS     =  1 * 60 * 1000
+const ONE_HOUR_MS   = 60 * 60 * 1000
+const NINETY_SEC_MS = 90 * 1000
+const TWO_MIN_MS    =  2 * 60 * 1000
+const ONE_MIN_MS    =  1 * 60 * 1000
 
 function isOnCooldown(provider: string): boolean {
   const until = cooldownUntil.get(provider)
@@ -56,22 +56,21 @@ export function isGroqOnCooldown(): boolean {
 }
 
 // Returns cooldown duration in ms, or null for no cooldown (config/404 errors).
-// Groq TPM resets every ~60s so its 429 gets a 2min window, not 1hr.
 function cooldownForError(providerName: string, errorMsg: string): number | null {
   if (isRateLimit(errorMsg)) {
     return providerName === 'Groq' ? NINETY_SEC_MS : ONE_HOUR_MS
   }
-  if (errorMsg.includes('404')) return null       // model not found — no cooldown
-  if (errorMsg.includes('500')) return TWO_MIN_MS // server error — short cooldown
-  return ONE_MIN_MS                               // network / unknown — short cooldown
+  if (errorMsg.includes('404')) return null
+  if (errorMsg.includes('500')) return TWO_MIN_MS
+  return ONE_MIN_MS
 }
 
 // ── CEREBRAS (Primary) ──────────────────────────────────────────────────────
+// Model list from GET /v1/models as of 2026-06-24: gpt-oss-120b, zai-glm-4.7
 async function callCerebras(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.CEREBRAS_API_KEY
   if (!apiKey) throw new Error('CEREBRAS_API_KEY not set')
-  // Try 70b first; fall back to 8b which has a separate quota
-  const models = ['llama-3.3-70b', 'llama-3.1-8b']
+  const models = ['gpt-oss-120b', 'zai-glm-4.7']
   let lastError: Error = new Error('Cerebras: no models tried')
   for (const model of models) {
     try {
@@ -94,7 +93,7 @@ async function callCerebras(prompt: string, systemPrompt: string): Promise<strin
         const err = await response.text()
         console.error(`[Cerebras] ${model} error:`, err.slice(0, 300))
         lastError = new Error(`Cerebras HTTP ${response.status}: ${err.slice(0, 200)}`)
-        if (response.status === 429) throw lastError // propagate rate limit immediately
+        if (response.status === 429) throw lastError
         continue
       }
       const data = (await response.json()) as any
@@ -149,43 +148,57 @@ async function callGemini(prompt: string, systemPrompt: string): Promise<string>
   return extracted
 }
 
-// ── MISTRAL (Third) ─────────────────────────────────────────────────────────
-async function callMistral(prompt: string, systemPrompt: string): Promise<string> {
-  const apiKey = process.env.MISTRAL_API_KEY
-  if (!apiKey) throw new Error('MISTRAL_API_KEY not set')
-  console.log('[Mistral] Calling mistral-small-latest...')
+// ── MISTRAL helpers ──────────────────────────────────────────────────────────
+// No system message — Mistral ignores response_format when system prompt is
+// long. Merge everything into user message with explicit JSON instruction.
+async function callMistralModel(
+  prompt: string,
+  systemPrompt: string,
+  model: string,
+  apiKey: string
+): Promise<string> {
   const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: 'mistral-small-latest',
+      model,
       messages: [
-        { role: 'system', content: 'You are a JSON API. Return ONLY raw valid JSON. No markdown, no explanation, no text before or after the JSON object.' },
-        { role: 'user', content: `${systemPrompt}\n\n${prompt}\n\nRespond with ONLY a valid JSON object.` },
+        {
+          role: 'user',
+          content: `${systemPrompt}\n\n${prompt}\n\nIMPORTANT: Your entire response must be a single valid JSON object. Start with { and end with }. No other text.`,
+        },
       ],
       max_tokens: 1500,
       temperature: 0.7,
       response_format: { type: 'json_object' },
     }),
   })
-  console.log(`[Mistral] HTTP ${response.status}`)
+  console.log(`[Mistral] ${model} → HTTP ${response.status}`)
   if (!response.ok) {
     const err = await response.text()
-    console.error('[Mistral] Error:', err.slice(0, 300))
+    console.error(`[Mistral] ${model} error:`, err.slice(0, 300))
     throw new Error(`Mistral HTTP ${response.status}: ${err.slice(0, 200)}`)
   }
   const data = (await response.json()) as any
   const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error('Mistral returned empty content')
+  if (!text) throw new Error(`Mistral ${model} returned empty content`)
   const extracted = extractJSON(text)
-  if (!extracted) throw new Error('Mistral response not parseable JSON')
-  console.log(`[Mistral] ✓ (${extracted.length} chars)`)
+  if (!extracted) throw new Error(`Mistral ${model} response not parseable JSON`)
+  console.log(`[Mistral] ${model} ✓ (${extracted.length} chars)`)
   return extracted
 }
 
+// ── MISTRAL (Third) ─────────────────────────────────────────────────────────
+async function callMistral(prompt: string, systemPrompt: string): Promise<string> {
+  const apiKey = process.env.MISTRAL_API_KEY
+  if (!apiKey) throw new Error('MISTRAL_API_KEY not set')
+  console.log('[Mistral] Calling mistral-small-latest...')
+  return callMistralModel(prompt, systemPrompt, 'mistral-small-latest', apiKey)
+}
+
 // ── GROQ (Fourth) ───────────────────────────────────────────────────────────
-// llama-3.1-8b-instant has a separate TPM quota from 70b, so a 429 on 70b
-// does NOT mean 8b is also rate limited. Try both before giving up.
+// llama-3.1-8b-instant has a separate TPM quota from 70b.
+// Only set Groq cooldown if BOTH models return 429.
 async function callGroq(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error('GROQ_API_KEY not set')
@@ -235,63 +248,51 @@ async function callGroq(prompt: string, systemPrompt: string): Promise<string> {
       console.log(`[Groq] ${name} failed:`, e.message?.slice(0, 150))
     }
   }
-  // Only surface a 429 to callAI (triggering the 2min cooldown) if every
-  // model was rate limited. A single-model 429 is just a quota split issue.
   if (rateLimitedCount === models.length) {
     throw new Error(`Groq HTTP 429: all models rate limited`)
   }
   throw lastError
 }
 
-// ── HUGGINGFACE (Emergency) ─────────────────────────────────────────────────
-async function callHuggingFace(prompt: string, systemPrompt: string): Promise<string> {
-  const apiKey = process.env.HUGGINGFACE_API_KEY
-  if (!apiKey) throw new Error('HUGGINGFACE_API_KEY not set')
-  const fullPrompt = `<s>[INST] ${systemPrompt}\n\n${prompt} [/INST]`
-
-  const doRequest = async () => {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000)
-    try {
-      return await fetch(
-        'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-          body: JSON.stringify({
-            inputs: fullPrompt,
-            parameters: { max_new_tokens: 1000, temperature: 0.7, return_full_text: false },
-          }),
-          signal: controller.signal,
-        }
-      )
-    } finally {
-      clearTimeout(timeout)
-    }
-  }
-
-  console.log('[HuggingFace] Calling Mistral-7B-Instruct-v0.2...')
-  let response = await doRequest()
-
-  if (response.status === 503) {
-    console.log('[HuggingFace] Model loading (503) — waiting 20s then retrying...')
-    await new Promise(r => setTimeout(r, 20000))
-    response = await doRequest()
-  }
-
-  console.log(`[HuggingFace] HTTP ${response.status}`)
+// ── SAMBANOVA (Fifth) ────────────────────────────────────────────────────────
+async function callSambaNova(prompt: string, systemPrompt: string): Promise<string> {
+  const apiKey = process.env.SAMBANOVA_API_KEY
+  if (!apiKey) throw new Error('SAMBANOVA_API_KEY not set')
+  console.log('[SambaNova] Calling Meta-Llama-3.3-70B-Instruct...')
+  const response = await fetch('https://api.sambanova.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: 'Meta-Llama-3.3-70B-Instruct',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: 1500,
+      temperature: 0.7,
+    }),
+  })
+  console.log(`[SambaNova] HTTP ${response.status}`)
   if (!response.ok) {
     const err = await response.text()
-    console.error('[HuggingFace] Error:', err.slice(0, 300))
-    throw new Error(`HuggingFace HTTP ${response.status}: ${err.slice(0, 200)}`)
+    console.error('[SambaNova] Error:', err.slice(0, 300))
+    throw new Error(`SambaNova HTTP ${response.status}: ${err.slice(0, 200)}`)
   }
   const data = (await response.json()) as any
-  const text = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text
-  if (!text) throw new Error('HuggingFace returned empty content')
+  const text = data.choices?.[0]?.message?.content
+  if (!text) throw new Error('SambaNova returned empty content')
   const extracted = extractJSON(text)
-  if (!extracted) throw new Error('HuggingFace response not parseable JSON')
-  console.log(`[HuggingFace] ✓ (${extracted.length} chars)`)
+  if (!extracted) throw new Error('SambaNova response not parseable JSON')
+  console.log(`[SambaNova] ✓ (${extracted.length} chars)`)
   return extracted
+}
+
+// ── MISTRAL FALLBACK (Sixth) — open-mistral-7b, separate quota ──────────────
+async function callMistralFallback(prompt: string, systemPrompt: string): Promise<string> {
+  const apiKey = process.env.MISTRAL_API_KEY
+  if (!apiKey) throw new Error('MISTRAL_API_KEY not set')
+  console.log('[MistralFallback] Calling open-mistral-7b...')
+  return callMistralModel(prompt, systemPrompt, 'open-mistral-7b', apiKey)
 }
 
 function isRateLimit(msg: string): boolean {
@@ -305,15 +306,16 @@ function isRateLimit(msg: string): boolean {
 
 export async function callAI(prompt: string, systemPrompt: string): Promise<string> {
   console.log(
-    `\n[AI] 5-provider chain: Cerebras→Gemini→Mistral→Groq→HuggingFace | GROQ=${!!process.env.GROQ_API_KEY} GEMINI=${!!process.env.GEMINI_API_KEY}`
+    `\n[AI] 6-provider chain: Cerebras→Gemini→Mistral→Groq→SambaNova→MistralFallback | GROQ=${!!process.env.GROQ_API_KEY} GEMINI=${!!process.env.GEMINI_API_KEY}`
   )
 
   const providers: Array<{ name: string; fn: () => Promise<string> }> = [
-    { name: 'Cerebras',    fn: () => callCerebras(prompt, systemPrompt) },
-    { name: 'Gemini',      fn: () => callGemini(prompt, systemPrompt) },
-    { name: 'Mistral',     fn: () => callMistral(prompt, systemPrompt) },
-    { name: 'Groq',        fn: () => callGroq(prompt, systemPrompt) },
-    { name: 'HuggingFace', fn: () => callHuggingFace(prompt, systemPrompt) },
+    { name: 'Cerebras',       fn: () => callCerebras(prompt, systemPrompt) },
+    { name: 'Gemini',         fn: () => callGemini(prompt, systemPrompt) },
+    { name: 'Mistral',        fn: () => callMistral(prompt, systemPrompt) },
+    { name: 'Groq',           fn: () => callGroq(prompt, systemPrompt) },
+    { name: 'SambaNova',      fn: () => callSambaNova(prompt, systemPrompt) },
+    { name: 'MistralFallback',fn: () => callMistralFallback(prompt, systemPrompt) },
   ]
 
   for (const { name, fn } of providers) {
@@ -336,5 +338,5 @@ export async function callAI(prompt: string, systemPrompt: string): Promise<stri
     }
   }
 
-  throw new Error('All 5 AI providers failed. Check Render logs and API keys.')
+  throw new Error('All AI providers failed. Check Render logs and API keys.')
 }
