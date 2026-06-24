@@ -11,6 +11,42 @@ import { runHiringPhase } from './phase10_hiring.agent'
 import { runDiagramsPhase } from './phase11_diagrams.agent'
 import { runCTOVerdictPhase } from './phase12_cto_verdict.agent'
 
+// Reduces prior-phase output to max ~400 chars before passing as context to the
+// next agent so large JSON blobs don't overflow provider context windows.
+// Preserves array structure (first 3 items, name-key only) so agents that do
+// data?.services?.map(s => s.name) still get real values.
+function trimContext(data: any, maxChars = 400): any {
+  if (!data) return null
+  if (JSON.stringify(data).length <= maxChars) return data
+
+  const slim: Record<string, any> = {}
+  for (const [k, v] of Object.entries(data)) {
+    if (k === '_status') continue
+    if (typeof v === 'string') {
+      slim[k] = (v as string).slice(0, 60)
+    } else if (typeof v === 'number' || typeof v === 'boolean') {
+      slim[k] = v
+    } else if (Array.isArray(v)) {
+      slim[k] = (v as any[]).slice(0, 3).map((item: any) => {
+        if (!item || typeof item !== 'object') return item
+        const label =
+          item.name ?? item.role ?? item.title ?? item.table_name ??
+          item.table ?? item.endpoint ?? item.service ?? item.phase ??
+          String(Object.values(item)[0] ?? '').slice(0, 50)
+        return { name: String(label).slice(0, 50) }
+      })
+    } else if (v && typeof v === 'object') {
+      const sub: Record<string, any> = {}
+      for (const [sk, sv] of Object.entries(v as Record<string, any>)) {
+        if (typeof sv === 'string') sub[sk] = (sv as string).slice(0, 40)
+        else if (typeof sv === 'number' || typeof sv === 'boolean') sub[sk] = sv
+      }
+      slim[k] = sub
+    }
+  }
+  return slim
+}
+
 async function runPhaseWithFallback(phaseName: string, phaseFunction: () => Promise<any>, fallback: any): Promise<any> {
   try {
     console.log(`[CTO] Running ${phaseName}...`)
@@ -43,7 +79,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const product = await runPhaseWithFallback(
     'Phase 2: Product Strategy',
-    () => runProductPhase(problem, founder),
+    () => runProductPhase(problem, trimContext(founder)),
     {
       _status: 'failed',
       phase: 'product_strategy',
@@ -57,7 +93,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const architecture = await runPhaseWithFallback(
     'Phase 3: System Architecture',
-    () => runArchitecturePhase(problem, founder, product),
+    () => runArchitecturePhase(problem, trimContext(founder), trimContext(product)),
     {
       _status: 'failed',
       phase: 'system_architecture',
@@ -71,7 +107,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const database = await runPhaseWithFallback(
     'Phase 4: Data Modeling',
-    () => runDatabasePhase(problem, architecture),
+    () => runDatabasePhase(problem, trimContext(architecture)),
     {
       _status: 'failed',
       phase: 'data_modeling',
@@ -84,7 +120,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const api = await runPhaseWithFallback(
     'Phase 5: API Design',
-    () => runAPIPhase(problem, architecture, database),
+    () => runAPIPhase(problem, trimContext(architecture), trimContext(database)),
     {
       _status: 'failed',
       phase: 'api_design',
@@ -96,7 +132,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const scaling = await runPhaseWithFallback(
     'Phase 6: Scaling & Reliability',
-    () => runScalingPhase(problem, architecture, founder),
+    () => runScalingPhase(problem, trimContext(architecture), trimContext(founder)),
     {
       _status: 'failed',
       phase: 'scaling_reliability',
@@ -108,7 +144,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const security = await runPhaseWithFallback(
     'Phase 7: Security Review',
-    () => runSecurityPhase(problem, architecture, api),
+    () => runSecurityPhase(problem, trimContext(architecture), trimContext(api)),
     {
       _status: 'failed',
       phase: 'security_review',
@@ -123,7 +159,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const devops = await runPhaseWithFallback(
     'Phase 8: DevOps',
-    () => runDevOpsPhase(problem, architecture),
+    () => runDevOpsPhase(problem, trimContext(architecture)),
     {
       _status: 'failed',
       phase: 'devops',
@@ -137,7 +173,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const finops = await runPhaseWithFallback(
     'Phase 9: FinOps',
-    () => runFinOpsPhase(problem, architecture, founder),
+    () => runFinOpsPhase(problem, trimContext(architecture), trimContext(founder)),
     {
       _status: 'failed',
       phase: 'finops',
@@ -152,7 +188,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const hiring = await runPhaseWithFallback(
     'Phase 10: Hiring Plan',
-    () => runHiringPhase(problem, architecture, founder),
+    () => runHiringPhase(problem, trimContext(architecture), trimContext(founder)),
     {
       _status: 'failed',
       phase: 'hiring_plan',
@@ -167,7 +203,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
 
   const diagrams = await runPhaseWithFallback(
     'Phase 11: Diagrams',
-    () => runDiagramsPhase(problem, architecture, database),
+    () => runDiagramsPhase(problem, trimContext(architecture), trimContext(database)),
     {
       _status: 'failed',
       phase: 'diagrams',
