@@ -1,3 +1,4 @@
+import { isGroqOnCooldown } from '../services/ai.service'
 import { runFounderPhase } from './phase1_founder.agent'
 import { runProductPhase } from './phase2_product.agent'
 import { runArchitecturePhase } from './phase3_architecture.agent'
@@ -48,6 +49,12 @@ function trimContext(data: any, maxChars = 400): any {
 }
 
 async function runPhaseWithFallback(phaseName: string, phaseFunction: () => Promise<any>, fallback: any): Promise<any> {
+  // If Groq hit its TPM limit on the previous phase, wait 3s to let the
+  // 60s bucket partially refill before hammering it again.
+  if (isGroqOnCooldown()) {
+    console.log(`[CTO] Groq on cooldown — waiting 3s before ${phaseName}`)
+    await new Promise(r => setTimeout(r, 3000))
+  }
   try {
     console.log(`[CTO] Running ${phaseName}...`)
     const result = await phaseFunction()

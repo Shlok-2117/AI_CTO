@@ -36,9 +36,10 @@ function extractJSON(text: string): string | null {
 
 // Per-provider in-memory cooldown tracking (resets on server restart)
 const cooldownUntil = new Map<string, number>()
-const ONE_HOUR_MS = 60 * 60 * 1000
-const TWO_MIN_MS  =  2 * 60 * 1000
-const ONE_MIN_MS  =  1 * 60 * 1000
+const ONE_HOUR_MS    = 60 * 60 * 1000
+const NINETY_SEC_MS  = 90 * 1000
+const TWO_MIN_MS     =  2 * 60 * 1000
+const ONE_MIN_MS     =  1 * 60 * 1000
 
 function isOnCooldown(provider: string): boolean {
   const until = cooldownUntil.get(provider)
@@ -50,11 +51,15 @@ function setCooldown(provider: string, ms: number): void {
   console.log(`[AI] ${provider} cooldown: ${Math.round(ms / 60000)}min`)
 }
 
+export function isGroqOnCooldown(): boolean {
+  return isOnCooldown('Groq')
+}
+
 // Returns cooldown duration in ms, or null for no cooldown (config/404 errors).
 // Groq TPM resets every ~60s so its 429 gets a 2min window, not 1hr.
 function cooldownForError(providerName: string, errorMsg: string): number | null {
   if (isRateLimit(errorMsg)) {
-    return providerName === 'Groq' ? TWO_MIN_MS : ONE_HOUR_MS
+    return providerName === 'Groq' ? NINETY_SEC_MS : ONE_HOUR_MS
   }
   if (errorMsg.includes('404')) return null       // model not found — no cooldown
   if (errorMsg.includes('500')) return TWO_MIN_MS // server error — short cooldown
@@ -66,7 +71,7 @@ async function callCerebras(prompt: string, systemPrompt: string): Promise<strin
   const apiKey = process.env.CEREBRAS_API_KEY
   if (!apiKey) throw new Error('CEREBRAS_API_KEY not set')
   // Try 70b first; fall back to 8b which has a separate quota
-  const models = ['llama3.3-70b', 'llama3.1-8b']
+  const models = ['llama-3.3-70b', 'llama-3.1-8b']
   let lastError: Error = new Error('Cerebras: no models tried')
   for (const model of models) {
     try {
@@ -155,8 +160,8 @@ async function callMistral(prompt: string, systemPrompt: string): Promise<string
     body: JSON.stringify({
       model: 'mistral-small-latest',
       messages: [
-        { role: 'system', content: `Return valid JSON only.\n\n${systemPrompt}` },
-        { role: 'user', content: prompt },
+        { role: 'system', content: 'You are a JSON API. Return ONLY raw valid JSON. No markdown, no explanation, no text before or after the JSON object.' },
+        { role: 'user', content: `${systemPrompt}\n\n${prompt}\n\nRespond with ONLY a valid JSON object.` },
       ],
       max_tokens: 1500,
       temperature: 0.7,
@@ -242,19 +247,38 @@ async function callGroq(prompt: string, systemPrompt: string): Promise<string> {
 async function callHuggingFace(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.HUGGINGFACE_API_KEY
   if (!apiKey) throw new Error('HUGGINGFACE_API_KEY not set')
-  console.log('[HuggingFace] Calling Mistral-7B-Instruct-v0.3...')
   const fullPrompt = `<s>[INST] ${systemPrompt}\n\n${prompt} [/INST]`
-  const response = await fetch(
-    'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        inputs: fullPrompt,
-        parameters: { max_new_tokens: 1000, temperature: 0.7, return_full_text: false },
-      }),
+
+  const doRequest = async () => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000)
+    try {
+      return await fetch(
+        'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            inputs: fullPrompt,
+            parameters: { max_new_tokens: 1000, temperature: 0.7, return_full_text: false },
+          }),
+          signal: controller.signal,
+        }
+      )
+    } finally {
+      clearTimeout(timeout)
     }
-  )
+  }
+
+  console.log('[HuggingFace] Calling Mistral-7B-Instruct-v0.2...')
+  let response = await doRequest()
+
+  if (response.status === 503) {
+    console.log('[HuggingFace] Model loading (503) — waiting 20s then retrying...')
+    await new Promise(r => setTimeout(r, 20000))
+    response = await doRequest()
+  }
+
   console.log(`[HuggingFace] HTTP ${response.status}`)
   if (!response.ok) {
     const err = await response.text()
