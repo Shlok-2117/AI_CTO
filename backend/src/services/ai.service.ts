@@ -37,7 +37,8 @@ function extractJSON(text: string): string | null {
 // Per-provider in-memory cooldown tracking (resets on server restart)
 const cooldownUntil = new Map<string, number>()
 const ONE_HOUR_MS = 60 * 60 * 1000
-const FIVE_MIN_MS = 5 * 60 * 1000
+const TWO_MIN_MS  =  2 * 60 * 1000
+const ONE_MIN_MS  =  1 * 60 * 1000
 
 function isOnCooldown(provider: string): boolean {
   const until = cooldownUntil.get(provider)
@@ -49,16 +50,27 @@ function setCooldown(provider: string, ms: number): void {
   console.log(`[AI] ${provider} cooldown: ${Math.round(ms / 60000)}min`)
 }
 
+// Returns cooldown duration in ms, or null for no cooldown (config/404 errors).
+// Groq TPM resets every ~60s so its 429 gets a 2min window, not 1hr.
+function cooldownForError(providerName: string, errorMsg: string): number | null {
+  if (isRateLimit(errorMsg)) {
+    return providerName === 'Groq' ? TWO_MIN_MS : ONE_HOUR_MS
+  }
+  if (errorMsg.includes('404')) return null       // model not found — no cooldown
+  if (errorMsg.includes('500')) return TWO_MIN_MS // server error — short cooldown
+  return ONE_MIN_MS                               // network / unknown — short cooldown
+}
+
 // ── CEREBRAS (Primary) ──────────────────────────────────────────────────────
 async function callCerebras(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.CEREBRAS_API_KEY
   if (!apiKey) throw new Error('CEREBRAS_API_KEY not set')
-  console.log('[Cerebras] Calling llama-3.3-70b...')
+  console.log('[Cerebras] Calling llama3.3-70b...')
   const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: 'llama-3.3-70b',
+      model: 'llama3.3-70b',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt },
@@ -86,9 +98,9 @@ async function callCerebras(prompt: string, systemPrompt: string): Promise<strin
 async function callGemini(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) throw new Error('GEMINI_API_KEY not set')
-  console.log('[Gemini] Calling gemini-2.0-flash-exp...')
+  console.log('[Gemini] Calling gemini-1.5-flash...')
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -129,11 +141,12 @@ async function callMistral(prompt: string, systemPrompt: string): Promise<string
     body: JSON.stringify({
       model: 'mistral-small-latest',
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: `Return valid JSON only.\n\n${systemPrompt}` },
         { role: 'user', content: prompt },
       ],
       max_tokens: 1500,
       temperature: 0.7,
+      response_format: { type: 'json_object' },
     }),
   })
   console.log(`[Mistral] HTTP ${response.status}`)
@@ -265,12 +278,12 @@ export async function callAI(prompt: string, systemPrompt: string): Promise<stri
       return await fn()
     } catch (e: any) {
       const msg = e.message ?? ''
-      if (isRateLimit(msg)) {
-        console.log(`[AI] ${name} rate limited → 1hr cooldown`)
-        setCooldown(name, ONE_HOUR_MS)
+      const cd = cooldownForError(name, msg)
+      if (cd === null) {
+        console.error(`[AI] ${name} config error (no cooldown): ${msg.slice(0, 150)}`)
       } else {
         console.error(`[AI] ${name} failed: ${msg.slice(0, 150)}`)
-        setCooldown(name, FIVE_MIN_MS)
+        setCooldown(name, cd)
       }
     }
   }
