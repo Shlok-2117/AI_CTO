@@ -65,42 +65,56 @@ function cooldownForError(providerName: string, errorMsg: string): number | null
 async function callCerebras(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.CEREBRAS_API_KEY
   if (!apiKey) throw new Error('CEREBRAS_API_KEY not set')
-  console.log('[Cerebras] Calling llama3.3-70b...')
-  const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: 'llama3.3-70b',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 1500,
-      temperature: 0.7,
-    }),
-  })
-  console.log(`[Cerebras] HTTP ${response.status}`)
-  if (!response.ok) {
-    const err = await response.text()
-    console.error('[Cerebras] Error:', err.slice(0, 300))
-    throw new Error(`Cerebras HTTP ${response.status}: ${err.slice(0, 200)}`)
+  // Try 70b first; fall back to 8b which has a separate quota
+  const models = ['llama3.3-70b', 'llama3.1-8b']
+  let lastError: Error = new Error('Cerebras: no models tried')
+  for (const model of models) {
+    try {
+      console.log(`[Cerebras] Calling ${model}...`)
+      const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: 1500,
+          temperature: 0.7,
+        }),
+      })
+      console.log(`[Cerebras] ${model} → HTTP ${response.status}`)
+      if (!response.ok) {
+        const err = await response.text()
+        console.error(`[Cerebras] ${model} error:`, err.slice(0, 300))
+        lastError = new Error(`Cerebras HTTP ${response.status}: ${err.slice(0, 200)}`)
+        if (response.status === 429) throw lastError // propagate rate limit immediately
+        continue
+      }
+      const data = (await response.json()) as any
+      const text = data.choices?.[0]?.message?.content
+      if (!text) { lastError = new Error(`Cerebras ${model} empty content`); continue }
+      const extracted = extractJSON(text)
+      if (!extracted) { lastError = new Error(`Cerebras ${model} not parseable JSON`); continue }
+      console.log(`[Cerebras] ${model} ✓ (${extracted.length} chars)`)
+      return extracted
+    } catch (e: any) {
+      if (e.message?.includes('429')) throw e
+      lastError = e
+      console.log(`[Cerebras] ${model} failed:`, e.message?.slice(0, 150))
+    }
   }
-  const data = (await response.json()) as any
-  const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error('Cerebras returned empty content')
-  const extracted = extractJSON(text)
-  if (!extracted) throw new Error('Cerebras response not parseable JSON')
-  console.log(`[Cerebras] ✓ (${extracted.length} chars)`)
-  return extracted
+  throw lastError
 }
 
 // ── GEMINI (Secondary) ──────────────────────────────────────────────────────
 async function callGemini(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) throw new Error('GEMINI_API_KEY not set')
-  console.log('[Gemini] Calling gemini-1.5-flash...')
+  console.log('[Gemini] Calling gemini-2.0-flash...')
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -165,6 +179,8 @@ async function callMistral(prompt: string, systemPrompt: string): Promise<string
 }
 
 // ── GROQ (Fourth) ───────────────────────────────────────────────────────────
+// llama-3.1-8b-instant has a separate TPM quota from 70b, so a 429 on 70b
+// does NOT mean 8b is also rate limited. Try both before giving up.
 async function callGroq(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error('GROQ_API_KEY not set')
@@ -173,6 +189,7 @@ async function callGroq(prompt: string, systemPrompt: string): Promise<string> {
     { name: 'llama-3.1-8b-instant',    maxTokens: 1500 },
   ]
   let lastError: Error = new Error('Groq: no models tried')
+  let rateLimitedCount = 0
   for (const { name, maxTokens } of models) {
     try {
       console.log(`[Groq] Calling ${name}...`)
@@ -193,9 +210,11 @@ async function callGroq(prompt: string, systemPrompt: string): Promise<string> {
       console.log(`[Groq] ${name} → HTTP ${response.status}`)
       if (!response.ok) {
         const err = await response.text()
-        const e = new Error(`Groq ${name} HTTP ${response.status}: ${err.slice(0, 200)}`)
-        if (response.status === 429) throw e
-        lastError = e
+        lastError = new Error(`Groq ${name} HTTP ${response.status}: ${err.slice(0, 200)}`)
+        if (response.status === 429) {
+          rateLimitedCount++
+          console.log(`[Groq] ${name} rate limited — trying next model`)
+        }
         continue
       }
       const data = (await response.json()) as any
@@ -206,10 +225,15 @@ async function callGroq(prompt: string, systemPrompt: string): Promise<string> {
       console.log(`[Groq] ${name} ✓ (${extracted.length} chars)`)
       return extracted
     } catch (e: any) {
-      if (e.message?.includes('429')) throw e
       lastError = e
+      if (e.message?.includes('429')) rateLimitedCount++
       console.log(`[Groq] ${name} failed:`, e.message?.slice(0, 150))
     }
+  }
+  // Only surface a 429 to callAI (triggering the 2min cooldown) if every
+  // model was rate limited. A single-model 429 is just a quota split issue.
+  if (rateLimitedCount === models.length) {
+    throw new Error(`Groq HTTP 429: all models rate limited`)
   }
   throw lastError
 }
