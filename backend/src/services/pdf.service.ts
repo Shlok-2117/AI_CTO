@@ -15,10 +15,24 @@ function safeArr(val: any): any[] {
   return Array.isArray(val) ? val : []
 }
 
+function escapeHtml(text: string): string {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 function scoreColor(score: number): string {
   if (score >= 80) return '#16a34a'
   if (score >= 60) return '#d97706'
   return '#dc2626'
+}
+
+function vcBadge(score: number): { label: string; bg: string; color: string } {
+  if (score >= 80) return { label: 'STRONG BUY',          bg: '#dcfce7', color: '#16a34a' }
+  if (score >= 65) return { label: 'BUY WITH CONDITIONS', bg: '#dbeafe', color: '#1d4ed8' }
+  if (score >= 50) return { label: 'NEUTRAL',             bg: '#fef3c7', color: '#d97706' }
+  return                   { label: 'PASS',               bg: '#fee2e2', color: '#dc2626' }
 }
 
 function ratingBadge(rating: string): string {
@@ -51,6 +65,17 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
   const generatedAt = new Date(generation.createdAt).toLocaleDateString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric'
   })
+
+  // FIX 1: title truncation + dynamic font size
+  const displayTitle = projectName.length > 50
+    ? projectName.slice(0, 47) + '...'
+    : projectName
+  const titleFontSize = projectName.length > 60 ? '36pt'
+    : projectName.length > 40 ? '42pt'
+    : '48pt'
+
+  const vcScore = r.verdict?.investor_review?.investability_score || 0
+  const badge = vcBadge(vcScore)
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -155,7 +180,6 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     position: relative; z-index: 1;
   }
   .cover-title {
-    font-size: 36pt;
     font-weight: 900;
     color: #ffffff;
     line-height: 1.1;
@@ -343,8 +367,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
 <div class="page cover">
   <div class="cover-top">
     <div class="cover-badge">JARVIS_CTO — CTO Intelligence System</div>
-    <div class="cover-title">
-      ${projectName.length > 30 ? projectName.substring(0, 30) + '...' : projectName}<br/>
+    <div class="cover-title" style="font-size:${titleFontSize}">
+      ${displayTitle}<br/>
       <span>Technical Blueprint</span>
     </div>
     <div class="cover-sub">
@@ -366,8 +390,9 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
       </div>
       <div class="cover-meta-item">
         <div class="cover-meta-label">VC Score</div>
-        <div class="cover-meta-value" style="color:var(--cyan)">
+        <div class="cover-meta-value" style="color:${badge.color}">
           ${r.verdict?.investor_review?.investability_score || '—'}/100
+          <span style="font-size:8pt;margin-left:6px;padding:2px 8px;border-radius:4px;background:${badge.bg};color:${badge.color}">${badge.label}</span>
         </div>
       </div>
     </div>
@@ -394,7 +419,7 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     ${[
       ['01','Founder Mindset','Business model, customer personas, revenue milestones'],
       ['02','Product Strategy','AARRR journey, features, North Star Metric'],
-      ['03','System Architecture','Services, tech stack, architectural decisions'],
+      ['03','System Architecture','Services, tech stack, and architectural decisions'],
       ['04','Data Modeling','Database schema, relationships, compliance'],
       ['05','API Design','REST endpoints, authentication, webhooks'],
       ['06','Scaling Roadmap','0 to 100M users, infrastructure evolution'],
@@ -414,8 +439,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </div>`).join('')}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 2</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 2 of 14</span>
   </div>
 </div>
 
@@ -503,8 +528,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </div>` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 3</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 3 of 14</span>
   </div>
 </div>
 
@@ -581,8 +606,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </table>` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 4</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 4 of 14</span>
   </div>
 </div>
 
@@ -636,8 +661,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </div>`).join('')}` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 5</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 5 of 14</span>
   </div>
 </div>
 
@@ -690,12 +715,12 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     ${r.database?.sql_preview ? `
     <div class="section-label">SQL Preview</div>
     <div class="code-block">
-      <code>${r.database.sql_preview.substring(0,600)}${r.database.sql_preview.length > 600 ? '\n-- ... (truncated)' : ''}</code>
+      <code>${escapeHtml(r.database.sql_preview.substring(0,600))}${r.database.sql_preview.length > 600 ? '\n-- ... (truncated)' : ''}</code>
     </div>` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 6</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 6 of 14</span>
   </div>
 </div>
 
@@ -754,8 +779,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </div>` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 7</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 7 of 14</span>
   </div>
 </div>
 
@@ -824,8 +849,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </table>` : ''}` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 8</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 8 of 14</span>
   </div>
 </div>
 
@@ -887,8 +912,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </div>` : '').join('')}` : ''}` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 9</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 9 of 14</span>
   </div>
 </div>
 
@@ -929,11 +954,11 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
       <tbody>
         ${safeArr(r.devops.ci_cd.pipeline_stages).map((s: any) => `
         <tr>
-          <td><strong>${safeStr(s.stage)}</strong></td>
-          <td style="color:var(--cyan);font-family:'JetBrains Mono',monospace">~${safeStr(s.estimated_duration_mins)}m</td>
+          <td><strong>${typeof s === 'string' ? s : safeStr(s.stage)}</strong></td>
+          <td style="color:var(--cyan);font-family:'JetBrains Mono',monospace">${typeof s !== 'string' && s.estimated_duration_mins ? `~${s.estimated_duration_mins}m` : '—'}</td>
           <td>
-            ${safeArr(s.actions).map((a: string) => `
-            <span class="badge" style="background:var(--gray-l);color:var(--gray);margin:1px">${a}</span>`).join('')}
+            ${typeof s !== 'string' ? safeArr(s.actions).map((a: string) => `
+            <span class="badge" style="background:var(--gray-l);color:var(--gray);margin:1px">${a}</span>`).join('') : ''}
           </td>
         </tr>`).join('')}
       </tbody>
@@ -955,8 +980,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </div>` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 10</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 10 of 14</span>
   </div>
 </div>
 
@@ -1020,8 +1045,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </table>` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 11</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 11 of 14</span>
   </div>
 </div>
 
@@ -1073,8 +1098,8 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </div>` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 12</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 12 of 14</span>
   </div>
 </div>
 
@@ -1093,30 +1118,27 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
   </div>
   <div class="page-content">
     <div class="warn-box">
-      <p>Paste any diagram below into <strong>mermaid.live</strong> to render it interactively as a visual diagram.</p>
+      <p>Paste any diagram code block below into <strong>mermaid.live</strong> to render it as an interactive visual diagram.</p>
     </div>
 
     ${r.diagrams?.architecture ? `
     <div class="section-label">System Architecture Diagram</div>
-    <div class="code-block">
-      <code>${String(r.diagrams.architecture).substring(0, 800)}${String(r.diagrams.architecture).length > 800 ? '\n-- truncated --' : ''}</code>
-    </div>` : ''}
+    <pre style="background:#0a0a1a;color:#00ffff;padding:16px;border-radius:8px;font-family:monospace;font-size:10px;border:1px solid #00ffff33;white-space:pre-wrap;word-break:break-all;margin:8px 0">${escapeHtml(String(r.diagrams.architecture).substring(0, 800))}${String(r.diagrams.architecture).length > 800 ? '\n... (truncated)' : ''}</pre>
+    <p style="color:#666;font-size:10px;margin-top:4px">📊 Paste above code at mermaid.live to view diagram</p>` : ''}
 
     ${r.diagrams?.er_diagram ? `
     <div class="section-label" style="margin-top:16px">Entity Relationship (ER) Diagram</div>
-    <div class="code-block">
-      <code>${String(r.diagrams.er_diagram).substring(0, 600)}${String(r.diagrams.er_diagram).length > 600 ? '\n-- truncated --' : ''}</code>
-    </div>` : ''}
+    <pre style="background:#0a0a1a;color:#00ffff;padding:16px;border-radius:8px;font-family:monospace;font-size:10px;border:1px solid #00ffff33;white-space:pre-wrap;word-break:break-all;margin:8px 0">${escapeHtml(String(r.diagrams.er_diagram).substring(0, 600))}${String(r.diagrams.er_diagram).length > 600 ? '\n... (truncated)' : ''}</pre>
+    <p style="color:#666;font-size:10px;margin-top:4px">📊 Paste above code at mermaid.live to view diagram</p>` : ''}
 
     ${r.diagrams?.sequence ? `
     <div class="section-label" style="margin-top:16px">Sequence Diagram</div>
-    <div class="code-block">
-      <code>${String(r.diagrams.sequence).substring(0, 400)}${String(r.diagrams.sequence).length > 400 ? '\n-- truncated --' : ''}</code>
-    </div>` : ''}
+    <pre style="background:#0a0a1a;color:#00ffff;padding:16px;border-radius:8px;font-family:monospace;font-size:10px;border:1px solid #00ffff33;white-space:pre-wrap;word-break:break-all;margin:8px 0">${escapeHtml(String(r.diagrams.sequence).substring(0, 400))}${String(r.diagrams.sequence).length > 400 ? '\n... (truncated)' : ''}</pre>
+    <p style="color:#666;font-size:10px;margin-top:4px">📊 Paste above code at mermaid.live to view diagram</p>` : ''}
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 13</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 13 of 14</span>
   </div>
 </div>
 
@@ -1134,76 +1156,114 @@ export async function generatePDF(generationId: string): Promise<Buffer> {
     </div>
   </div>
   <div class="page-content">
+
+    <!-- VC Score + Reasoning -->
     ${r.verdict?.investor_review ? `
-    <div style="display:flex;gap:20px;align-items:flex-start;margin-bottom:20px">
+    <div style="display:flex;gap:20px;align-items:flex-start;margin-bottom:16px">
       <div style="text-align:center;flex-shrink:0">
-        <div style="width:90px;height:90px;border-radius:50%;border:4px solid ${scoreColor(r.verdict.investor_review.investability_score||0)};display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:8px">
-          <div style="font-size:24pt;font-weight:900;color:${scoreColor(r.verdict.investor_review.investability_score||0)};line-height:1">
+        <div style="width:90px;height:90px;border-radius:50%;border:4px solid ${scoreColor(vcScore)};display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:8px">
+          <div style="font-size:24pt;font-weight:900;color:${scoreColor(vcScore)};line-height:1">
             ${safeStr(r.verdict.investor_review.investability_score, '0')}
           </div>
           <div style="font-size:7pt;color:var(--gray)">/100</div>
         </div>
-        <div style="display:inline-block;padding:6px 16px;border-radius:6px;font-size:10pt;font-weight:800;background:${
-          r.verdict.investor_review.verdict === 'INVEST' ? '#dcfce7' :
-          r.verdict.investor_review.verdict === 'PASS' ? '#fee2e2' : '#fef3c7'
-        };color:${
-          r.verdict.investor_review.verdict === 'INVEST' ? '#16a34a' :
-          r.verdict.investor_review.verdict === 'PASS' ? '#dc2626' : '#d97706'
-        }">
-          ${safeStr(r.verdict.investor_review.verdict, 'WATCH')}
+        <div style="display:inline-block;padding:5px 10px;border-radius:6px;font-size:8pt;font-weight:800;background:${badge.bg};color:${badge.color};white-space:nowrap">
+          ${badge.label}
         </div>
       </div>
       <div style="flex:1">
-        ${safeArr(r.verdict.investor_review.green_flags).length ? `
-        <div style="margin-bottom:10px">
-          <div class="section-label" style="color:var(--green);margin-top:0">Green Flags</div>
-          <ul class="check-list">
-            ${safeArr(r.verdict.investor_review.green_flags).slice(0,5).map((f: string) => `<li>${f}</li>`).join('')}
-          </ul>
-        </div>` : ''}
-        ${safeArr(r.verdict.investor_review.red_flags).length ? `
-        <div>
-          <div class="section-label" style="color:var(--red);margin-top:0">Red Flags</div>
-          <ul class="check-list cross-list">
-            ${safeArr(r.verdict.investor_review.red_flags).slice(0,5).map((f: string) => `<li>${f}</li>`).join('')}
-          </ul>
+        <div class="highlight" style="margin:0 0 10px 0">
+          <p>${safeStr(r.verdict.investor_review.reasoning)}</p>
+        </div>
+        ${r.verdict.investor_review.technical_moat ? `
+        <div class="info-card cyan-accent" style="margin:0">
+          <div class="info-card-title">Technical Moat</div>
+          <div class="info-card-sub">${safeStr(r.verdict.investor_review.technical_moat)}</div>
         </div>` : ''}
       </div>
-    </div>` : ''}
+    </div>
+    ${safeArr(r.verdict.investor_review.conditions).length ? `
+    <div class="section-label" style="color:var(--amber)">Conditions for Investment</div>
+    <ul class="check-list">
+      ${safeArr(r.verdict.investor_review.conditions).map((c: string) => `<li>${c}</li>`).join('')}
+    </ul>` : ''}` : ''}
 
+    <!-- Devil's Advocate -->
     ${r.verdict?.devils_advocate ? `
-    <div class="section-label">Devil's Advocate</div>
-    ${safeArr(r.verdict.devils_advocate.brutal_truths).length ? `
+    <div class="section-label" style="margin-top:12px">Devil's Advocate</div>
+    ${r.verdict.devils_advocate.most_dangerous_decision ? `
     <div class="warn-box">
-      <p style="font-weight:700;margin-bottom:6px">Brutal Truths:</p>
-      ${safeArr(r.verdict.devils_advocate.brutal_truths).map((t: string) => `<p style="margin:3px 0">▸ ${t}</p>`).join('')}
+      <p style="font-weight:700;margin-bottom:4px">Most Dangerous Decision:</p>
+      <p>${safeStr(r.verdict.devils_advocate.most_dangerous_decision)}</p>
     </div>` : ''}
-    ${safeArr(r.verdict.devils_advocate.existential_risks).length ? `
-    <div class="info-card red-accent" style="margin-top:10px">
-      <div class="info-card-title">Existential Risks</div>
-      <ul class="check-list cross-list" style="margin-top:6px">
-        ${safeArr(r.verdict.devils_advocate.existential_risks).slice(0,4).map((r: string) => `<li>${r}</li>`).join('')}
-      </ul>
-    </div>` : ''}` : ''}
+    ${safeArr(r.verdict.devils_advocate.overengineered_components).length ? `
+    <div style="margin-top:8px">
+      ${safeArr(r.verdict.devils_advocate.overengineered_components).map((c: any) => `
+      <div class="info-card red-accent" style="margin-bottom:6px">
+        <div class="info-card-title">${safeStr(c.component)}</div>
+        <div class="info-card-sub">${safeStr(c.issue)}</div>
+        ${c.simpler_alternative ? `<div style="font-size:8pt;color:var(--green);margin-top:4px">✓ Alternative: ${safeStr(c.simpler_alternative)}</div>` : ''}
+      </div>`).join('')}
+    </div>` : ''}
+    ${safeArr(r.verdict.devils_advocate.wrong_assumptions).length ? `
+    <div class="section-label" style="color:var(--amber)">Wrong Assumptions to Challenge</div>
+    <ul class="check-list cross-list">
+      ${safeArr(r.verdict.devils_advocate.wrong_assumptions).slice(0,4).map((a: string) => `<li>${a}</li>`).join('')}
+    </ul>` : ''}` : ''}
 
-    ${r.verdict?.final_statement ? `
+    <!-- Netflix vs Stripe -->
+    ${(safeArr(r.verdict?.what_netflix_would_do_differently).length || safeArr(r.verdict?.what_stripe_would_do_differently).length) ? `
+    <div class="grid-2" style="margin-top:12px">
+      ${safeArr(r.verdict?.what_netflix_would_do_differently).length ? `
+      <div class="info-card amber-accent">
+        <div class="info-card-title">vs Netflix</div>
+        <ul class="bullet-list" style="margin-top:6px">
+          ${safeArr(r.verdict.what_netflix_would_do_differently).slice(0,3).map((n: string) => `<li>${n}</li>`).join('')}
+        </ul>
+      </div>` : ''}
+      ${safeArr(r.verdict?.what_stripe_would_do_differently).length ? `
+      <div class="info-card purple-accent">
+        <div class="info-card-title">vs Stripe</div>
+        <ul class="bullet-list" style="margin-top:6px">
+          ${safeArr(r.verdict.what_stripe_would_do_differently).slice(0,3).map((s: string) => `<li>${s}</li>`).join('')}
+        </ul>
+      </div>` : ''}
+    </div>` : ''}
+
+    <!-- Confidence Scores -->
+    ${safeArr(r.verdict?.confidence_scores).length ? `
+    <div class="section-label" style="margin-top:10px">Confidence Scores by Area</div>
+    <table class="data-table">
+      <thead><tr><th>Area</th><th width="15%">Score</th><th>Reasoning</th></tr></thead>
+      <tbody>
+        ${safeArr(r.verdict.confidence_scores).map((cs: any) => `
+        <tr>
+          <td><strong>${safeStr(cs.recommendation)}</strong></td>
+          <td style="color:${scoreColor(cs.confidence||0)};font-weight:700;font-family:'JetBrains Mono',monospace">${safeStr(cs.confidence)}/100</td>
+          <td style="font-size:8pt">${safeStr(cs.reasoning)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : ''}
+
+    <!-- Final Statement -->
+    ${r.verdict?.final_cto_statement || r.verdict?.final_statement ? `
     <div class="divider"></div>
     <div class="highlight" style="border-left-color:var(--navy);background:#f8fafc">
       <p style="font-size:7.5pt;font-weight:700;color:var(--gray);letter-spacing:.1em;margin-bottom:6px">CTO FINAL STATEMENT</p>
       <p style="font-size:10pt;color:var(--navy);font-weight:500;font-style:italic;line-height:1.7">
-        "${safeStr(r.verdict.final_statement)}"
+        "${safeStr(r.verdict.final_cto_statement || r.verdict.final_statement)}"
       </p>
     </div>` : ''}
 
     <div style="margin-top:20px;padding:16px;background:var(--navy);border-radius:8px;text-align:center">
       <div style="font-size:7.5pt;color:#475569;letter-spacing:.1em;margin-bottom:6px">GENERATED BY</div>
       <div style="font-size:14pt;font-weight:900;color:#00d4ff;letter-spacing:.05em">JARVIS_CTO</div>
-      <div style="font-size:8pt;color:#64748b;margin-top:4px">ai-cto-two.vercel.app · 12-Phase AI Architecture Generator</div>
+      <div style="font-size:8pt;color:#64748b;margin-top:4px">ai-cto-two.vercel.app · 12-Phase AI Architecture Generator · ${generatedAt}</div>
     </div>
   </div>
   <div class="page-footer">
-    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app</span>
-    <span class="footer-page">Page 14</span>
+    <span class="footer-brand">JARVIS_CTO · ai-cto-two.vercel.app · ${generatedAt}</span>
+    <span class="footer-page">Page 14 of 14</span>
   </div>
 </div>
 

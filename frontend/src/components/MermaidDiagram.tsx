@@ -8,6 +8,22 @@ interface Props {
   title?: string
 }
 
+function cleanMermaid(code: string): string {
+  return code
+    .replace(/```mermaid\n?/g, '')
+    .replace(/```\n?/g, '')
+    .replace(/>\s*>/g, '-->')
+    .replace(/- >/g, '-->')
+    .replace(/—>/g, '-->')
+    .replace(/=>/g, '-->')
+    .replace(/\|([^|]+)\|/g, '["$1"]')
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .trim()
+}
+
+const SIMPLE_FALLBACK = `graph TD\n    A[Start] --> B[Process]\n    B --> C[End]`
+
 export default function MermaidDiagram({ diagram, title }: Props) {
   const [svg, setSvg] = useState<string>('')
   const [error, setError] = useState(false)
@@ -47,48 +63,47 @@ export default function MermaidDiagram({ diagram, title }: Props) {
     function doRender() {
       const win = window as any
       if (!win.mermaid) return
-      try {
-        win.mermaid.initialize({
-          startOnLoad: false,
-          theme: 'dark',
-          securityLevel: 'loose',
-          themeVariables: {
-            primaryColor: '#0B1120',
-            primaryTextColor: '#00D4FF',
-            primaryBorderColor: '#00D4FF',
-            lineColor: '#38BDF8',
-            secondaryColor: '#1e3a5f',
-            tertiaryColor: '#0B1120',
-            background: '#030712',
-            mainBkg: '#0B1120',
-            nodeBorder: '#00D4FF',
-            clusterBkg: '#0B1120',
-            titleColor: '#F8FAFC',
-            edgeLabelBackground: '#0B1120',
-            fontSize: '14px',
-          }
-        })
-        // Strip markdown fences the AI sometimes wraps the diagram in
-        const cleaned = diagram
-          .replace(/```mermaid/g, '')
-          .replace(/```/g, '')
-          .trim()
 
-        win.mermaid.render(idRef.current, cleaned)
-          .then(({ svg: svgCode }: { svg: string }) => {
+      win.mermaid.initialize({
+        startOnLoad: false,
+        theme: 'dark',
+        securityLevel: 'loose',
+        themeVariables: {
+          primaryColor: '#0B1120',
+          primaryTextColor: '#00D4FF',
+          primaryBorderColor: '#00D4FF',
+          lineColor: '#38BDF8',
+          secondaryColor: '#1e3a5f',
+          tertiaryColor: '#0B1120',
+          background: '#030712',
+          mainBkg: '#0B1120',
+          nodeBorder: '#00D4FF',
+          clusterBkg: '#0B1120',
+          titleColor: '#F8FAFC',
+          edgeLabelBackground: '#0B1120',
+          fontSize: '14px',
+        }
+      })
+
+      win.mermaid.render(idRef.current, cleanMermaid(diagram))
+        .then(({ svg: svgCode }: { svg: string }) => {
+          setSvg(svgCode)
+          setError(false)
+          setLoading(false)
+        })
+        .catch(async (e1: any) => {
+          console.error('Mermaid render error (attempt 1):', e1)
+          try {
+            const { svg: svgCode } = await win.mermaid.render(idRef.current + '_fb', SIMPLE_FALLBACK)
             setSvg(svgCode)
             setError(false)
             setLoading(false)
-          })
-          .catch((err: any) => {
-            console.error('Mermaid render error:', err)
+          } catch (e2: any) {
+            console.error('Mermaid render error (fallback):', e2)
             setError(true)
             setLoading(false)
-          })
-      } catch {
-        setError(true)
-        setLoading(false)
-      }
+          }
+        })
     }
 
     const win = window as any
