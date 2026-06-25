@@ -11,40 +11,74 @@ import { runHiringPhase } from './phase10_hiring.agent'
 import { runDiagramsPhase } from './phase11_diagrams.agent'
 import { runCTOVerdictPhase } from './phase12_cto_verdict.agent'
 
-// Reduces prior-phase output to max ~400 chars before passing as context to the
-// next agent so large JSON blobs don't overflow provider context windows.
-// Preserves array structure (first 3 items, name-key only) so agents that do
-// data?.services?.map(s => s.name) still get real values.
-function trimContext(data: any, maxChars = 400): any {
-  if (!data) return null
-  if (JSON.stringify(data).length <= maxChars) return data
+// Builds a compact ~200-token string summary of all completed phases.
+// Passed as context to each subsequent agent instead of full JSON blobs,
+// keeping prompts well under provider context limits.
+function buildContextSummary(phases: {
+  founder?: any; product?: any; architecture?: any; database?: any;
+  api?: any; scaling?: any; security?: any; devops?: any;
+  finops?: any; hiring?: any; diagrams?: any;
+}): string {
+  const parts: string[] = []
 
-  const slim: Record<string, any> = {}
-  for (const [k, v] of Object.entries(data)) {
-    if (k === '_status') continue
-    if (typeof v === 'string') {
-      slim[k] = (v as string).slice(0, 60)
-    } else if (typeof v === 'number' || typeof v === 'boolean') {
-      slim[k] = v
-    } else if (Array.isArray(v)) {
-      slim[k] = (v as any[]).slice(0, 3).map((item: any) => {
-        if (!item || typeof item !== 'object') return item
-        const label =
-          item.name ?? item.role ?? item.title ?? item.table_name ??
-          item.table ?? item.endpoint ?? item.service ?? item.phase ??
-          String(Object.values(item)[0] ?? '').slice(0, 50)
-        return { name: String(label).slice(0, 50) }
-      })
-    } else if (v && typeof v === 'object') {
-      const sub: Record<string, any> = {}
-      for (const [sk, sv] of Object.entries(v as Record<string, any>)) {
-        if (typeof sv === 'string') sub[sk] = (sv as string).slice(0, 40)
-        else if (typeof sv === 'number' || typeof sv === 'boolean') sub[sk] = sv
-      }
-      slim[k] = sub
-    }
+  if (phases.founder) {
+    const p = phases.founder
+    const pitch = p?.startup_identity?.one_line_pitch || 'startup idea'
+    parts.push(`Founder: ${pitch}`.slice(0, 100))
   }
-  return slim
+  if (phases.product) {
+    const p = phases.product
+    const metric = p?.metrics?.north_star_metric || 'product strategy'
+    parts.push(`Product: ${metric}`.slice(0, 100))
+  }
+  if (phases.architecture) {
+    const p = phases.architecture
+    const pattern = p?.architecture_style?.pattern || 'architecture'
+    const svcs = (p?.services || []).slice(0, 3).map((s: any) => s?.name || s).filter(Boolean).join(', ')
+    parts.push(`Arch: ${pattern}${svcs ? ` [${svcs}]` : ''}`.slice(0, 100))
+  }
+  if (phases.database) {
+    const p = phases.database
+    const db = p?.database_strategy?.primary_database || 'DB'
+    const tables = (p?.tables || []).slice(0, 4).map((t: any) => t?.name || t?.table_name || t).filter(Boolean).join(', ')
+    parts.push(`DB: ${db}${tables ? ` tables:${tables}` : ''}`.slice(0, 100))
+  }
+  if (phases.api) {
+    const p = phases.api
+    const style = p?.api_strategy?.style || 'REST'
+    const count = (p?.endpoints || []).length
+    parts.push(`API: ${style}, ${count} endpoints`.slice(0, 100))
+  }
+  if (phases.scaling) {
+    const p = phases.scaling
+    const uptime = p?.reliability?.target_uptime || 'N/A'
+    parts.push(`Scaling: uptime=${uptime}`.slice(0, 100))
+  }
+  if (phases.security) {
+    const p = phases.security
+    const risk = p?.risk_score || 'reviewed'
+    parts.push(`Security: risk=${risk}`.slice(0, 100))
+  }
+  if (phases.devops) {
+    const p = phases.devops
+    const cloud = p?.infrastructure?.cloud_provider || 'cloud'
+    parts.push(`DevOps: ${cloud}`.slice(0, 100))
+  }
+  if (phases.finops) {
+    const p = phases.finops
+    const cost = p?.tiers?.mvp?.monthly_usd || p?.cost_per_user?.at_1k_users || '?'
+    parts.push(`FinOps: MVP=$${cost}/mo`.slice(0, 100))
+  }
+  if (phases.hiring) {
+    const p = phases.hiring
+    const size = p?.year_1?.team_size || '?'
+    parts.push(`Hiring: y1 team=${size}`.slice(0, 100))
+  }
+  if (phases.diagrams) {
+    parts.push('Diagrams: generated')
+  }
+
+  return parts.join(' | ').slice(0, 500)
 }
 
 async function runPhaseWithFallback(phaseName: string, phaseFunction: () => Promise<any>, fallback: any): Promise<any> {
@@ -62,6 +96,17 @@ async function runPhaseWithFallback(phaseName: string, phaseFunction: () => Prom
 export async function generateCTOBlueprint(problem: string): Promise<any> {
   console.log(`\n[CTO SYSTEM] Starting 12-phase analysis for: "${problem}"\n`)
 
+  // Tracks completed phase results so buildContextSummary can grow incrementally.
+  const completed: {
+    founder?: any; product?: any; architecture?: any; database?: any;
+    api?: any; scaling?: any; security?: any; devops?: any;
+    finops?: any; hiring?: any; diagrams?: any;
+  } = {}
+
+  // Returns a compact context object wrapping the summary string. Each agent
+  // receives this instead of the full prior-phase JSON (~200 tokens vs 3000+).
+  const ctx = () => ({ _summary: buildContextSummary(completed) })
+
   const founder = await runPhaseWithFallback(
     'Phase 1: Founder Mindset',
     () => runFounderPhase(problem),
@@ -76,10 +121,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       customer: { primary_persona: null }
     }
   )
+  completed.founder = founder
 
   const product = await runPhaseWithFallback(
     'Phase 2: Product Strategy',
-    () => runProductPhase(problem, trimContext(founder)),
+    () => runProductPhase(problem, ctx()),
     {
       _status: 'failed',
       phase: 'product_strategy',
@@ -90,10 +136,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       product_risks: []
     }
   )
+  completed.product = product
 
   const architecture = await runPhaseWithFallback(
     'Phase 3: System Architecture',
-    () => runArchitecturePhase(problem, trimContext(founder), trimContext(product)),
+    () => runArchitecturePhase(problem, ctx(), ctx()),
     {
       _status: 'failed',
       phase: 'system_architecture',
@@ -104,10 +151,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       third_party_integrations: []
     }
   )
+  completed.architecture = architecture
 
   const database = await runPhaseWithFallback(
     'Phase 4: Data Modeling',
-    () => runDatabasePhase(problem, trimContext(architecture)),
+    () => runDatabasePhase(problem, ctx()),
     {
       _status: 'failed',
       phase: 'data_modeling',
@@ -117,10 +165,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       indexes: []
     }
   )
+  completed.database = database
 
   const api = await runPhaseWithFallback(
     'Phase 5: API Design',
-    () => runAPIPhase(problem, trimContext(architecture), trimContext(database)),
+    () => runAPIPhase(problem, ctx(), ctx()),
     {
       _status: 'failed',
       phase: 'api_design',
@@ -129,10 +178,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       error_handling: { error_codes: [] }
     }
   )
+  completed.api = api
 
   const scaling = await runPhaseWithFallback(
     'Phase 6: Scaling & Reliability',
-    () => runScalingPhase(problem, trimContext(architecture), trimContext(founder)),
+    () => runScalingPhase(problem, ctx(), ctx()),
     {
       _status: 'failed',
       phase: 'scaling_reliability',
@@ -141,10 +191,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       performance_targets: { api_p99_latency_ms: 500, api_p95_latency_ms: 200, page_load_time_ms: 3000, database_query_p99_ms: 100 }
     }
   )
+  completed.scaling = scaling
 
   const security = await runPhaseWithFallback(
     'Phase 7: Security Review',
-    () => runSecurityPhase(problem, trimContext(architecture), trimContext(api)),
+    () => runSecurityPhase(problem, ctx(), ctx()),
     {
       _status: 'failed',
       phase: 'security_review',
@@ -156,10 +207,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       security_roadmap: []
     }
   )
+  completed.security = security
 
   const devops = await runPhaseWithFallback(
     'Phase 8: DevOps',
-    () => runDevOpsPhase(problem, trimContext(architecture)),
+    () => runDevOpsPhase(problem, ctx()),
     {
       _status: 'failed',
       phase: 'devops',
@@ -170,10 +222,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       environments: []
     }
   )
+  completed.devops = devops
 
   const finops = await runPhaseWithFallback(
     'Phase 9: FinOps',
-    () => runFinOpsPhase(problem, trimContext(architecture), trimContext(founder)),
+    () => runFinOpsPhase(problem, ctx(), ctx()),
     {
       _status: 'failed',
       phase: 'finops',
@@ -185,10 +238,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       cost_saving_tips: []
     }
   )
+  completed.finops = finops
 
   const hiring = await runPhaseWithFallback(
     'Phase 10: Hiring Plan',
-    () => runHiringPhase(problem, trimContext(architecture), trimContext(founder)),
+    () => runHiringPhase(problem, ctx(), ctx()),
     {
       _status: 'failed',
       phase: 'hiring_plan',
@@ -200,10 +254,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       avoid_early_hiring: []
     }
   )
+  completed.hiring = hiring
 
   const diagrams = await runPhaseWithFallback(
     'Phase 11: Diagrams',
-    () => runDiagramsPhase(problem, trimContext(architecture), trimContext(database)),
+    () => runDiagramsPhase(problem, ctx(), ctx()),
     {
       _status: 'failed',
       phase: 'diagrams',
@@ -212,6 +267,7 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       sequence: 'sequenceDiagram\n    User->>API: Request\n    API-->>User: Response'
     }
   )
+  completed.diagrams = diagrams
 
   const allData = { founder, product, architecture, database, api, scaling, security, devops, finops, hiring, diagrams }
 

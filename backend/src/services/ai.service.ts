@@ -2,7 +2,7 @@ function sleep(ms: number) {
   return new Promise<void>(r => setTimeout(r, ms))
 }
 
-// Bulletproof JSON extraction — 4 independent strategies
+// Bulletproof JSON extraction — 5 independent strategies
 function extractJSON(text: string): string | null {
   if (!text) return null
 
@@ -63,17 +63,62 @@ function setCooldown(provider: string, ms: number): void {
   console.log(`[AI] ${provider} cooldown: ${Math.round(ms / 60000)}min`)
 }
 
-// Returns cooldown duration in ms, or null for no cooldown (config/404 errors).
+function isRateLimit(msg: string): boolean {
+  return (
+    msg.includes('429') ||
+    msg.includes('rate_limit') ||
+    msg.includes('rate limit') ||
+    msg.includes('RESOURCE_EXHAUSTED')
+  )
+}
+
+// DeepSeek and Groq have short TPM windows; all others get 1hr on 429.
 function cooldownForError(providerName: string, errorMsg: string): number | null {
   if (isRateLimit(errorMsg)) {
-    return providerName === 'Groq' ? SIXTY_FIVE_SEC_MS : ONE_HOUR_MS
+    return (providerName === 'Groq' || providerName === 'DeepSeek')
+      ? SIXTY_FIVE_SEC_MS
+      : ONE_HOUR_MS
   }
   if (errorMsg.includes('404')) return null
   if (errorMsg.includes('500')) return TWO_MIN_MS
   return ONE_MIN_MS
 }
 
-// ── CEREBRAS (Primary) ──────────────────────────────────────────────────────
+// ── DEEPSEEK (Primary — reliable JSON via response_format) ───────────────────
+async function callDeepSeek(prompt: string, systemPrompt: string): Promise<string> {
+  const apiKey = process.env.DEEPSEEK_KEY_1
+  if (!apiKey) throw new Error('DEEPSEEK_KEY_1 not set')
+  console.log('[DeepSeek] Calling deepseek-chat...')
+  const response = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: 1500,
+      temperature: 0,
+      response_format: { type: 'json_object' },
+    }),
+  })
+  console.log(`[DeepSeek] HTTP ${response.status}`)
+  if (!response.ok) {
+    const err = await response.text()
+    console.error('[DeepSeek] Error:', err.slice(0, 300))
+    throw new Error(`DeepSeek HTTP ${response.status}: ${err.slice(0, 200)}`)
+  }
+  const data = (await response.json()) as any
+  const text = data.choices?.[0]?.message?.content
+  if (!text) throw new Error('DeepSeek returned empty content')
+  const extracted = extractJSON(text)
+  if (!extracted) throw new Error('DeepSeek response not parseable JSON')
+  console.log(`[DeepSeek] ✓ (${extracted.length} chars)`)
+  return extracted
+}
+
+// ── CEREBRAS (Secondary) ─────────────────────────────────────────────────────
 // Model list from GET /v1/models as of 2026-06-24: gpt-oss-120b, zai-glm-4.7
 async function callCerebras(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.CEREBRAS_API_KEY
@@ -120,93 +165,7 @@ async function callCerebras(prompt: string, systemPrompt: string): Promise<strin
   throw lastError
 }
 
-// ── GEMINI (Secondary) ──────────────────────────────────────────────────────
-async function callGemini(prompt: string, systemPrompt: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) throw new Error('GEMINI_API_KEY not set')
-  console.log('[Gemini] Calling gemini-2.0-flash...')
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          maxOutputTokens: 1500,
-          temperature: 0.7,
-          responseMimeType: 'application/json',
-        },
-      }),
-    }
-  )
-  console.log(`[Gemini] HTTP ${response.status}`)
-  if (!response.ok) {
-    const err = await response.text()
-    console.error('[Gemini] Error:', err.slice(0, 300))
-    throw new Error(`Gemini HTTP ${response.status}: ${err.slice(0, 200)}`)
-  }
-  const data = (await response.json()) as any
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!text) throw new Error('Gemini returned empty content')
-  const extracted = extractJSON(text)
-  if (!extracted) throw new Error('Gemini response not parseable JSON')
-  console.log(`[Gemini] ✓ (${extracted.length} chars)`)
-  return extracted
-}
-
-// ── MISTRAL helpers ──────────────────────────────────────────────────────────
-// No system message — Mistral ignores response_format when system prompt is
-// long. Merge everything into user message with explicit JSON instruction.
-async function callMistralModel(
-  prompt: string,
-  systemPrompt: string,
-  model: string,
-  apiKey: string
-): Promise<string> {
-  const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: 'user',
-          content: systemPrompt + '\n\n' + prompt + '\n\nReturn ONLY a valid JSON object. No comments, no trailing commas, no explanation. Start with { end with }.',
-        },
-      ],
-      max_tokens: 1500,
-      temperature: 0.7,
-      response_format: { type: 'json_object' },
-    }),
-  })
-  console.log(`[Mistral] ${model} → HTTP ${response.status}`)
-  if (!response.ok) {
-    const err = await response.text()
-    console.error(`[Mistral] ${model} error:`, err.slice(0, 300))
-    throw new Error(`Mistral HTTP ${response.status}: ${err.slice(0, 200)}`)
-  }
-  const data = (await response.json()) as any
-  const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error(`Mistral ${model} returned empty content`)
-  const extracted = extractJSON(text)
-  if (!extracted) throw new Error(`Mistral ${model} response not parseable JSON`)
-  console.log(`[Mistral] ${model} ✓ (${extracted.length} chars)`)
-  return extracted
-}
-
-// ── MISTRAL (Third) ─────────────────────────────────────────────────────────
-async function callMistral(prompt: string, systemPrompt: string): Promise<string> {
-  const apiKey = process.env.MISTRAL_API_KEY
-  if (!apiKey) throw new Error('MISTRAL_API_KEY not set')
-  console.log('[Mistral] Calling mistral-small-latest...')
-  return callMistralModel(prompt, systemPrompt, 'mistral-small-latest', apiKey)
-}
-
-// ── GROQ (Fourth) ───────────────────────────────────────────────────────────
-// llama-3.1-8b-instant has a separate TPM quota from 70b.
-// Only set Groq cooldown if BOTH models return 429.
+// ── GROQ (Third — llama-3.1-8b has separate TPM quota from 70b) ─────────────
 async function callGroq(prompt: string, systemPrompt: string): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error('GROQ_API_KEY not set')
@@ -262,73 +221,57 @@ async function callGroq(prompt: string, systemPrompt: string): Promise<string> {
   throw lastError
 }
 
-// ── SAMBANOVA (Fifth) ────────────────────────────────────────────────────────
-async function callSambaNova(prompt: string, systemPrompt: string): Promise<string> {
-  const apiKey = process.env.SAMBANOVA_API_KEY
-  if (!apiKey) throw new Error('SAMBANOVA_API_KEY not set')
-  console.log('[SambaNova] Calling Meta-Llama-3.3-70B-Instruct...')
-  const response = await fetch('https://api.sambanova.ai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: 'Meta-Llama-3.3-70B-Instruct',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 1500,
-      temperature: 0.7,
-    }),
-  })
-  console.log(`[SambaNova] HTTP ${response.status}`)
+// ── GEMINI (Fourth) ──────────────────────────────────────────────────────────
+async function callGemini(prompt: string, systemPrompt: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) throw new Error('GEMINI_API_KEY not set')
+  console.log('[Gemini] Calling gemini-2.0-flash...')
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 1500,
+          temperature: 0.7,
+          responseMimeType: 'application/json',
+        },
+      }),
+    }
+  )
+  console.log(`[Gemini] HTTP ${response.status}`)
   if (!response.ok) {
     const err = await response.text()
-    console.error('[SambaNova] Error:', err.slice(0, 300))
-    throw new Error(`SambaNova HTTP ${response.status}: ${err.slice(0, 200)}`)
+    console.error('[Gemini] Error:', err.slice(0, 300))
+    throw new Error(`Gemini HTTP ${response.status}: ${err.slice(0, 200)}`)
   }
   const data = (await response.json()) as any
-  const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error('SambaNova returned empty content')
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+  if (!text) throw new Error('Gemini returned empty content')
   const extracted = extractJSON(text)
-  if (!extracted) throw new Error('SambaNova response not parseable JSON')
-  console.log(`[SambaNova] ✓ (${extracted.length} chars)`)
+  if (!extracted) throw new Error('Gemini response not parseable JSON')
+  console.log(`[Gemini] ✓ (${extracted.length} chars)`)
   return extracted
 }
 
-// ── MISTRAL FALLBACK (Sixth) — open-mistral-7b, separate quota ──────────────
-async function callMistralFallback(prompt: string, systemPrompt: string): Promise<string> {
-  const apiKey = process.env.MISTRAL_API_KEY
-  if (!apiKey) throw new Error('MISTRAL_API_KEY not set')
-  console.log('[MistralFallback] Calling open-mistral-7b...')
-  return callMistralModel(prompt, systemPrompt, 'open-mistral-7b', apiKey)
-}
-
-function isRateLimit(msg: string): boolean {
-  return (
-    msg.includes('429') ||
-    msg.includes('rate_limit') ||
-    msg.includes('rate limit') ||
-    msg.includes('RESOURCE_EXHAUSTED')
-  )
-}
-
 export async function callAI(prompt: string, systemPrompt: string): Promise<string> {
+  if (!process.env.DEEPSEEK_KEY_1) {
+    console.warn('[AI] REMINDER: Add DEEPSEEK_KEY_1 to Render env vars (get at platform.deepseek.com)')
+  }
+
   console.log(
-    `\n[AI] 6-provider chain: Cerebras→Gemini→Mistral→Groq→SambaNova→MistralFallback | GROQ=${!!process.env.GROQ_API_KEY} GEMINI=${!!process.env.GEMINI_API_KEY}`
+    `\n[AI] 4-provider chain: DeepSeek→Cerebras→Groq→Gemini | GROQ=${!!process.env.GROQ_API_KEY} GEMINI=${!!process.env.GEMINI_API_KEY} DEEPSEEK=${!!process.env.DEEPSEEK_KEY_1}`
   )
 
   const providers: Array<{ name: string; fn: () => Promise<string> }> = [
-    { name: 'Cerebras',       fn: () => callCerebras(prompt, systemPrompt) },
-    { name: 'Gemini',         fn: () => callGemini(prompt, systemPrompt) },
-    { name: 'Mistral',        fn: () => callMistral(prompt, systemPrompt) },
-    { name: 'Groq',           fn: () => callGroq(prompt, systemPrompt) },
-    { name: 'SambaNova',      fn: () => callSambaNova(prompt, systemPrompt) },
-    { name: 'MistralFallback',fn: () => callMistralFallback(prompt, systemPrompt) },
+    { name: 'DeepSeek', fn: () => callDeepSeek(prompt, systemPrompt) },
+    { name: 'Cerebras', fn: () => callCerebras(prompt, systemPrompt) },
+    { name: 'Groq',     fn: () => callGroq(prompt, systemPrompt) },
+    { name: 'Gemini',   fn: () => callGemini(prompt, systemPrompt) },
   ]
-
-  if (!process.env.SAMBANOVA_API_KEY) {
-    console.warn('[AI] REMINDER: Add SAMBANOVA_API_KEY from cloud.sambanova.ai to Render env vars')
-  }
 
   for (const { name, fn } of providers) {
     if (isOnCooldown(name)) {
