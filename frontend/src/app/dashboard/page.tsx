@@ -873,23 +873,27 @@ function DevOpsTab({ d }: { d: any }) {
       )}
       {d.ci_cd && (
         <div>
-          <SectionHeader title="CI/CD" sub={`${d.ci_cd.platform} · ${d.ci_cd.deployment_strategy} · ${d.ci_cd.deployment_frequency}`} />
+          <SectionHeader title="CI/CD" sub={[d.ci_cd?.platform, d.ci_cd?.deployment_strategy, d.ci_cd?.deployment_frequency].filter(Boolean).join(' · ')} />
           {Array.isArray(d.ci_cd.pipeline_stages) && (
             <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
               {d.ci_cd.pipeline_stages.map((stage: any, i: number) => (
                 <div key={i} className="hud-panel rounded-lg p-4 flex-1 min-w-[150px] shrink-0">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-semibold text-cyan-400">{stage.stage}</p>
-                    <span className="text-[10px] text-gray-500">{stage.estimated_duration_mins}m</span>
+                    <p className="text-xs font-semibold text-cyan-400">
+                      {typeof stage === 'string' ? stage : (stage?.stage || `Stage ${i + 1}`)}
+                    </p>
+                    {typeof stage !== 'string' && stage?.estimated_duration_mins && (
+                      <span className="text-[10px] text-gray-500">{stage.estimated_duration_mins}m</span>
+                    )}
                   </div>
-                  <SafeList items={stage.actions} />
+                  {typeof stage !== 'string' && <SafeList items={stage?.actions} />}
                 </div>
               ))}
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <DataCard label="Deployment" value={d.ci_cd.deployment_strategy} />
-            <DataCard label="Rollback" value={d.ci_cd.rollback_strategy} />
+            <DataCard label="Deployment" value={d.ci_cd?.deployment_strategy} />
+            <DataCard label="Rollback" value={d.ci_cd?.rollback_strategy} />
           </div>
         </div>
       )}
@@ -2348,13 +2352,25 @@ export default function DashboardPage() {
                     {r[TABS[activeTab].id]?._status === 'failed' && (
                       <div className="mb-4 flex items-start gap-3 rounded-lg p-4" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.25)' }}>
                         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#F59E0B' }} />
-                        <div>
-                          <p className="text-sm font-semibold" style={{ color: '#FCD34D' }}>Phase analysis failed</p>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold" style={{ color: '#FCD34D' }}>Phase analysis failed — showing placeholder data</p>
                           <p className="text-xs mt-0.5" style={{ color: 'rgba(248,250,252,0.4)' }}>
-                            The AI could not generate data for this phase. Click <strong>REGENERATE</strong> to try again.
-                            Check Render logs for GROQ errors if this persists.
+                            The AI could not generate data for this phase. Regenerate to retry all 12 phases with fresh AI calls.
                           </p>
                         </div>
+                        <button
+                          onClick={() => handleGenerate(true)}
+                          disabled={loading}
+                          className="shrink-0 text-[11px] font-mono px-3 py-1.5 rounded transition-all"
+                          style={{
+                            color: '#00ffff',
+                            background: 'transparent',
+                            border: '1px solid rgba(0,255,255,0.25)',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            opacity: loading ? 0.5 : 1,
+                          }}>
+                          ↻ Regenerate
+                        </button>
                       </div>
                     )}
                     {tabContent[activeTab]}

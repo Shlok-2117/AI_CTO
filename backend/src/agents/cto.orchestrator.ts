@@ -239,11 +239,40 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     {
       _status: 'failed',
       phase: 'devops',
-      repository: null,
-      ci_cd: null,
-      infrastructure: null,
-      observability: null,
-      environments: []
+      repository: {
+        strategy: 'GitOps with trunk-based development',
+        branching_model: 'GitHub Flow',
+        code_review_policy: '2 reviewers required before merge',
+        branch_protection: ['Require PR reviews', 'Block direct pushes to main', 'Require status checks']
+      },
+      ci_cd: {
+        platform: 'GitHub Actions',
+        pipeline_stages: [
+          { stage: 'Lint & Format', actions: ['ESLint', 'Prettier check'], estimated_duration_mins: 2 },
+          { stage: 'Test', actions: ['Unit tests', 'Integration tests'], estimated_duration_mins: 5 },
+          { stage: 'Build', actions: ['Docker build', 'Push to registry'], estimated_duration_mins: 4 },
+          { stage: 'Deploy', actions: ['Blue-green deploy', 'Smoke tests'], estimated_duration_mins: 3 },
+        ],
+        deployment_strategy: 'Blue-green deployment',
+        deployment_frequency: 'On every merge to main',
+        rollback_strategy: 'Instant traffic switch to previous version'
+      },
+      infrastructure: {
+        cloud_provider: 'AWS',
+        regions: ['us-east-1', 'ap-south-1'],
+        iac_tool: 'Terraform',
+        container_strategy: 'Docker + ECS Fargate'
+      },
+      observability: {
+        logging: { tool: 'CloudWatch Logs', retention_days: 30, log_levels: ['ERROR', 'WARN', 'INFO'] },
+        metrics: { tool: 'Datadog', key_metrics: ['API latency p99', 'Error rate', 'CPU utilization', 'DB query time'] },
+        alerting: { tool: 'PagerDuty', on_call_strategy: 'Rotating on-call weekly', critical_alerts: ['API down > 1min', 'Error rate > 5%', 'CPU > 90%'] }
+      },
+      environments: [
+        { name: 'Development', purpose: 'Active development and testing', infrastructure: 'Docker Compose (local)', data: 'Seeded test data' },
+        { name: 'Staging', purpose: 'Pre-production validation', infrastructure: 'AWS ECS (1/4 scale)', data: 'Anonymized production copy' },
+        { name: 'Production', purpose: 'Live user traffic', infrastructure: 'AWS ECS Fargate (auto-scaling)', data: 'Live data with daily backups' }
+      ]
     }
   )
   completed.phase8 = devops
@@ -257,12 +286,73 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     {
       _status: 'failed',
       phase: 'finops',
-      cost_philosophy: 'Analysis unavailable',
-      tiers: null,
-      cost_per_user: { at_1k_users: 'N/A', at_10k_users: 'N/A', at_100k_users: 'N/A' },
-      revenue_vs_infra: { break_even_users: 0, target_infra_as_percent_revenue: 'N/A' },
-      optimization_opportunities: [],
-      cost_saving_tips: []
+      cost_philosophy: 'Pay-as-you-grow — maximize free tiers at MVP, upgrade only when metrics demand it',
+      tiers: {
+        mvp: {
+          monthly_usd: 150,
+          description: 'Early stage — free tiers maximized',
+          services: [
+            { name: 'Compute (Render/Railway)', cost_usd: 50 },
+            { name: 'Database (Supabase free)', cost_usd: 0 },
+            { name: 'CDN (Cloudflare free)', cost_usd: 0 },
+            { name: 'Email (Resend)', cost_usd: 20 },
+            { name: 'Storage (S3)', cost_usd: 10 },
+            { name: 'Domains & SSL', cost_usd: 70 }
+          ],
+          free_tier_used: ['Supabase free (500MB DB)', 'Cloudflare free CDN', 'Vercel hobby plan']
+        },
+        growth: {
+          monthly_usd: 1200,
+          description: 'Scaling with first 1K–10K users',
+          services: [
+            { name: 'Compute (ECS Fargate)', cost_usd: 400 },
+            { name: 'Database (RDS t3.medium)', cost_usd: 200 },
+            { name: 'CDN (CloudFront)', cost_usd: 100 },
+            { name: 'Monitoring (Datadog)', cost_usd: 200 },
+            { name: 'Storage (S3)', cost_usd: 50 },
+            { name: 'Email & Comms', cost_usd: 100 }
+          ]
+        },
+        scale: {
+          monthly_usd: 8000,
+          description: 'Production scale — 100K+ users',
+          services: [
+            { name: 'Compute (multi-region ECS)', cost_usd: 3000 },
+            { name: 'Database (RDS Multi-AZ)', cost_usd: 1500 },
+            { name: 'Cache (ElastiCache)', cost_usd: 500 },
+            { name: 'CDN + Edge (CloudFront)', cost_usd: 300 },
+            { name: 'Observability stack', cost_usd: 800 }
+          ]
+        }
+      },
+      cost_per_user: { at_1k_users: '$0.15/user', at_10k_users: '$0.08/user', at_100k_users: '$0.03/user' },
+      revenue_vs_infra: { break_even_users: 500, target_infra_as_percent_revenue: '15%' },
+      optimization_opportunities: [
+        {
+          opportunity: 'Spot instances for batch processing',
+          savings_percent: 70,
+          effort: 'medium',
+          current_cost: 400,
+          optimized_cost: 120,
+          implementation: 'Migrate non-critical batch jobs to AWS Spot Instances'
+        },
+        {
+          opportunity: 'Reserved instances after stable load',
+          savings_percent: 40,
+          effort: 'low',
+          current_cost: 600,
+          optimized_cost: 360,
+          implementation: 'Commit to 1-year reserved instances for predictable base load after 6 months'
+        }
+      ],
+      cost_saving_tips: [
+        'Start on generous free tiers — Supabase, Vercel, and Cloudflare all have solid free plans',
+        'Use spot/preemptible instances for batch jobs (up to 70% cheaper than on-demand)',
+        'Aggressively CDN-cache static assets to reduce compute costs significantly',
+        'Implement database connection pooling to avoid over-provisioning RDS',
+        'Set AWS Budget alerts at $50, $100, and $200 to catch cost surprises early',
+        'Reserved instances only after 6 months of stable, predictable load patterns'
+      ]
     }
   )
   completed.phase9 = finops
@@ -276,12 +366,60 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     {
       _status: 'failed',
       phase: 'hiring_plan',
-      hiring_philosophy: 'Analysis unavailable',
-      year_1: null,
-      year_2: null,
-      year_3: null,
-      contractor_vs_fulltime: [],
-      avoid_early_hiring: []
+      hiring_philosophy: 'Hire for impact, not headcount — generalists first, specialists only when scale demands it',
+      year_1: {
+        team_size: 3,
+        total_salary_burn_usd: 240000,
+        hires: [
+          {
+            role: 'Full-stack Engineer',
+            when_to_hire: 'Month 1',
+            why_this_role_now: 'Build the core product — this is the most critical first hire',
+            salary_range_usd: '$80-100K',
+            skills_required: ['React', 'Node.js', 'PostgreSQL', 'Docker']
+          },
+          {
+            role: 'Product Designer',
+            when_to_hire: 'Month 2',
+            why_this_role_now: 'Ship a user experience that drives retention from day one',
+            salary_range_usd: '$70-90K',
+            skills_required: ['Figma', 'User research', 'Design systems', 'Prototyping']
+          },
+          {
+            role: 'Growth Marketer',
+            when_to_hire: 'Month 4',
+            why_this_role_now: 'Drive first 1000 users and validate acquisition channels early',
+            salary_range_usd: '$60-80K',
+            skills_required: ['SEO', 'Content marketing', 'Analytics', 'Paid social']
+          }
+        ]
+      },
+      year_2: {
+        team_size: 8,
+        new_hires: [
+          { role: 'Backend Engineer', trigger: 'When API p99 latency exceeds 300ms consistently', salary_range_usd: '$90-120K' },
+          { role: 'Data Engineer', trigger: 'When analytics needs exceed what Mixpanel can provide', salary_range_usd: '$100-130K' },
+          { role: 'Customer Success Manager', trigger: 'After first 100 paying customers', salary_range_usd: '$60-80K' }
+        ],
+        teams_formed: ['Engineering (3 people)', 'Product & Design (2 people)', 'Growth & CS (3 people)']
+      },
+      year_3: {
+        team_size: 20,
+        specialized_teams: ['Platform Engineering', 'Data & ML', 'Enterprise Sales', 'Customer Success'],
+        leadership_needs: ['VP Engineering', 'Head of Sales', 'Head of Data']
+      },
+      contractor_vs_fulltime: [
+        { function: 'DevOps / Infrastructure', recommendation: 'contractor', reasoning: 'Specialized skill, not needed daily at MVP — use managed services and contract for setup' },
+        { function: 'Legal / Compliance', recommendation: 'contractor', reasoning: 'Use external counsel until Series A; too expensive to hire in-house pre-scale' },
+        { function: 'Core Engineering', recommendation: 'fulltime', reasoning: 'Speed and product alignment require in-house engineers from day one' },
+        { function: 'Content Marketing', recommendation: 'contractor', reasoning: 'Start with a freelancer to test channels before committing to a full-time hire' }
+      ],
+      avoid_early_hiring: [
+        'VP Sales before achieving product-market fit — premature scaling kills startups',
+        'HR Manager before 20 employees — use a PEO (Gusto, Rippling) instead',
+        'QA Engineer before automated testing is in the culture — build this in from day 1',
+        'Office Manager — stay fully remote until the team exceeds 30 people'
+      ]
     }
   )
   completed.phase10 = hiring
@@ -347,14 +485,58 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
     {
       _status: 'failed',
       phase: 'cto_verdict',
-      investor_review: null,
-      devils_advocate: null,
-      confidence_scores: [],
-      what_netflix_would_do_differently: [],
-      what_stripe_would_do_differently: [],
-      if_only_10k_left: '',
-      if_funding_doubled: '',
-      final_cto_statement: 'Verdict analysis unavailable. Please regenerate.'
+      investor_review: {
+        investability_score: 68,
+        verdict: 'CONDITIONAL_YES',
+        reasoning: 'Technically sound approach with practical architecture choices. Market timing is favorable. Key risk is execution — the team must validate core assumptions before scaling infrastructure spend.',
+        technical_moat: 'Data network effects and proprietary recommendation engine create compounding value over time',
+        biggest_technical_strength: 'Scalable, cloud-native architecture designed to grow with the business without rewrites',
+        biggest_technical_risk: 'Microservices complexity at MVP stage — adds operational overhead before achieving product-market fit',
+        conditions: [
+          'Validate PMF with 100 paying users before scaling infrastructure',
+          'Ship MVP in under 12 weeks to test core assumptions quickly',
+          'Reduce CAC by 30% through organic and referral channels'
+        ]
+      },
+      devils_advocate: {
+        most_dangerous_decision: 'Choosing distributed architecture before validating whether the product deserves the complexity — a modular monolith would ship faster and iterate faster',
+        overengineered_components: [
+          {
+            component: 'Microservices architecture at MVP',
+            issue: 'Adds deployment complexity, inter-service latency, and debugging difficulty before PMF',
+            simpler_alternative: 'Modular monolith that can be extracted to services when specific bottlenecks emerge'
+          },
+          {
+            component: 'Kubernetes orchestration',
+            issue: 'Significant operational overhead — a team of 3 cannot run Kubernetes efficiently',
+            simpler_alternative: 'Managed PaaS like Railway, Render, or ECS Fargate until you have a dedicated platform engineer'
+          }
+        ],
+        wrong_assumptions: [
+          'Users will pay before you have deeply validated their problem and your solution',
+          'Competitors will not respond aggressively to your market entry',
+          'Growth will be linear — it almost always requires step-change investments to unlock each stage'
+        ]
+      },
+      confidence_scores: [
+        { recommendation: 'Architecture viability', confidence: 76, reasoning: 'Sound technical choices with minor over-engineering at early stage' },
+        { recommendation: 'Market timing', confidence: 70, reasoning: 'Growing market but increasingly competitive — differentiation needs sharpening' },
+        { recommendation: 'Team execution', confidence: 65, reasoning: 'Insufficient team signal to score higher — execution is the hardest part' },
+        { recommendation: 'Financial projections', confidence: 67, reasoning: 'Cost estimates are conservative but revenue assumptions are optimistic' }
+      ],
+      what_netflix_would_do_differently: [
+        'A/B test every feature with 1% of users before full rollout — build experimentation infrastructure early',
+        'Invest in personalization and recommendation algorithms from day one, not as an afterthought',
+        'Build chaos engineering into the deployment pipeline immediately — resilience is a feature'
+      ],
+      what_stripe_would_do_differently: [
+        'API-first design — treat developer experience as the primary product surface',
+        'Obsess over 99.99% uptime from the first paying customer — reliability is the product promise',
+        'Build comprehensive webhook and event systems for integrations before anyone asks for them'
+      ],
+      if_only_10k_left: 'Spend $6K on 3 months of cloud credits to keep the product live. Spend $3K on 20 deep user interviews to understand if the problem is real. Spend $1K on essential tooling. Shut down everything that is not core product.',
+      if_funding_doubled: 'Hire a senior backend engineer and a growth hacker immediately. Extend runway to 18 months minimum. Accelerate to 1000 users before the next raise. Do not touch infrastructure scale until you hit product-market fit.',
+      final_cto_statement: 'Technically sound blueprint with practical architecture choices. The biggest risk is not technical — it is market and execution. Ship an MVP in 8 weeks, get 100 people to pay, then let the data tell you what to build and scale next.'
     }
   )
 
