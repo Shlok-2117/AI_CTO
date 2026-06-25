@@ -68,7 +68,13 @@ export default function MermaidDiagram({ diagram, title }: Props) {
             fontSize: '14px',
           }
         })
-        win.mermaid.render(idRef.current, diagram.trim())
+        // Strip markdown fences the AI sometimes wraps the diagram in
+        const cleaned = diagram
+          .replace(/```mermaid/g, '')
+          .replace(/```/g, '')
+          .trim()
+
+        win.mermaid.render(idRef.current, cleaned)
           .then(({ svg: svgCode }: { svg: string }) => {
             setSvg(svgCode)
             setError(false)
@@ -154,10 +160,11 @@ export default function MermaidDiagram({ diagram, title }: Props) {
         )}
 
         {error && (
-          <div className="rounded-lg p-4 text-center"
-            style={{ background: 'rgba(248,113,113,0.05)', border: '1px solid rgba(248,113,113,0.1)' }}>
-            <p className="text-xs font-mono mb-3" style={{ color: 'rgba(248,113,113,0.6)' }}>
-              Could not render diagram
+          <div className="rounded-lg p-5 text-center"
+            style={{ border: '1px solid rgba(0,212,255,0.15)', background: 'rgba(0,212,255,0.03)' }}>
+            <p className="text-lg mb-1">📊</p>
+            <p className="text-xs font-mono mb-3" style={{ color: 'rgba(0,212,255,0.5)' }}>
+              Diagram temporarily unavailable
             </p>
             <a href="https://mermaid.live"
               target="_blank"

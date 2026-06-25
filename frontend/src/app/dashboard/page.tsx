@@ -2323,6 +2323,18 @@ export default function DashboardPage() {
                 )}
               </div>
 
+              {/* Debug panel — shows which phase keys arrived from backend */}
+              {process.env.NODE_ENV === 'development' && (
+                <details className="mb-3 rounded-lg overflow-hidden" style={{ border: '1px solid rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.04)' }}>
+                  <summary className="px-4 py-2 cursor-pointer text-[9px] font-mono tracking-widest select-none list-none" style={{ color: 'rgba(245,158,11,0.5)' }}>
+                    ▸ DEBUG — output keys (click to expand)
+                  </summary>
+                  <pre className="px-4 pb-3 text-[9px] font-mono leading-relaxed" style={{ color: 'rgba(245,158,11,0.7)' }}>
+                    {JSON.stringify(Object.keys(r), null, 2)}
+                  </pre>
+                </details>
+              )}
+
               {/* Tab content */}
               <div className="hud-perspective">
                 <AnimatePresence mode="wait">
