@@ -141,6 +141,32 @@ const AGENT_STEPS = [
   { id: 12, name: 'CTO Verdict',           desc: 'Issuing final investment verdict...',  icon: Award,      color: '#F43F5E' },
 ]
 
+const phaseMessages = [
+  "🧠 Phase 1: Analyzing founder mindset & market opportunity...",
+  "📊 Phase 2: Mapping product strategy & growth loops...",
+  "🏗️ Phase 3: Designing system architecture...",
+  "🗄️ Phase 4: Modeling database schema...",
+  "🔌 Phase 5: Defining API endpoints...",
+  "📈 Phase 6: Planning scaling roadmap 0→100M users...",
+  "🔒 Phase 7: Running security audit...",
+  "⚙️ Phase 8: Configuring DevOps pipeline...",
+  "💰 Phase 9: Calculating cloud costs...",
+  "👥 Phase 10: Building hiring plan...",
+  "📐 Phase 11: Generating architecture diagrams...",
+  "🏆 Phase 12: Writing CTO verdict...",
+]
+
+const waitingQuotes = [
+  "If you can't wait this long, the startup game isn't for you, baby. 😎",
+  "Rome wasn't built in a day. Your architecture is being built right now. 🏛️",
+  "Your CTO is thinking... Good things take time. ⚡",
+  "12 AI agents working in parallel. Patience is a founder's virtue. 🚀",
+  "Real CTOs take weeks for this. We're doing it in minutes. 💪",
+  "The best blueprints aren't rushed. Trust the process. 🎯",
+  "While you wait — imagine pitching this to a VC with an 85/100 score. 💰",
+  "Our AI is thinking harder than a Stanford MBA right now. 🧠",
+]
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function SectionHeader({ title, sub }: { title: string; sub?: string }) {
@@ -1414,6 +1440,9 @@ export default function DashboardPage() {
   const [scrollProgress, setScrollProgress] = useState(0)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfTimer, setPdfTimer] = useState(30)
+  const [currentPhase, setCurrentPhase] = useState(0)
+  const [currentQuote, setCurrentQuote] = useState(0)
+  const [completedPhases, setCompletedPhases] = useState<number[]>([])
   const timerRefs = useRef<NodeJS.Timeout[]>([])
   const logsRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -1441,6 +1470,33 @@ export default function DashboardPage() {
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [loading])
+
+  useEffect(() => {
+    if (!loading) return
+
+    setCurrentPhase(0)
+    setCurrentQuote(0)
+    setCompletedPhases([])
+
+    const phaseInterval = setInterval(() => {
+      setCurrentPhase(prev => {
+        const next = prev + 1
+        setCompletedPhases(p => [...p, prev])
+        return next >= 12 ? 11 : next
+      })
+    }, 8000)
+
+    const quoteInterval = setInterval(() => {
+      setCurrentQuote(prev => (prev + 1) % waitingQuotes.length)
+    }, 12000)
+
+    return () => {
+      clearInterval(phaseInterval)
+      clearInterval(quoteInterval)
+      setCurrentPhase(0)
+      setCompletedPhases([])
     }
   }, [loading])
 
@@ -2010,215 +2066,164 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Loading */}
-        <AnimatePresence>
-          {loading && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="mb-6"
-            >
-              <div className="hud-panel rounded-2xl overflow-hidden relative"
-                style={{ borderColor: 'rgba(0,212,255,0.12)', minHeight: 420 }}>
+        {/* Loading — full-screen overlay */}
+        {loading && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.95)',
+            zIndex: 50,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '24px',
+            padding: '40px',
+            overflowY: 'auto',
+          }}>
 
-                {/* Top beam */}
-                <div className="absolute top-0 left-0 right-0 h-px"
-                  style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.6),transparent)' }} />
+            {/* JARVIS title */}
+            <div style={{
+              color: '#00ffff',
+              fontSize: '14px',
+              letterSpacing: '4px',
+              opacity: 0.7,
+              fontFamily: 'monospace',
+              textAlign: 'center',
+            }}>
+              JARVIS_CTO · AI ANALYSIS IN PROGRESS
+            </div>
 
-                {/* Ambient glow */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                  <motion.div
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.03, 0.07, 0.03] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full"
-                    style={{ background: 'radial-gradient(circle, #00D4FF 0%, transparent 70%)' }}
-                  />
+            {/* Timer */}
+            <div style={{
+              color: '#00ffff',
+              fontSize: '48px',
+              fontWeight: 'bold',
+              fontFamily: 'monospace',
+              textShadow: '0 0 20px rgba(0,255,255,0.5)',
+            }}>
+              {Math.floor(elapsedTime / 60).toString().padStart(2, '0')}:
+              {(elapsedTime % 60).toString().padStart(2, '0')}
+            </div>
+
+            {/* Current Phase Message */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentPhase}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4 }}
+                style={{
+                  color: '#ffffff',
+                  fontSize: '18px',
+                  textAlign: 'center',
+                  maxWidth: '600px',
+                  minHeight: '28px',
+                }}
+              >
+                {phaseMessages[currentPhase]}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Phase Progress Dots */}
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              maxWidth: '400px',
+            }}>
+              {phaseMessages.map((_, i) => (
+                <div key={i} style={{
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  background: completedPhases.includes(i)
+                    ? '#00ffff'
+                    : i === currentPhase
+                      ? '#ffffff'
+                      : '#333333',
+                  boxShadow: i === currentPhase ? '0 0 10px #00ffff' : 'none',
+                  transition: 'all 0.3s ease',
+                  animation: i === currentPhase ? 'jarvis-pulse 1s infinite' : 'none',
+                }} />
+              ))}
+            </div>
+
+            {/* Phase List */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              maxWidth: '500px',
+              width: '100%',
+            }}>
+              {phaseMessages.map((msg, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  opacity: i > currentPhase ? 0.3 : 1,
+                  transition: 'all 0.5s ease',
+                  fontSize: '13px',
+                  color: completedPhases.includes(i)
+                    ? '#00ffff'
+                    : i === currentPhase
+                      ? '#ffffff'
+                      : '#666',
+                }}>
+                  <span style={{ fontSize: '16px', width: '20px', textAlign: 'center', flexShrink: 0 }}>
+                    {completedPhases.includes(i) ? '✅' : i === currentPhase ? '⚡' : '○'}
+                  </span>
+                  {msg}
                 </div>
+              ))}
+            </div>
 
-                <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center">
+            {/* Rotating Quote */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentQuote}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
+                style={{
+                  padding: '16px 24px',
+                  border: '1px solid rgba(0,255,255,0.2)',
+                  borderRadius: '8px',
+                  color: '#00ffff',
+                  fontSize: '14px',
+                  textAlign: 'center',
+                  maxWidth: '500px',
+                  fontStyle: 'italic',
+                  background: 'rgba(0,255,255,0.04)',
+                }}
+              >
+                &ldquo;{waitingQuotes[currentQuote]}&rdquo;
+              </motion.div>
+            </AnimatePresence>
 
-                  {/* System label */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="flex items-center gap-2 mb-10"
-                  >
-                    <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: '#00D4FF', boxShadow: '0 0 6px #00D4FF' }} />
-                    <span className="text-[9px] font-mono tracking-[0.4em]" style={{ color: 'rgba(0,212,255,0.5)' }}>
-                      JARVIS_CTO INTELLIGENCE ACTIVE
-                    </span>
-                    <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.75 }}
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: '#00D4FF', boxShadow: '0 0 6px #00D4FF' }} />
-                  </motion.div>
+            {/* EQ Bars */}
+            <div style={{
+              display: 'flex',
+              gap: '4px',
+              alignItems: 'flex-end',
+              height: '30px',
+            }}>
+              {[...Array(12)].map((_, i) => (
+                <div key={i} style={{
+                  width: '4px',
+                  background: '#00ffff',
+                  borderRadius: '2px',
+                  animation: `jarvis-eq ${0.5 + i * 0.1}s ease-in-out infinite alternate`,
+                }} />
+              ))}
+            </div>
 
-                  {/* 220×220 JARVIS clock */}
-                  <div className="relative mb-10" style={{ width: 220, height: 220 }}>
-
-                    <svg className="absolute inset-0" width="220" height="220">
-                      <circle cx="110" cy="110" r="100" fill="none"
-                        stroke="rgba(0,212,255,0.04)" strokeWidth="1" strokeDasharray="3 6" />
-                    </svg>
-
-                    <motion.svg className="absolute inset-0" width="220" height="220"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}>
-                      <circle cx="110" cy="110" r="104" fill="none"
-                        stroke="rgba(0,212,255,0.12)" strokeWidth="1" strokeDasharray="20 8 4 8" />
-                      <circle cx="110" cy="6" r="3" fill="#00D4FF"
-                        style={{ filter: 'drop-shadow(0 0 4px #00D4FF)' }} />
-                    </motion.svg>
-
-                    <motion.svg className="absolute inset-0" width="220" height="220"
-                      animate={{ rotate: -360 }}
-                      transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}>
-                      <circle cx="110" cy="110" r="86" fill="none"
-                        stroke="rgba(56,189,248,0.15)" strokeWidth="1" strokeDasharray="12 8" />
-                      <circle cx="110" cy="24" r="2.5" fill="#38BDF8"
-                        style={{ filter: 'drop-shadow(0 0 3px #38BDF8)' }} />
-                    </motion.svg>
-
-                    {/* 30-second countdown arc */}
-                    <svg className="absolute inset-0" width="220" height="220"
-                      style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="110" cy="110" r="96" fill="none"
-                        stroke="rgba(0,212,255,0.06)" strokeWidth="3" />
-                      <motion.circle
-                        cx="110" cy="110" r="96"
-                        fill="none" stroke="#00D4FF" strokeWidth="3" strokeLinecap="round"
-                        style={{
-                          filter: 'drop-shadow(0 0 6px rgba(0,212,255,0.5))',
-                          strokeDasharray: `${2 * Math.PI * 96}`,
-                        }}
-                        animate={{ strokeDashoffset: [0, 2 * Math.PI * 96] }}
-                        transition={{ duration: 30, ease: 'linear', repeat: Infinity }}
-                      />
-                    </svg>
-
-                    <motion.svg className="absolute inset-0" width="220" height="220"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}>
-                      <circle cx="110" cy="110" r="68" fill="none"
-                        stroke="rgba(245,158,11,0.1)" strokeWidth="1" strokeDasharray="6 10" />
-                      <circle cx="110" cy="42" r="2" fill="#F59E0B"
-                        style={{ filter: 'drop-shadow(0 0 3px #F59E0B)' }} />
-                    </motion.svg>
-
-                    {/* Center */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="text-5xl font-black font-mono leading-none"
-                        style={{ color: '#00D4FF', textShadow: '0 0 30px rgba(0,212,255,0.5)', letterSpacing: '0.05em' }}>
-                        {formatTime(elapsedTime)}
-                      </div>
-                      <motion.div
-                        animate={{ opacity: [0.4, 0.9, 0.4] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="text-[9px] font-mono mt-2 tracking-[0.3em]"
-                        style={{ color: 'rgba(0,212,255,0.4)' }}>
-                        ELAPSED
-                      </motion.div>
-                    </div>
-
-                    {/* 8 tick marks */}
-                    {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-                      <div key={angle} className="absolute"
-                        style={{
-                          width: 1, height: 8,
-                          background: 'rgba(0,212,255,0.25)',
-                          top: '50%', left: '50%',
-                          transformOrigin: '50% 110px',
-                          transform: `rotate(${angle}deg) translateX(-50%) translateY(-110px)`,
-                          borderRadius: 1
-                        }} />
-                    ))}
-                  </div>
-
-                  {/* Agent name — blur in/out */}
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={currentStep}
-                      initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
-                      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                      exit={{ opacity: 0, y: -12, filter: 'blur(6px)' }}
-                      transition={{ duration: 0.5 }}
-                      className="text-center mb-6"
-                    >
-                      <div className="text-sm font-mono font-black tracking-[0.2em] mb-1.5"
-                        style={{ color: currentStep === 0 ? 'rgba(0,212,255,0.6)' : completedSteps.length === 12 ? '#4ADE80' : '#F8FAFC' }}>
-                        {currentStep === 0
-                          ? '▸ INITIALIZING SYSTEM'
-                          : completedSteps.length === 12
-                          ? '✓ BLUEPRINT COMPLETE'
-                          : `▸ ${AGENT_STEPS[currentStep - 1]?.name?.toUpperCase()}`
-                        }
-                      </div>
-                      <div className="text-xs font-mono" style={{ color: 'rgba(248,250,252,0.2)' }}>
-                        {currentStep === 0
-                          ? 'Preparing 12 specialized agents...'
-                          : completedSteps.length === 12
-                          ? 'Compiling your technical blueprint...'
-                          : AGENT_STEPS[currentStep - 1]?.desc
-                        }
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
-
-                  {/* EQ bars */}
-                  <div className="flex items-end gap-1.5 h-10 mb-6">
-                    {AGENT_STEPS.map((step, i) => {
-                      const isDone = completedSteps.includes(step.id)
-                      const isActive = currentStep === step.id
-                      return (
-                        <motion.div
-                          key={step.id}
-                          className="w-1.5 rounded-full"
-                          animate={{
-                            height: isDone ? '100%' :
-                              isActive ? ['15%', '100%', '40%', '80%', '25%', '90%', '50%', '100%'] :
-                              ['10%', '15%', '10%', '20%', '10%']
-                          }}
-                          transition={{
-                            duration: isActive ? 0.5 : 2,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                            delay: i * 0.08
-                          }}
-                          style={{
-                            background: isDone ? '#4ADE80' : isActive ? '#00D4FF' : 'rgba(255,255,255,0.06)',
-                            boxShadow: isDone ? '0 0 6px rgba(74,222,128,0.4)' : isActive ? '0 0 8px rgba(0,212,255,0.6)' : 'none',
-                            minHeight: 3
-                          }}
-                        />
-                      )
-                    })}
-                  </div>
-
-                  {/* Live log — single line */}
-                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg w-full max-w-sm"
-                    style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,212,255,0.06)' }}>
-                    <motion.div
-                      animate={{ opacity: [1, 0.2, 1] }}
-                      transition={{ duration: 0.8, repeat: Infinity }}
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{ background: '#00D4FF', boxShadow: '0 0 4px #00D4FF' }} />
-                    <span className="text-[9px] font-mono truncate flex-1 text-left"
-                      style={{ color: 'rgba(0,212,255,0.35)' }}>
-                      {logs[logs.length - 1] || 'Booting intelligence system...'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Bottom beam */}
-                <div className="absolute bottom-0 left-0 right-0 h-px"
-                  style={{ background: 'linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent)' }} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          </div>
+        )}
 
         {/* Results */}
         <AnimatePresence>

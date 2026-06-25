@@ -692,3 +692,13 @@
   z-index: 0;
   overflow: hidden;
 }
+
+@keyframes jarvis-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes jarvis-eq {
+  from { height: 10%; }
+  to { height: 100%; }
+}
