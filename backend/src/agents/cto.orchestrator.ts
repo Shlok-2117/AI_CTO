@@ -11,74 +11,84 @@ import { runHiringPhase } from './phase10_hiring.agent'
 import { runDiagramsPhase } from './phase11_diagrams.agent'
 import { runCTOVerdictPhase } from './phase12_cto_verdict.agent'
 
-// Builds a compact ~200-token string summary of all completed phases.
-// Passed as context to each subsequent agent instead of full JSON blobs,
-// keeping prompts well under provider context limits.
-function buildContextSummary(phases: {
-  founder?: any; product?: any; architecture?: any; database?: any;
-  api?: any; scaling?: any; security?: any; devops?: any;
-  finops?: any; hiring?: any; diagrams?: any;
-}): string {
-  const parts: string[] = []
+// Returns a compact summary of all completed phases — max 500 chars / ~125 tokens.
+// Each subsequent agent receives this string instead of full prior-phase JSON,
+// giving a ~90% token reduction while keeping the essential context visible.
+function buildContextSummary(completedPhases: Record<string, any>): string {
+  const lines: string[] = []
 
-  if (phases.founder) {
-    const p = phases.founder
-    const pitch = p?.startup_identity?.one_line_pitch || 'startup idea'
-    parts.push(`Founder: ${pitch}`.slice(0, 100))
-  }
-  if (phases.product) {
-    const p = phases.product
-    const metric = p?.metrics?.north_star_metric || 'product strategy'
-    parts.push(`Product: ${metric}`.slice(0, 100))
-  }
-  if (phases.architecture) {
-    const p = phases.architecture
-    const pattern = p?.architecture_style?.pattern || 'architecture'
-    const svcs = (p?.services || []).slice(0, 3).map((s: any) => s?.name || s).filter(Boolean).join(', ')
-    parts.push(`Arch: ${pattern}${svcs ? ` [${svcs}]` : ''}`.slice(0, 100))
-  }
-  if (phases.database) {
-    const p = phases.database
-    const db = p?.database_strategy?.primary_database || 'DB'
-    const tables = (p?.tables || []).slice(0, 4).map((t: any) => t?.name || t?.table_name || t).filter(Boolean).join(', ')
-    parts.push(`DB: ${db}${tables ? ` tables:${tables}` : ''}`.slice(0, 100))
-  }
-  if (phases.api) {
-    const p = phases.api
-    const style = p?.api_strategy?.style || 'REST'
-    const count = (p?.endpoints || []).length
-    parts.push(`API: ${style}, ${count} endpoints`.slice(0, 100))
-  }
-  if (phases.scaling) {
-    const p = phases.scaling
-    const uptime = p?.reliability?.target_uptime || 'N/A'
-    parts.push(`Scaling: uptime=${uptime}`.slice(0, 100))
-  }
-  if (phases.security) {
-    const p = phases.security
-    const risk = p?.risk_score || 'reviewed'
-    parts.push(`Security: risk=${risk}`.slice(0, 100))
-  }
-  if (phases.devops) {
-    const p = phases.devops
-    const cloud = p?.infrastructure?.cloud_provider || 'cloud'
-    parts.push(`DevOps: ${cloud}`.slice(0, 100))
-  }
-  if (phases.finops) {
-    const p = phases.finops
-    const cost = p?.tiers?.mvp?.monthly_usd || p?.cost_per_user?.at_1k_users || '?'
-    parts.push(`FinOps: MVP=$${cost}/mo`.slice(0, 100))
-  }
-  if (phases.hiring) {
-    const p = phases.hiring
-    const size = p?.year_1?.team_size || '?'
-    parts.push(`Hiring: y1 team=${size}`.slice(0, 100))
-  }
-  if (phases.diagrams) {
-    parts.push('Diagrams: generated')
+  if (completedPhases.phase1) {
+    const p = completedPhases.phase1
+    const pitch = p?.startup_identity?.one_line_pitch
+      || p?.oneLinePitch
+      || p?.pitch
+      || 'startup defined'
+    const model = p?.business_model?.primary_model
+      || p?.businessModel
+      || 'business model defined'
+    lines.push(`P1: ${pitch} | ${model}`.slice(0, 120))
   }
 
-  return parts.join(' | ').slice(0, 500)
+  if (completedPhases.phase2) {
+    const p = completedPhases.phase2
+    const nsm = p?.north_star_metric
+      || p?.northStarMetric
+      || p?.metrics?.north_star_metric
+      || 'product strategy defined'
+    lines.push(`P2: ${nsm}`.slice(0, 100))
+  }
+
+  if (completedPhases.phase3) {
+    const p = completedPhases.phase3
+    const stack = p?.tech_stack?.primary
+      || p?.techStack
+      || p?.architecture_style?.pattern
+      || p?.architecture
+      || 'architecture defined'
+    lines.push(`P3: ${stack}`.slice(0, 100))
+  }
+
+  if (completedPhases.phase4) {
+    const p = completedPhases.phase4
+    const tables = p?.tables?.length
+      || p?.schema?.length
+      || '?'
+    lines.push(`P4: DB schema ${tables} tables`.slice(0, 100))
+  }
+
+  if (completedPhases.phase5) {
+    const p = completedPhases.phase5
+    const endpoints = p?.endpoints?.length
+      || p?.api_endpoints?.length
+      || '?'
+    lines.push(`P5: ${endpoints} API endpoints defined`.slice(0, 100))
+  }
+
+  if (completedPhases.phase6) {
+    lines.push(`P6: scaling roadmap defined`)
+  }
+
+  if (completedPhases.phase7) {
+    lines.push(`P7: security audit defined`)
+  }
+
+  if (completedPhases.phase8) {
+    lines.push(`P8: devops pipeline defined`)
+  }
+
+  if (completedPhases.phase9) {
+    lines.push(`P9: finops analysis defined`)
+  }
+
+  if (completedPhases.phase10) {
+    lines.push(`P10: hiring plan defined`)
+  }
+
+  if (completedPhases.phase11) {
+    lines.push(`P11: architecture diagrams defined`)
+  }
+
+  return lines.join('\n').slice(0, 500)
 }
 
 async function runPhaseWithFallback(phaseName: string, phaseFunction: () => Promise<any>, fallback: any): Promise<any> {
@@ -96,17 +106,10 @@ async function runPhaseWithFallback(phaseName: string, phaseFunction: () => Prom
 export async function generateCTOBlueprint(problem: string): Promise<any> {
   console.log(`\n[CTO SYSTEM] Starting 12-phase analysis for: "${problem}"\n`)
 
-  // Tracks completed phase results so buildContextSummary can grow incrementally.
-  const completed: {
-    founder?: any; product?: any; architecture?: any; database?: any;
-    api?: any; scaling?: any; security?: any; devops?: any;
-    finops?: any; hiring?: any; diagrams?: any;
-  } = {}
+  const completed: Record<string, any> = {}
+  const ctx = () => buildContextSummary(completed)
 
-  // Returns a compact context object wrapping the summary string. Each agent
-  // receives this instead of the full prior-phase JSON (~200 tokens vs 3000+).
-  const ctx = () => ({ _summary: buildContextSummary(completed) })
-
+  // ── Phase 1: no prior context ──────────────────────────────────────────────
   const founder = await runPhaseWithFallback(
     'Phase 1: Founder Mindset',
     () => runFounderPhase(problem),
@@ -121,11 +124,14 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       customer: { primary_persona: null }
     }
   )
-  completed.founder = founder
+  completed.phase1 = founder
 
+  // ── Phase 2 ────────────────────────────────────────────────────────────────
+  const p2ctx = ctx()
+  console.log(`[Context] Phase 2 context length: ${p2ctx.length} chars`)
   const product = await runPhaseWithFallback(
     'Phase 2: Product Strategy',
-    () => runProductPhase(problem, ctx()),
+    () => runProductPhase(problem, p2ctx),
     {
       _status: 'failed',
       phase: 'product_strategy',
@@ -136,11 +142,14 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       product_risks: []
     }
   )
-  completed.product = product
+  completed.phase2 = product
 
+  // ── Phase 3 ────────────────────────────────────────────────────────────────
+  const p3ctx = ctx()
+  console.log(`[Context] Phase 3 context length: ${p3ctx.length} chars`)
   const architecture = await runPhaseWithFallback(
     'Phase 3: System Architecture',
-    () => runArchitecturePhase(problem, ctx(), ctx()),
+    () => runArchitecturePhase(problem, p3ctx, p3ctx),
     {
       _status: 'failed',
       phase: 'system_architecture',
@@ -151,11 +160,14 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       third_party_integrations: []
     }
   )
-  completed.architecture = architecture
+  completed.phase3 = architecture
 
+  // ── Phase 4 ────────────────────────────────────────────────────────────────
+  const p4ctx = ctx()
+  console.log(`[Context] Phase 4 context length: ${p4ctx.length} chars`)
   const database = await runPhaseWithFallback(
     'Phase 4: Data Modeling',
-    () => runDatabasePhase(problem, ctx()),
+    () => runDatabasePhase(problem, p4ctx),
     {
       _status: 'failed',
       phase: 'data_modeling',
@@ -165,11 +177,14 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       indexes: []
     }
   )
-  completed.database = database
+  completed.phase4 = database
 
+  // ── Phase 5 ────────────────────────────────────────────────────────────────
+  const p5ctx = ctx()
+  console.log(`[Context] Phase 5 context length: ${p5ctx.length} chars`)
   const api = await runPhaseWithFallback(
     'Phase 5: API Design',
-    () => runAPIPhase(problem, ctx(), ctx()),
+    () => runAPIPhase(problem, p5ctx, p5ctx),
     {
       _status: 'failed',
       phase: 'api_design',
@@ -178,11 +193,14 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       error_handling: { error_codes: [] }
     }
   )
-  completed.api = api
+  completed.phase5 = api
 
+  // ── Phase 6 ────────────────────────────────────────────────────────────────
+  const p6ctx = ctx()
+  console.log(`[Context] Phase 6 context length: ${p6ctx.length} chars`)
   const scaling = await runPhaseWithFallback(
     'Phase 6: Scaling & Reliability',
-    () => runScalingPhase(problem, ctx(), ctx()),
+    () => runScalingPhase(problem, p6ctx, p6ctx),
     {
       _status: 'failed',
       phase: 'scaling_reliability',
@@ -191,11 +209,14 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       performance_targets: { api_p99_latency_ms: 500, api_p95_latency_ms: 200, page_load_time_ms: 3000, database_query_p99_ms: 100 }
     }
   )
-  completed.scaling = scaling
+  completed.phase6 = scaling
 
+  // ── Phase 7 ────────────────────────────────────────────────────────────────
+  const p7ctx = ctx()
+  console.log(`[Context] Phase 7 context length: ${p7ctx.length} chars`)
   const security = await runPhaseWithFallback(
     'Phase 7: Security Review',
-    () => runSecurityPhase(problem, ctx(), ctx()),
+    () => runSecurityPhase(problem, p7ctx, p7ctx),
     {
       _status: 'failed',
       phase: 'security_review',
@@ -207,11 +228,14 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       security_roadmap: []
     }
   )
-  completed.security = security
+  completed.phase7 = security
 
+  // ── Phase 8 ────────────────────────────────────────────────────────────────
+  const p8ctx = ctx()
+  console.log(`[Context] Phase 8 context length: ${p8ctx.length} chars`)
   const devops = await runPhaseWithFallback(
     'Phase 8: DevOps',
-    () => runDevOpsPhase(problem, ctx()),
+    () => runDevOpsPhase(problem, p8ctx),
     {
       _status: 'failed',
       phase: 'devops',
@@ -222,11 +246,14 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       environments: []
     }
   )
-  completed.devops = devops
+  completed.phase8 = devops
 
+  // ── Phase 9 ────────────────────────────────────────────────────────────────
+  const p9ctx = ctx()
+  console.log(`[Context] Phase 9 context length: ${p9ctx.length} chars`)
   const finops = await runPhaseWithFallback(
     'Phase 9: FinOps',
-    () => runFinOpsPhase(problem, ctx(), ctx()),
+    () => runFinOpsPhase(problem, p9ctx, p9ctx),
     {
       _status: 'failed',
       phase: 'finops',
@@ -238,11 +265,14 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       cost_saving_tips: []
     }
   )
-  completed.finops = finops
+  completed.phase9 = finops
 
+  // ── Phase 10 ───────────────────────────────────────────────────────────────
+  const p10ctx = ctx()
+  console.log(`[Context] Phase 10 context length: ${p10ctx.length} chars`)
   const hiring = await runPhaseWithFallback(
     'Phase 10: Hiring Plan',
-    () => runHiringPhase(problem, ctx(), ctx()),
+    () => runHiringPhase(problem, p10ctx, p10ctx),
     {
       _status: 'failed',
       phase: 'hiring_plan',
@@ -254,11 +284,14 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       avoid_early_hiring: []
     }
   )
-  completed.hiring = hiring
+  completed.phase10 = hiring
 
+  // ── Phase 11 ───────────────────────────────────────────────────────────────
+  const p11ctx = ctx()
+  console.log(`[Context] Phase 11 context length: ${p11ctx.length} chars`)
   const diagrams = await runPhaseWithFallback(
     'Phase 11: Diagrams',
-    () => runDiagramsPhase(problem, ctx(), ctx()),
+    () => runDiagramsPhase(problem, p11ctx, p11ctx),
     {
       _status: 'failed',
       phase: 'diagrams',
@@ -267,10 +300,11 @@ export async function generateCTOBlueprint(problem: string): Promise<any> {
       sequence: 'sequenceDiagram\n    User->>API: Request\n    API-->>User: Response'
     }
   )
-  completed.diagrams = diagrams
+  completed.phase11 = diagrams
 
   const allData = { founder, product, architecture, database, api, scaling, security, devops, finops, hiring, diagrams }
 
+  // ── Phase 12: Verdict (uses hand-picked slim fields, not summary) ──────────
   const verdictContext = {
     startup: {
       idea: problem,
