@@ -10,15 +10,21 @@ interface Props {
 
 function cleanMermaid(code: string): string {
   return code
-    .replace(/```mermaid\n?/g, '')
-    .replace(/```\n?/g, '')
-    .replace(/>\s*>/g, '-->')
-    .replace(/- >/g, '-->')
-    .replace(/—>/g, '-->')
-    .replace(/=>/g, '-->')
-    .replace(/\|([^|]+)\|/g, '["$1"]')
-    .replace(/[‘’]/g, "'")
-    .replace(/[“”]/g, '"')
+    .replace(/```mermaid\n?/gi, ‘’)
+    .replace(/```\n?/g, ‘’)
+    .replace(/‑/g, ‘-’)
+    .replace(/–/g, ‘--’)
+    .replace(/—/g, ‘--’)
+    .replace(/’|’/g, “’”)
+    .replace(/”|”/g, ‘”’)
+    .replace(/ /g, ‘ ‘)
+    .replace(/…/g, ‘...’)
+    .replace(/‑>/g, ‘-->’)
+    .replace(/–>/g, ‘-->’)
+    .replace(/—>/g, ‘-->’)
+    .replace(/=>/g, ‘-->’)
+    .replace(/- >/g, ‘-->’)
+    .replace(/>\s*>/g, ‘-->’)
     .trim()
 }
 
@@ -26,12 +32,13 @@ const SIMPLE_FALLBACK = `graph TD\n    A[Start] --> B[Process]\n    B --> C[End]
 
 export default function MermaidDiagram({ diagram, title }: Props) {
   const [svg, setSvg] = useState<string>('')
-  const [error, setError] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [fullscreen, setFullscreen] = useState(false)
   const [zoom, setZoom] = useState(1)
   const idRef = useRef(`md-${Math.random().toString(36).slice(2, 8)}`)
   const renderAttempted = useRef(false)
+  const ref = useRef<HTMLDivElement>(null)
 
   const openFullscreen = useCallback(() => {
     setZoom(1)
@@ -60,7 +67,7 @@ export default function MermaidDiagram({ diagram, title }: Props) {
     renderAttempted.current = true
     setLoading(true)
 
-    function doRender() {
+    async function doRender() {
       const win = window as any
       if (!win.mermaid) return
 
@@ -85,25 +92,49 @@ export default function MermaidDiagram({ diagram, title }: Props) {
         }
       })
 
-      win.mermaid.render(idRef.current, cleanMermaid(diagram))
-        .then(({ svg: svgCode }: { svg: string }) => {
-          setSvg(svgCode)
-          setError(false)
-          setLoading(false)
-        })
-        .catch(async (e1: any) => {
-          console.error('Mermaid render error (attempt 1):', e1)
-          try {
-            const { svg: svgCode } = await win.mermaid.render(idRef.current + '_fb', SIMPLE_FALLBACK)
-            setSvg(svgCode)
-            setError(false)
-            setLoading(false)
-          } catch (e2: any) {
-            console.error('Mermaid render error (fallback):', e2)
-            setError(true)
-            setLoading(false)
-          }
-        })
+      const id1 = idRef.current + '_a'
+      const id2 = idRef.current + '_b'
+      const id3 = idRef.current + '_c'
+
+      // Attempt 1: cleaned diagram
+      try {
+        const { svg: svgCode } = await win.mermaid.render(id1, cleanMermaid(diagram))
+        if (ref.current) ref.current.innerHTML = svgCode
+        setSvg(svgCode)
+        setError(null)
+        setLoading(false)
+        return
+      } catch {}
+
+      // Attempt 2: remove all non-ASCII
+      try {
+        const c2 = cleanMermaid(diagram).replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '')
+        const { svg: svgCode } = await win.mermaid.render(id2, c2)
+        if (ref.current) ref.current.innerHTML = svgCode
+        setSvg(svgCode)
+        setError(null)
+        setLoading(false)
+        return
+      } catch {}
+
+      // Attempt 3: simple structural fallback
+      try {
+        const fallback = `graph TD
+    A[Client] --> B[API Gateway]
+    B --> C[Auth Service]
+    B --> D[Core Service]
+    D --> E[(Database)]
+    D --> F[(Cache)]`
+        const { svg: svgCode } = await win.mermaid.render(id3, fallback)
+        if (ref.current) ref.current.innerHTML = svgCode
+        setSvg(svgCode)
+        setError(null)
+        setLoading(false)
+        return
+      } catch {}
+
+      setError('📊 Diagram temporarily unavailable')
+      setLoading(false)
     }
 
     const win = window as any
@@ -177,9 +208,8 @@ export default function MermaidDiagram({ diagram, title }: Props) {
         {error && (
           <div className="rounded-lg p-5 text-center"
             style={{ border: '1px solid rgba(0,212,255,0.15)', background: 'rgba(0,212,255,0.03)' }}>
-            <p className="text-lg mb-1">📊</p>
             <p className="text-xs font-mono mb-3" style={{ color: 'rgba(0,212,255,0.5)' }}>
-              Diagram temporarily unavailable
+              {error}
             </p>
             <a href="https://mermaid.live"
               target="_blank"
@@ -215,7 +245,7 @@ export default function MermaidDiagram({ diagram, title }: Props) {
                 </span>
               </div>
             </div>
-            <div dangerouslySetInnerHTML={{ __html: svg }} />
+            <div ref={ref} dangerouslySetInnerHTML={{ __html: svg }} />
           </div>
         )}
       </div>

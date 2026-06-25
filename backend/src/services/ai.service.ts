@@ -42,7 +42,25 @@ function extractJSON(text: string): string | null {
     return cleaned
   } catch {}
 
-  console.error('[extractJSON] All 5 strategies failed. Preview:', text.slice(0, 400))
+  // Strategy 6: unicode smart-chars + trailing commas then extract {}
+  const unicodeCleaned = text
+    .replace(/‑/g, '-')
+    .replace(/–/g, '-')
+    .replace(/—/g, '-')
+    .replace(/‘|’/g, "'")
+    .replace(/“|”/g, '"')
+    .replace(/ /g, ' ')
+    .replace(/…/g, '...')
+    .replace(/,(\s*[}\]])/g, '$1')
+    .replace(/\/\/[^\n]*/g, '')
+  const us = unicodeCleaned.indexOf('{')
+  const ue = unicodeCleaned.lastIndexOf('}')
+  if (us !== -1 && ue > us) {
+    const slice = unicodeCleaned.slice(us, ue + 1)
+    try { JSON.parse(slice); return slice } catch {}
+  }
+
+  console.error('[extractJSON] All 6 strategies failed. Preview:', text.slice(0, 400))
   return null
 }
 
@@ -84,85 +102,38 @@ function cooldownForError(providerName: string, errorMsg: string): number | null
   return ONE_MIN_MS
 }
 
-// ── DEEPSEEK (Primary — reliable JSON via response_format) ───────────────────
-async function callDeepSeek(prompt: string, systemPrompt: string): Promise<string> {
-  const apiKey = process.env.DEEPSEEK_KEY_1
-  if (!apiKey) throw new Error('DEEPSEEK_KEY_1 not set')
-  console.log('[DeepSeek] Calling deepseek-chat...')
-  const response = await fetch('https://api.deepseek.com/chat/completions', {
+// ── CEREBRAS (Primary) ───────────────────────────────────────────────────────
+async function callCerebras(prompt: string, systemPrompt: string): Promise<string> {
+  const apiKey = process.env.CEREBRAS_API_KEY
+  if (!apiKey) throw new Error('CEREBRAS_API_KEY not set')
+  const model = 'gpt-oss-120b'
+  console.log(`[Cerebras] Calling ${model}...`)
+  const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt },
       ],
       max_tokens: 1500,
-      temperature: 0,
-      response_format: { type: 'json_object' },
+      temperature: 0.7,
     }),
   })
-  console.log(`[DeepSeek] HTTP ${response.status}`)
+  console.log(`[Cerebras] ${model} → HTTP ${response.status}`)
   if (!response.ok) {
     const err = await response.text()
-    console.error('[DeepSeek] Error:', err.slice(0, 300))
-    throw new Error(`DeepSeek HTTP ${response.status}: ${err.slice(0, 200)}`)
+    console.error(`[Cerebras] ${model} error:`, err.slice(0, 300))
+    throw new Error(`Cerebras HTTP ${response.status}: ${err.slice(0, 200)}`)
   }
   const data = (await response.json()) as any
   const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error('DeepSeek returned empty content')
+  if (!text) throw new Error('Cerebras returned empty content')
   const extracted = extractJSON(text)
-  if (!extracted) throw new Error('DeepSeek response not parseable JSON')
-  console.log(`[DeepSeek] ✓ (${extracted.length} chars)`)
+  if (!extracted) throw new Error('Cerebras response not parseable JSON')
+  console.log(`[Cerebras] ${model} ✓ (${extracted.length} chars)`)
   return extracted
-}
-
-// ── CEREBRAS (Secondary) ─────────────────────────────────────────────────────
-// Model list from GET /v1/models as of 2026-06-24: gpt-oss-120b, zai-glm-4.7
-async function callCerebras(prompt: string, systemPrompt: string): Promise<string> {
-  const apiKey = process.env.CEREBRAS_API_KEY
-  if (!apiKey) throw new Error('CEREBRAS_API_KEY not set')
-  const models = ['gpt-oss-120b', 'zai-glm-4.7']
-  let lastError: Error = new Error('Cerebras: no models tried')
-  for (const model of models) {
-    try {
-      console.log(`[Cerebras] Calling ${model}...`)
-      const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt },
-          ],
-          max_tokens: 1500,
-          temperature: 0.7,
-        }),
-      })
-      console.log(`[Cerebras] ${model} → HTTP ${response.status}`)
-      if (!response.ok) {
-        const err = await response.text()
-        console.error(`[Cerebras] ${model} error:`, err.slice(0, 300))
-        lastError = new Error(`Cerebras HTTP ${response.status}: ${err.slice(0, 200)}`)
-        if (response.status === 429) throw lastError
-        continue
-      }
-      const data = (await response.json()) as any
-      const text = data.choices?.[0]?.message?.content
-      if (!text) { lastError = new Error(`Cerebras ${model} empty content`); continue }
-      const extracted = extractJSON(text)
-      if (!extracted) { lastError = new Error(`Cerebras ${model} not parseable JSON`); continue }
-      console.log(`[Cerebras] ${model} ✓ (${extracted.length} chars)`)
-      return extracted
-    } catch (e: any) {
-      if (e.message?.includes('429')) throw e
-      lastError = e
-      console.log(`[Cerebras] ${model} failed:`, e.message?.slice(0, 150))
-    }
-  }
-  throw lastError
 }
 
 // ── GROQ (Third — llama-3.1-8b has separate TPM quota from 70b) ─────────────
@@ -258,16 +229,11 @@ async function callGemini(prompt: string, systemPrompt: string): Promise<string>
 }
 
 export async function callAI(prompt: string, systemPrompt: string): Promise<string> {
-  if (!process.env.DEEPSEEK_KEY_1) {
-    console.warn('[AI] REMINDER: Add DEEPSEEK_KEY_1 to Render env vars (get at platform.deepseek.com)')
-  }
-
   console.log(
-    `\n[AI] 4-provider chain: DeepSeek→Cerebras→Groq→Gemini | GROQ=${!!process.env.GROQ_API_KEY} GEMINI=${!!process.env.GEMINI_API_KEY} DEEPSEEK=${!!process.env.DEEPSEEK_KEY_1}`
+    `\n[AI] 3-provider chain: Cerebras→Groq→Gemini | CEREBRAS=${!!process.env.CEREBRAS_API_KEY} GROQ=${!!process.env.GROQ_API_KEY} GEMINI=${!!process.env.GEMINI_API_KEY}`
   )
 
   const providers: Array<{ name: string; fn: () => Promise<string> }> = [
-    { name: 'DeepSeek', fn: () => callDeepSeek(prompt, systemPrompt) },
     { name: 'Cerebras', fn: () => callCerebras(prompt, systemPrompt) },
     { name: 'Groq',     fn: () => callGroq(prompt, systemPrompt) },
     { name: 'Gemini',   fn: () => callGemini(prompt, systemPrompt) },
