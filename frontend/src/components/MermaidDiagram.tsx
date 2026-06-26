@@ -1,4 +1,5 @@
 'use client'
+
 import { useEffect, useRef, useState } from 'react'
 
 function cleanMermaid(code: string): string {
@@ -19,28 +20,16 @@ function cleanMermaid(code: string): string {
     .replace(/—>/g, '-->')
     .replace(/=>/g, '-->')
     .replace(/- >/g, '-->')
+    .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '')
     .trim()
 }
 
-// Poll until window.mermaid.render is available (CDN loads async)
-function waitForMermaid(timeout = 10000): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const start = Date.now()
-    const check = () => {
-      const win = window as any
-      if (win.mermaid && typeof win.mermaid.render === 'function') {
-        resolve(win.mermaid)
-        return
-      }
-      if (Date.now() - start > timeout) {
-        reject(new Error('Mermaid load timeout'))
-        return
-      }
-      setTimeout(check, 100)
-    }
-    check()
-  })
-}
+const FALLBACK_DIAGRAM = `graph TD
+    Client[Web Client] --> Gateway[API Gateway]
+    Gateway --> Auth[Auth Service]
+    Gateway --> Core[Core Service]
+    Core --> DB[(PostgreSQL)]
+    Core --> Cache[(Redis)]`
 
 export default function MermaidDiagram({
   diagram,
@@ -49,19 +38,101 @@ export default function MermaidDiagram({
   diagram: string
   title?: string
 }) {
-  // Container div is always in the DOM so ref.current is non-null when render() runs.
-  // Status controls what's visually shown around it.
-  const ref = useRef<HTMLDivElement>(null)
-  const [status, setStatus] = useState<'loading' | 'success' | 'fallback'>('loading')
-  const renderAttempted = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [status, setStatus] = useState<'loading' | 'done' | 'fallback'>('loading')
+  const [fallbackCode, setFallbackCode] = useState('')
 
   useEffect(() => {
-    if (!diagram?.trim() || renderAttempted.current) return
-    renderAttempted.current = true
+    if (!diagram) return
 
-    // Inject the Mermaid CDN script if not already present
-    const win = window as any
-    if (!win.mermaid) {
+    let cancelled = false
+
+    const tryRender = async (code: string, attempt: number): Promise<boolean> => {
+      return new Promise((resolve) => {
+        try {
+          const win = window as any
+          if (!win.mermaid) { resolve(false); return }
+
+          win.mermaid.initialize({
+            startOnLoad: false,
+            theme: 'dark',
+            securityLevel: 'loose',
+            suppressErrorRendering: true,
+            themeVariables: {
+              primaryColor: '#00ffff22',
+              primaryTextColor: '#ffffff',
+              primaryBorderColor: '#00ffff',
+              lineColor: '#00ffff88',
+              background: '#0a0a1a',
+              mainBkg: '#0d1117',
+              nodeBorder: '#00ffff',
+              fontSize: '14px',
+            },
+          })
+
+          const id = `mermaid_${Date.now()}_${attempt}`
+          const temp = document.createElement('div')
+          temp.id = id
+          temp.style.cssText = 'position:fixed;top:-9999px;left:-9999px;'
+          document.body.appendChild(temp)
+
+          win.mermaid.render(id, code).then(
+            ({ svg }: { svg: string }) => {
+              if (document.body.contains(temp)) document.body.removeChild(temp)
+              if (!cancelled && containerRef.current) {
+                containerRef.current.innerHTML = svg
+                const svgEl = containerRef.current.querySelector('svg')
+                if (svgEl) {
+                  svgEl.style.maxWidth = '100%'
+                  svgEl.style.height = 'auto'
+                  svgEl.removeAttribute('width')
+                  svgEl.removeAttribute('height')
+                }
+              }
+              resolve(true)
+            },
+            () => {
+              if (document.body.contains(temp)) document.body.removeChild(temp)
+              resolve(false)
+            }
+          )
+        } catch {
+          resolve(false)
+        }
+      })
+    }
+
+    const run = async () => {
+      // Wait for mermaid CDN to load (polls every 200ms, up to 8s)
+      let waited = 0
+      while (!(window as any).mermaid && waited < 8000) {
+        await new Promise(r => setTimeout(r, 200))
+        waited += 200
+      }
+
+      if (cancelled) return
+
+      const cleaned = cleanMermaid(diagram)
+
+      // Attempt 1: cleaned diagram
+      const ok1 = await tryRender(cleaned, 1)
+      if (ok1) { setStatus('done'); return }
+
+      if (cancelled) return
+
+      // Attempt 2: hardcoded fallback diagram
+      const ok2 = await tryRender(FALLBACK_DIAGRAM, 2)
+      if (ok2) { setStatus('done'); return }
+
+      if (cancelled) return
+
+      // All failed — show code
+      setFallbackCode(cleaned || diagram)
+      setStatus('fallback')
+    }
+
+    // Inject CDN script if mermaid isn't already loaded
+    if (!(window as any).mermaid) {
       const existing = document.querySelector('script[data-mermaid="true"]')
       if (!existing) {
         const script = document.createElement('script')
@@ -71,91 +142,12 @@ export default function MermaidDiagram({
       }
     }
 
-    const render = async () => {
-      try {
-        // Wait until mermaid.render is actually callable (handles async CDN load)
-        const mermaid = await waitForMermaid()
+    run()
 
-        const container = ref.current
-        if (!container) { setStatus('fallback'); return }
-
-        // Suppress Mermaid's built-in bomb/error UI
-        try {
-          if (mermaid?.mermaidAPI?.setConfig) {
-            mermaid.mermaidAPI.setConfig({ suppressErrorRendering: true })
-          }
-        } catch {}
-
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: 'dark',
-          suppressErrorRendering: true,
-          securityLevel: 'loose',
-          themeVariables: {
-            primaryColor: '#0B1120',
-            primaryTextColor: '#00D4FF',
-            primaryBorderColor: '#00D4FF',
-            lineColor: '#38BDF8',
-            secondaryColor: '#1e3a5f',
-            tertiaryColor: '#0B1120',
-            background: '#030712',
-            mainBkg: '#0B1120',
-            nodeBorder: '#00D4FF',
-            clusterBkg: '#0B1120',
-            titleColor: '#F8FAFC',
-            edgeLabelBackground: '#0B1120',
-            fontSize: '14px',
-          },
-        })
-
-        // Attempt 1: cleaned diagram
-        const cleaned = cleanMermaid(diagram)
-        const tmp1 = document.createElement('div')
-        tmp1.id = 'mmd_' + Math.random().toString(36).slice(2)
-        tmp1.style.cssText = 'position:absolute;visibility:hidden;left:-9999px'
-        document.body.appendChild(tmp1)
-        try {
-          const { svg } = await mermaid.render(tmp1.id, cleaned)
-          document.body.removeChild(tmp1)
-          container.innerHTML = svg
-          const svgEl = container.querySelector('svg')
-          if (svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto' }
-          setStatus('success')
-          return
-        } catch {
-          if (document.body.contains(tmp1)) document.body.removeChild(tmp1)
-        }
-
-        // Attempt 2: strip all non-ASCII
-        const ascii = cleaned.replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '')
-        const tmp2 = document.createElement('div')
-        tmp2.id = 'mmd_' + Math.random().toString(36).slice(2)
-        tmp2.style.cssText = 'position:absolute;visibility:hidden;left:-9999px'
-        document.body.appendChild(tmp2)
-        try {
-          const { svg } = await mermaid.render(tmp2.id, ascii)
-          document.body.removeChild(tmp2)
-          container.innerHTML = svg
-          const svgEl = container.querySelector('svg')
-          if (svgEl) { svgEl.style.maxWidth = '100%'; svgEl.style.height = 'auto' }
-          setStatus('success')
-          return
-        } catch {
-          if (document.body.contains(tmp2)) document.body.removeChild(tmp2)
-        }
-
-        // Both attempts failed — show code fallback
-        setStatus('fallback')
-      } catch {
-        // waitForMermaid timed out or unexpected error
-        setStatus('fallback')
-      }
-    }
-
-    render()
+    return () => { cancelled = true }
   }, [diagram])
 
-  if (!diagram?.trim()) return null
+  if (!diagram) return null
 
   return (
     <div>
@@ -167,16 +159,14 @@ export default function MermaidDiagram({
 
       {status === 'loading' && (
         <div style={{
-          padding: '32px 20px',
-          color: 'rgba(0,212,255,0.4)',
+          padding: '20px',
           textAlign: 'center',
-          border: '1px solid rgba(0,212,255,0.08)',
+          color: '#00ffff66',
+          border: '1px solid #00ffff22',
           borderRadius: '8px',
-          background: 'rgba(0,212,255,0.03)',
-          fontFamily: 'monospace',
-          fontSize: '10px',
+          fontSize: '13px',
         }}>
-          Rendering diagram...
+          ⚡ Rendering diagram...
         </div>
       )}
 
@@ -186,37 +176,49 @@ export default function MermaidDiagram({
           border: '1px solid rgba(0,255,255,0.2)',
           borderRadius: '8px',
           padding: '16px',
-          fontFamily: 'monospace',
-          fontSize: '11px',
-          color: 'rgba(0,255,255,0.8)',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-all',
-          maxHeight: '300px',
-          overflowY: 'auto',
         }}>
           <div style={{ color: '#00ffff', marginBottom: '8px', fontSize: '12px', fontFamily: 'sans-serif' }}>
-            &#x1F4CA; Paste at{' '}
-            <a href="https://mermaid.live" target="_blank" rel="noreferrer" style={{ color: '#00ffff' }}>
+            📊 Copy and paste at{' '}
+            <a
+              href="https://mermaid.live"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: '#00ffff', textDecoration: 'underline' }}
+            >
               mermaid.live
             </a>
-            {' '}to view
+            {' '}to view the diagram
           </div>
-          {cleanMermaid(diagram)}
+          <pre style={{
+            fontFamily: 'monospace',
+            fontSize: '11px',
+            color: 'rgba(0,255,255,0.8)',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all',
+            maxHeight: '250px',
+            overflowY: 'auto',
+            margin: 0,
+          }}>
+            {fallbackCode}
+          </pre>
         </div>
       )}
 
-      {/* Container always in DOM — ref.current is non-null when render() resolves.
-          Shown only on success; hidden (not removed) during loading/fallback. */}
+      {/*
+        containerRef div is ALWAYS in the DOM (display:none when not 'done').
+        This ensures containerRef.current is non-null when tryRender's .then()
+        callback fires and writes innerHTML — status is still 'loading' at that
+        point, so a conditional render would leave the ref unattached.
+      */}
       <div
-        ref={ref}
+        ref={containerRef}
         style={{
-          display: status === 'success' ? 'block' : 'none',
+          display: status === 'done' ? 'block' : 'none',
           maxWidth: '100%',
           overflowX: 'auto',
+          background: '#0d1117',
           borderRadius: '8px',
           padding: '12px',
-          background: 'rgba(3,7,18,0.6)',
-          border: '1px solid rgba(0,212,255,0.08)',
         }}
       />
     </div>
