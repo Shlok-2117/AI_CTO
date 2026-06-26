@@ -1,4 +1,4 @@
-function sleep(ms: number) {
+﻿function sleep(ms: number) {
   return new Promise<void>(r => setTimeout(r, ms))
 }
 
@@ -44,13 +44,13 @@ function extractJSON(text: string): string | null {
 
   // Strategy 6: unicode smart-chars + trailing commas then extract {}
   const unicodeCleaned = text
-    .replace(/‑/g, '-')
-    .replace(/–/g, '-')
-    .replace(/—/g, '-')
-    .replace(/‘|’/g, "'")
-    .replace(/“|”/g, '"')
-    .replace(/ /g, ' ')
-    .replace(/…/g, '...')
+    .replace(/\u2011/g, '-')
+    .replace(/\u2013/g, '-')
+    .replace(/\u2014/g, '-')
+    .replace(/\u2018|\u2019/g, "'")
+    .replace(/\u201C|\u201D/g, '"')
+    .replace(/\u00A0/g, ' ')
+    .replace(/\u2026/g, '...')
     .replace(/,(\s*[}\]])/g, '$1')
     .replace(/\/\/[^\n]*/g, '')
   const us = unicodeCleaned.indexOf('{')

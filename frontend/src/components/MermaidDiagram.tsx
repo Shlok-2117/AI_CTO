@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
@@ -10,21 +10,23 @@ interface Props {
 
 function cleanMermaid(code: string): string {
   return code
-    .replace(/```mermaid\n?/gi, ‘’)
-    .replace(/```\n?/g, ‘’)
-    .replace(/‑/g, ‘-’)
-    .replace(/–/g, ‘--’)
-    .replace(/—/g, ‘--’)
-    .replace(/’|’/g, “’”)
-    .replace(/”|”/g, ‘”’)
-    .replace(/ /g, ‘ ‘)
-    .replace(/…/g, ‘...’)
-    .replace(/‑>/g, ‘-->’)
-    .replace(/–>/g, ‘-->’)
-    .replace(/—>/g, ‘-->’)
-    .replace(/=>/g, ‘-->’)
-    .replace(/- >/g, ‘-->’)
-    .replace(/>\s*>/g, ‘-->’)
+    .replace(/```mermaid/gi, '')
+    .replace(/```/g, '')
+    .replace(/\u2011/g, '-')
+    .replace(/\u2013/g, '--')
+    .replace(/\u2014/g, '--')
+    .replace(/\u2018/g, "'")
+    .replace(/\u2019/g, "'")
+    .replace(/\u201C/g, '"')
+    .replace(/\u201D/g, '"')
+    .replace(/\u00A0/g, ' ')
+    .replace(/\u2026/g, '...')
+    .replace(/\u2011>/g, '-->')
+    .replace(/\u2013>/g, '-->')
+    .replace(/\u2014>/g, '-->')
+    .replace(/=>/g, '-->')
+    .replace(/- >/g, '-->')
+    .replace(/>\s*>/g, '-->')
     .trim()
 }
 
@@ -147,7 +149,7 @@ export default function MermaidDiagram({ diagram, title }: Props) {
     script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js'
     script.setAttribute('data-mermaid', 'true')
     script.onload = () => setTimeout(doRender, 100)
-    script.onerror = () => { setError(true); setLoading(false) }
+    script.onerror = () => { setError('Failed to load Mermaid'); setLoading(false) }
     document.head.appendChild(script)
   }, [diagram])
 
