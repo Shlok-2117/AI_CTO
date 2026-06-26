@@ -264,7 +264,7 @@ export async function callAI(prompt: string, systemPrompt: string): Promise<stri
   if (allCooling) {
     const shortestWait = Math.min(
       ...providers.map(({ name }) => Math.max(0, (cooldownUntil.get(name) ?? 0) - Date.now()))
-    ) + 500
+    ) + 2000
     console.log(`[AI] All providers cooling — waiting ${Math.round(shortestWait / 1000)}s for fastest reset`)
     await new Promise(r => setTimeout(r, shortestWait))
     for (const { name, fn } of providers) {
