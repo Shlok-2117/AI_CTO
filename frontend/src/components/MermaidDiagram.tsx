@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Maximize2, ZoomIn, ZoomOut } from 'lucide-react'
@@ -12,34 +12,34 @@ function cleanMermaid(code: string): string {
   return code
     .replace(/```mermaid/gi, '')
     .replace(/```/g, '')
-    .replace(/\u2011/g, '-')
-    .replace(/\u2013/g, '--')
-    .replace(/\u2014/g, '--')
-    .replace(/\u2018/g, "'")
-    .replace(/\u2019/g, "'")
-    .replace(/\u201C/g, '"')
-    .replace(/\u201D/g, '"')
-    .replace(/\u00A0/g, ' ')
-    .replace(/\u2026/g, '...')
-    .replace(/\u2011>/g, '-->')
-    .replace(/\u2013>/g, '-->')
-    .replace(/\u2014>/g, '-->')
+    .replace(/‑/g, '-')
+    .replace(/–/g, '--')
+    .replace(/—/g, '--')
+    .replace(/‘/g, "'")
+    .replace(/’/g, "'")
+    .replace(/“/g, '"')
+    .replace(/”/g, '"')
+    .replace(/ /g, ' ')
+    .replace(/…/g, '...')
+    .replace(/‑>/g, '-->')
+    .replace(/–>/g, '-->')
+    .replace(/—>/g, '-->')
     .replace(/=>/g, '-->')
     .replace(/- >/g, '-->')
     .replace(/>\s*>/g, '-->')
     .trim()
 }
 
-const SIMPLE_FALLBACK = `graph TD\n    A[Start] --> B[Process]\n    B --> C[End]`
-
 export default function MermaidDiagram({ diagram, title }: Props) {
-  const [svg, setSvg] = useState<string>('')
+  // svgForModal is only set on successful SVG renders — drives the fullscreen modal
+  const [svgForModal, setSvgForModal] = useState<string>('')
+  // error is only set when the Mermaid script itself fails to load
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [fullscreen, setFullscreen] = useState(false)
   const [zoom, setZoom] = useState(1)
-  const idRef = useRef(`md-${Math.random().toString(36).slice(2, 8)}`)
   const renderAttempted = useRef(false)
+  // ref is always in the DOM (hidden while loading) so doRender can write to it immediately
   const ref = useRef<HTMLDivElement>(null)
 
   const openFullscreen = useCallback(() => {
@@ -70,13 +70,23 @@ export default function MermaidDiagram({ diagram, title }: Props) {
     setLoading(true)
 
     async function doRender() {
-      const win = window as any
-      if (!win.mermaid) return
+      const container = ref.current
+      if (!container) return
 
-      win.mermaid.initialize({
+      const mermaid = (window as any).mermaid
+
+      // Suppress mermaid's built-in error renderer (the bomb icon)
+      try {
+        if (mermaid?.mermaidAPI?.setConfig) {
+          mermaid.mermaidAPI.setConfig({ suppressErrorRendering: true })
+        }
+      } catch {}
+
+      mermaid.initialize({
         startOnLoad: false,
         theme: 'dark',
         securityLevel: 'loose',
+        suppressErrorRendering: true,
         themeVariables: {
           primaryColor: '#0B1120',
           primaryTextColor: '#00D4FF',
@@ -94,61 +104,65 @@ export default function MermaidDiagram({ diagram, title }: Props) {
         }
       })
 
-      const id1 = idRef.current + '_a'
-      const id2 = idRef.current + '_b'
-      const id3 = idRef.current + '_c'
-
-      // Attempt 1: cleaned diagram
+      // Attempt 1: cleaned diagram — temp element to avoid DOM corruption on failure
+      const tmp1 = document.createElement('div')
+      tmp1.id = 'mmd_' + Date.now() + '_1'
+      document.body.appendChild(tmp1)
       try {
-        const { svg: svgCode } = await win.mermaid.render(id1, cleanMermaid(diagram))
-        if (ref.current) ref.current.innerHTML = svgCode
-        setSvg(svgCode)
-        setError(null)
+        const c1 = cleanMermaid(diagram)
+        const { svg } = await mermaid.render(tmp1.id, c1)
+        document.body.removeChild(tmp1)
+        container.innerHTML = svg
+        setSvgForModal(svg)
         setLoading(false)
         return
-      } catch {}
+      } catch {
+        if (document.body.contains(tmp1)) document.body.removeChild(tmp1)
+      }
 
-      // Attempt 2: remove all non-ASCII
+      // Attempt 2: strip all non-ASCII
+      const tmp2 = document.createElement('div')
+      tmp2.id = 'mmd_' + Date.now() + '_2'
+      document.body.appendChild(tmp2)
       try {
         const c2 = cleanMermaid(diagram).replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '')
-        const { svg: svgCode } = await win.mermaid.render(id2, c2)
-        if (ref.current) ref.current.innerHTML = svgCode
-        setSvg(svgCode)
-        setError(null)
+        const { svg } = await mermaid.render(tmp2.id, c2)
+        document.body.removeChild(tmp2)
+        container.innerHTML = svg
+        setSvgForModal(svg)
         setLoading(false)
         return
-      } catch {}
+      } catch {
+        if (document.body.contains(tmp2)) document.body.removeChild(tmp2)
+      }
 
-      // Attempt 3: simple structural fallback
+      // Attempt 3: simple hardcoded fallback diagram
+      const tmp3 = document.createElement('div')
+      tmp3.id = 'mmd_' + Date.now() + '_3'
+      document.body.appendChild(tmp3)
       try {
         const fallback = `graph TD
-    A[Client] --> B[API Gateway]
-    B --> C[Auth Service]
-    B --> D[Core Service]
-    D --> E[(Database)]
-    D --> F[(Cache)]`
-        const { svg: svgCode } = await win.mermaid.render(id3, fallback)
-        if (ref.current) ref.current.innerHTML = svgCode
-        setSvg(svgCode)
-        setError(null)
+    Client[Web Client] --> Gateway[API Gateway]
+    Gateway --> Auth[Auth Service]
+    Gateway --> Core[Core Service]
+    Core --> DB[(PostgreSQL)]
+    Core --> Cache[(Redis)]`
+        const { svg } = await mermaid.render(tmp3.id, fallback)
+        document.body.removeChild(tmp3)
+        container.innerHTML = svg
+        setSvgForModal(svg)
         setLoading(false)
         return
-      } catch {}
+      } catch {
+        if (document.body.contains(tmp3)) document.body.removeChild(tmp3)
+      }
 
-      // All attempts failed — show raw code in a styled box instead of an error
+      // ALL attempts failed — write copyable code box directly to DOM, no error state
       const escaped = (diagram || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-      setSvg(
-        '<div style="background:#0a0a1a;border:1px solid rgba(0,255,255,0.2);border-radius:8px;' +
-        'padding:16px;font-family:monospace;font-size:11px;color:rgba(0,255,255,0.6);' +
-        'white-space:pre-wrap;word-break:break-all">' +
-        '<div style="color:#00ffff;margin-bottom:8px;font-size:12px;font-weight:bold;">' +
-        '📊 Copy this code → paste at mermaid.live' +
-        '</div>' + escaped + '</div>'
-      )
-      setError(null)
+      container.innerHTML = `<div style="background:#0a0a1a;border:1px solid rgba(0,255,255,0.2);border-radius:8px;padding:16px;font-family:monospace;font-size:11px;color:rgba(0,255,255,0.7);white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto"><div style="color:#00ffff;margin-bottom:8px;font-size:12px;font-family:sans-serif;font-weight:bold">&#x1F4CA; Paste at <a href="https://mermaid.live" target="_blank" style="color:#00ffff;text-decoration:underline">mermaid.live</a> to view</div>${escaped}</div>`
       setLoading(false)
     }
 
@@ -178,7 +192,7 @@ export default function MermaidDiagram({ diagram, title }: Props) {
               style={{ color: 'rgba(0,212,255,0.4)' }}>
               {title}
             </div>
-            {svg && !error && (
+            {svgForModal && !loading && !error && (
               <button
                 onClick={openFullscreen}
                 className="flex items-center gap-1.5 text-[9px] font-mono px-3 py-1.5 rounded-lg transition-all"
@@ -236,38 +250,44 @@ export default function MermaidDiagram({ diagram, title }: Props) {
           </div>
         )}
 
-        {svg && !error && !loading && (
+        {/* Container is always in the DOM so ref.current is available during doRender.
+            Hidden while loading; revealed by setLoading(false) after doRender writes to it. */}
+        {!error && (
           <div
-            className="rounded-lg overflow-auto cursor-pointer group relative"
+            className="rounded-lg overflow-auto relative group"
             style={{
+              display: loading ? 'none' : 'block',
               background: 'rgba(3,7,18,0.6)',
               border: '1px solid rgba(0,212,255,0.08)',
               padding: '16px',
               maxHeight: '380px',
-              transition: 'border-color 0.2s'
+              transition: 'border-color 0.2s',
+              cursor: svgForModal ? 'pointer' : 'default'
             }}
-            onClick={openFullscreen}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,212,255,0.25)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,212,255,0.08)' }}
+            onClick={svgForModal ? openFullscreen : undefined}
+            onMouseEnter={svgForModal ? (e => { e.currentTarget.style.borderColor = 'rgba(0,212,255,0.25)' }) : undefined}
+            onMouseLeave={svgForModal ? (e => { e.currentTarget.style.borderColor = 'rgba(0,212,255,0.08)' }) : undefined}
           >
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg z-10"
-              style={{ background: 'rgba(3,7,18,0.6)' }}>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg"
-                style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)' }}>
-                <Maximize2 className="w-4 h-4" style={{ color: '#00D4FF' }} />
-                <span className="text-xs font-mono font-bold" style={{ color: '#00D4FF' }}>
-                  CLICK TO EXPAND
-                </span>
+            {svgForModal && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg z-10 pointer-events-none"
+                style={{ background: 'rgba(3,7,18,0.6)' }}>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-lg"
+                  style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)' }}>
+                  <Maximize2 className="w-4 h-4" style={{ color: '#00D4FF' }} />
+                  <span className="text-xs font-mono font-bold" style={{ color: '#00D4FF' }}>
+                    CLICK TO EXPAND
+                  </span>
+                </div>
               </div>
-            </div>
-            <div ref={ref} dangerouslySetInnerHTML={{ __html: svg }} />
+            )}
+            <div ref={ref} />
           </div>
         )}
       </div>
 
-      {/* Fullscreen modal */}
+      {/* Fullscreen modal — only shown for real SVG renders, not code box fallback */}
       <AnimatePresence>
-        {fullscreen && svg && (
+        {fullscreen && svgForModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -345,7 +365,7 @@ export default function MermaidDiagram({ diagram, title }: Props) {
                 }}
                 onClick={e => e.stopPropagation()}
               >
-                <div dangerouslySetInnerHTML={{ __html: svg }} />
+                <div dangerouslySetInnerHTML={{ __html: svgForModal }} />
               </div>
             </div>
 
