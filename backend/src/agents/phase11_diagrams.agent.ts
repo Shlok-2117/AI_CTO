@@ -6,24 +6,58 @@ ${MASTER_CTO_IDENTITY}
 
 PHASE 11 — DIAGRAMS
 
-Generate valid Mermaid diagram syntax for all 3 diagrams.
-Use \\n for newlines inside strings.
-Keep diagrams clean and readable.
+Generate architecture diagrams in valid Mermaid.js syntax.
 
-Output ONLY this JSON:
+STRICT RULES — follow exactly:
+1. Use ONLY ASCII characters — no unicode, no smart quotes
+2. Use ONLY --> for arrows (two dashes + greater than)
+3. Node IDs: alphanumeric only, no spaces (use underscore)
+4. Node labels: use square brackets [Label Text]
+5. Keep it simple — max 8 nodes per diagram
+6. No subgraphs — flat structure only
+7. No special characters in labels: & < > ' "
+
+VALID EXAMPLE — copy this style exactly:
+graph TD
+    Client[Web Client] --> Gateway[API Gateway]
+    Gateway --> Auth[Auth Service]
+    Gateway --> Core[Core Service]
+    Core --> DB[(PostgreSQL)]
+    Core --> Cache[(Redis)]
+
+ER DIAGRAM VALID EXAMPLE:
+erDiagram
+    USER {
+        uuid id
+        string email
+        string name
+    }
+    ORDER {
+        uuid id
+        uuid user_id
+        string status
+    }
+    USER ||--o{ ORDER : places
+
+SEQUENCE VALID EXAMPLE:
+sequenceDiagram
+    actor User
+    participant App
+    participant API
+    participant DB
+    User->>App: Login Request
+    App->>API: POST /auth/login
+    API->>DB: Find User
+    DB-->>API: User Found
+    API-->>App: JWT Token
+    App-->>User: Success
+
+Return JSON with these exact keys:
 {
-  "phase": "diagrams",
-  "architecture": "graph TD\\n    Client[React Frontend]-->API[API Gateway]\\n    API-->Auth[Auth Service]\\n    API-->Core[Core Service]",
-  "er_diagram": "erDiagram\\n    USER ||--o{ ORDER : places\\n    ORDER ||--|{ ITEM : contains",
-  "sequence": "sequenceDiagram\\n    actor User\\n    User->>Frontend: Action\\n    Frontend->>API: Request\\n    API-->>Frontend: Response"
+  "architecture": "graph TD\\n    Client[Web Client] --> Gateway[API Gateway]\\n    Gateway --> Auth[Auth Service]",
+  "er_diagram": "erDiagram\\n    USER {\\n        uuid id\\n        string email\\n    }",
+  "sequence": "sequenceDiagram\\n    actor User\\n    participant API\\n    User->>API: Request\\n    API-->>User: Response"
 }
-
-Rules for Mermaid syntax:
-- Use \\n for newlines (double backslash n in the JSON string)
-- No special characters in node labels except spaces and letters
-- For erDiagram, use simple entity names without spaces
-- Keep node names short (max 20 chars)
-- Test mentally that syntax is valid before outputting
 `
 
 function cleanJSON(text: string): string {

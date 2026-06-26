@@ -135,7 +135,20 @@ export default function MermaidDiagram({ diagram, title }: Props) {
         return
       } catch {}
 
-      setError('📊 Diagram temporarily unavailable')
+      // All attempts failed — show raw code in a styled box instead of an error
+      const escaped = (diagram || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+      setSvg(
+        '<div style="background:#0a0a1a;border:1px solid rgba(0,255,255,0.2);border-radius:8px;' +
+        'padding:16px;font-family:monospace;font-size:11px;color:rgba(0,255,255,0.6);' +
+        'white-space:pre-wrap;word-break:break-all">' +
+        '<div style="color:#00ffff;margin-bottom:8px;font-size:12px;font-weight:bold;">' +
+        '📊 Copy this code → paste at mermaid.live' +
+        '</div>' + escaped + '</div>'
+      )
+      setError(null)
       setLoading(false)
     }
 
