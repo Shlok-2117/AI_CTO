@@ -54,49 +54,10 @@ export function BootScreen({ onComplete }: { onComplete: () => void }) {
       setDone(true)
       setTimeout(() => {
         sessionStorage.setItem('jarvis_booted', 'true')
-
-        try {
-          const greeting = userName
-            ? `Welcome back to JARVIS C T O, ${userName}. All systems are online.`
-            : `Welcome to JARVIS C T O. All 12 intelligence agents are standing by.`
-
-          if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel()
-
-            const speak = () => {
-              const utterance = new SpeechSynthesisUtterance(greeting)
-              utterance.rate = 0.88
-              utterance.pitch = 0.75
-              utterance.volume = 1.0
-
-              const voices = window.speechSynthesis.getVoices()
-              const preferred = voices.find(v =>
-                v.name.includes('Daniel') ||
-                v.name.includes('Google UK English Male') ||
-                v.name.includes('Microsoft David') ||
-                v.name.includes('Aaron') ||
-                v.name.includes('Alex') ||
-                v.lang === 'en-GB'
-              ) || voices.find(v => v.lang.startsWith('en'))
-
-              if (preferred) utterance.voice = preferred
-              window.speechSynthesis.speak(utterance)
-            }
-
-            if (window.speechSynthesis.getVoices().length === 0) {
-              window.speechSynthesis.onvoiceschanged = speak
-            } else {
-              speak()
-            }
-          }
-        } catch {
-          console.log('Voice not available')
-        }
-
         onComplete()
       }, 800)
     }, 2600)
-  }, [onComplete, bootLines, userName])
+  }, [onComplete, bootLines])
 
   return (
     <AnimatePresence>
