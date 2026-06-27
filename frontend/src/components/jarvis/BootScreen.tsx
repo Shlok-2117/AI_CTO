@@ -1,29 +1,41 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HudOrb } from './HudOrb'
-
-const BOOT_LINES = [
-  { text: '▸ INITIALIZING JARVIS CORE SYSTEM', delay: 200, color: 'text-cyan-400' },
-  { text: '▸ Loading neural architecture modules...', delay: 600, color: 'text-slate-400' },
-  { text: '▸ Connecting AI providers...', delay: 1000, color: 'text-slate-400' },
-  { text: '  ✓ Groq llama-3.1-8b-instant', delay: 1300, color: 'text-green-400' },
-  { text: '  ✓ Groq llama-3.3-70b-versatile fallback', delay: 1600, color: 'text-green-400' },
-  { text: '▸ Loading 6 specialized agents...', delay: 2000, color: 'text-slate-400' },
-  { text: '  ✓ Architecture Agent — ONLINE', delay: 2300, color: 'text-green-400' },
-  { text: '  ✓ Database Agent — ONLINE', delay: 2500, color: 'text-green-400' },
-  { text: '  ✓ API Design Agent — ONLINE', delay: 2700, color: 'text-green-400' },
-  { text: '  ✓ Cost Estimator — ONLINE', delay: 2900, color: 'text-green-400' },
-  { text: '  ✓ Security Agent — ONLINE', delay: 3100, color: 'text-green-400' },
-  { text: '  ✓ Diagram Agent — ONLINE', delay: 3300, color: 'text-green-400' },
-  { text: '▸ All systems operational', delay: 3700, color: 'text-cyan-400' },
-  { text: '▸ WELCOME TO JARVIS_CTO', delay: 4000, color: 'text-amber-400' },
-]
 
 export function BootScreen({ onComplete }: { onComplete: () => void }) {
   const [visibleLines, setVisibleLines] = useState<number[]>([])
   const [progress, setProgress] = useState(0)
   const [done, setDone] = useState(false)
+
+  const [userName] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const stored = localStorage.getItem('user')
+      if (stored) {
+        const u = JSON.parse(stored)
+        return u.name || u.email?.split('@')[0] || null
+      }
+    } catch {}
+    return null
+  })
+
+  const bootLines = useMemo(() => {
+    if (userName) {
+      return [
+        { text: 'JARVIS_CTO SYSTEM ONLINE', delay: 200, color: 'text-cyan-400' },
+        { text: `WELCOME BACK, ${userName.toUpperCase()}`, delay: 800, color: 'text-amber-400' },
+        { text: 'ALL 12 AGENTS: ACTIVE', delay: 1400, color: 'text-green-400' },
+        { text: 'GENERATING YOUR DASHBOARD...', delay: 2000, color: 'text-slate-400' },
+      ]
+    }
+    return [
+      { text: 'JARVIS_CTO SYSTEM INITIALIZING...', delay: 200, color: 'text-cyan-400' },
+      { text: 'AI AGENTS: ONLINE', delay: 800, color: 'text-green-400' },
+      { text: 'LOADING INTERFACE...', delay: 1400, color: 'text-slate-400' },
+      { text: 'READY', delay: 2000, color: 'text-amber-400' },
+    ]
+  }, [userName])
 
   useEffect(() => {
     if (sessionStorage.getItem('jarvis_booted')) {
@@ -31,10 +43,10 @@ export function BootScreen({ onComplete }: { onComplete: () => void }) {
       return
     }
 
-    BOOT_LINES.forEach((line, i) => {
+    bootLines.forEach((line, i) => {
       setTimeout(() => {
         setVisibleLines(prev => [...prev, i])
-        setProgress(Math.round(((i + 1) / BOOT_LINES.length) * 100))
+        setProgress(Math.round(((i + 1) / bootLines.length) * 100))
       }, line.delay)
     })
 
@@ -43,14 +55,7 @@ export function BootScreen({ onComplete }: { onComplete: () => void }) {
       setTimeout(() => {
         sessionStorage.setItem('jarvis_booted', 'true')
 
-        // JARVIS welcome voice
         try {
-          const userName = localStorage.getItem('user')
-            ? JSON.parse(localStorage.getItem('user') || '{}').name ||
-              JSON.parse(localStorage.getItem('user') || '{}').email?.split('@')[0] ||
-              null
-            : null
-
           const greeting = userName
             ? `Welcome back to JARVIS C T O, ${userName}. All systems are online.`
             : `Welcome to JARVIS C T O. All 12 intelligence agents are standing by.`
@@ -84,14 +89,14 @@ export function BootScreen({ onComplete }: { onComplete: () => void }) {
               speak()
             }
           }
-        } catch (e) {
+        } catch {
           console.log('Voice not available')
         }
 
         onComplete()
       }, 800)
-    }, 4600)
-  }, [onComplete])
+    }, 2600)
+  }, [onComplete, bootLines, userName])
 
   return (
     <AnimatePresence>
@@ -145,8 +150,8 @@ export function BootScreen({ onComplete }: { onComplete: () => void }) {
                 </div>
                 <span className="text-xs font-mono text-slate-600 ml-2">system.boot.log</span>
               </div>
-              <div className="space-y-1 min-h-[200px]">
-                {BOOT_LINES.map((line, i) =>
+              <div className="space-y-1 min-h-[120px]">
+                {bootLines.map((line, i) =>
                   visibleLines.includes(i) && (
                     <motion.div
                       key={i}
