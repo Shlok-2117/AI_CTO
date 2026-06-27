@@ -1,41 +1,19 @@
 'use client'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HudOrb } from './HudOrb'
+
+const BOOT_LINES = [
+  { text: 'JARVIS_CTO SYSTEM ONLINE', delay: 200, color: 'text-cyan-400' },
+  { text: 'ALL 12 AGENTS: OPERATIONAL', delay: 800, color: 'text-green-400' },
+  { text: 'INITIALIZING INTELLIGENCE CORE...', delay: 1400, color: 'text-slate-400' },
+  { text: 'READY TO BUILD YOUR EMPIRE 🚀', delay: 2000, color: 'text-amber-400' },
+]
 
 export function BootScreen({ onComplete }: { onComplete: () => void }) {
   const [visibleLines, setVisibleLines] = useState<number[]>([])
   const [progress, setProgress] = useState(0)
   const [done, setDone] = useState(false)
-
-  const [userName] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null
-    try {
-      const stored = localStorage.getItem('user')
-      if (stored) {
-        const u = JSON.parse(stored)
-        return u.name || u.email?.split('@')[0] || null
-      }
-    } catch {}
-    return null
-  })
-
-  const bootLines = useMemo(() => {
-    if (userName) {
-      return [
-        { text: 'JARVIS_CTO SYSTEM ONLINE', delay: 200, color: 'text-cyan-400' },
-        { text: `WELCOME BACK, ${userName.toUpperCase()}`, delay: 800, color: 'text-amber-400' },
-        { text: 'ALL 12 AGENTS: ACTIVE', delay: 1400, color: 'text-green-400' },
-        { text: 'GENERATING YOUR DASHBOARD...', delay: 2000, color: 'text-slate-400' },
-      ]
-    }
-    return [
-      { text: 'JARVIS_CTO SYSTEM INITIALIZING...', delay: 200, color: 'text-cyan-400' },
-      { text: 'AI AGENTS: ONLINE', delay: 800, color: 'text-green-400' },
-      { text: 'LOADING INTERFACE...', delay: 1400, color: 'text-slate-400' },
-      { text: 'READY', delay: 2000, color: 'text-amber-400' },
-    ]
-  }, [userName])
 
   useEffect(() => {
     if (sessionStorage.getItem('jarvis_booted')) {
@@ -43,10 +21,10 @@ export function BootScreen({ onComplete }: { onComplete: () => void }) {
       return
     }
 
-    bootLines.forEach((line, i) => {
+    BOOT_LINES.forEach((line, i) => {
       setTimeout(() => {
         setVisibleLines(prev => [...prev, i])
-        setProgress(Math.round(((i + 1) / bootLines.length) * 100))
+        setProgress(Math.round(((i + 1) / BOOT_LINES.length) * 100))
       }, line.delay)
     })
 
@@ -57,7 +35,7 @@ export function BootScreen({ onComplete }: { onComplete: () => void }) {
         onComplete()
       }, 800)
     }, 2600)
-  }, [onComplete, bootLines])
+  }, [onComplete])
 
   return (
     <AnimatePresence>
@@ -112,7 +90,7 @@ export function BootScreen({ onComplete }: { onComplete: () => void }) {
                 <span className="text-xs font-mono text-slate-600 ml-2">system.boot.log</span>
               </div>
               <div className="space-y-1 min-h-[120px]">
-                {bootLines.map((line, i) =>
+                {BOOT_LINES.map((line, i) =>
                   visibleLines.includes(i) && (
                     <motion.div
                       key={i}
