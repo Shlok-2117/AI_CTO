@@ -9,11 +9,11 @@ function cleanMermaid(code: string): string {
     .replace(/‑/g, '-')
     .replace(/–/g, '--')
     .replace(/—/g, '--')
-    .replace(/‘/g, "'")
-    .replace(/’/g, "'")
-    .replace(/“/g, '"')
-    .replace(/”/g, '"')
-    .replace(/ /g, ' ')
+    .replace(/'/g, "'")
+    .replace(/'/g, "'")
+    .replace(/"/g, '"')
+    .replace(/"/g, '"')
+    .replace(/ /g, ' ')
     .replace(/…/g, '...')
     .replace(/‑>/g, '-->')
     .replace(/–>/g, '-->')
@@ -41,6 +41,26 @@ export default function MermaidDiagram({
   const containerRef = useRef<HTMLDivElement>(null)
   const [status, setStatus] = useState<'loading' | 'done' | 'fallback'>('loading')
   const [fallbackCode, setFallbackCode] = useState('')
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [zoom, setZoom] = useState(100)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isFullscreen) return
+      if (e.key === 'Escape') {
+        setIsFullscreen(false)
+        setZoom(100)
+      }
+      if (e.key === '+' || e.key === '=') {
+        setZoom(z => Math.min(300, z + 25))
+      }
+      if (e.key === '-') {
+        setZoom(z => Math.max(25, z - 25))
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isFullscreen])
 
   useEffect(() => {
     if (!diagram) return
@@ -150,77 +170,252 @@ export default function MermaidDiagram({
   if (!diagram) return null
 
   return (
-    <div>
-      {title && (
-        <div style={{ color: 'rgba(0,212,255,0.4)', fontSize: '9px', fontFamily: 'monospace', letterSpacing: '0.1em', marginBottom: '8px' }}>
-          {title}
-        </div>
-      )}
-
-      {status === 'loading' && (
-        <div style={{
-          padding: '20px',
-          textAlign: 'center',
-          color: '#00ffff66',
-          border: '1px solid #00ffff22',
-          borderRadius: '8px',
-          fontSize: '13px',
-        }}>
-          ⚡ Rendering diagram...
-        </div>
-      )}
-
-      {status === 'fallback' && (
-        <div style={{
-          background: '#0a0a1a',
-          border: '1px solid rgba(0,255,255,0.2)',
-          borderRadius: '8px',
-          padding: '16px',
-        }}>
-          <div style={{ color: '#00ffff', marginBottom: '8px', fontSize: '12px', fontFamily: 'sans-serif' }}>
-            📊 Copy and paste at{' '}
-            <a
-              href="https://mermaid.live"
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: '#00ffff', textDecoration: 'underline' }}
-            >
-              mermaid.live
-            </a>
-            {' '}to view the diagram
+    <>
+      <div>
+        {title && (
+          <div style={{ color: 'rgba(0,212,255,0.4)', fontSize: '9px', fontFamily: 'monospace', letterSpacing: '0.1em', marginBottom: '8px' }}>
+            {title}
           </div>
-          <pre style={{
-            fontFamily: 'monospace',
-            fontSize: '11px',
-            color: 'rgba(0,255,255,0.8)',
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-all',
-            maxHeight: '250px',
-            overflowY: 'auto',
-            margin: 0,
+        )}
+
+        {status === 'loading' && (
+          <div style={{
+            padding: '20px',
+            textAlign: 'center',
+            color: '#00ffff66',
+            border: '1px solid #00ffff22',
+            borderRadius: '8px',
+            fontSize: '13px',
           }}>
-            {fallbackCode}
-          </pre>
+            ⚡ Rendering diagram...
+          </div>
+        )}
+
+        {status === 'fallback' && (
+          <div style={{
+            background: '#0a0a1a',
+            border: '1px solid rgba(0,255,255,0.2)',
+            borderRadius: '8px',
+            padding: '16px',
+          }}>
+            <div style={{ color: '#00ffff', marginBottom: '8px', fontSize: '12px', fontFamily: 'sans-serif' }}>
+              📊 Copy and paste at{' '}
+              <a
+                href="https://mermaid.live"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: '#00ffff', textDecoration: 'underline' }}
+              >
+                mermaid.live
+              </a>
+              {' '}to view the diagram
+            </div>
+            <pre style={{
+              fontFamily: 'monospace',
+              fontSize: '11px',
+              color: 'rgba(0,255,255,0.8)',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+              maxHeight: '250px',
+              overflowY: 'auto',
+              margin: 0,
+            }}>
+              {fallbackCode}
+            </pre>
+          </div>
+        )}
+
+        {/*
+          The outer div hides/shows based on status. The inner containerRef div is
+          ALWAYS in the DOM so containerRef.current is non-null when tryRender's
+          .then() callback fires and writes innerHTML (status is still 'loading'
+          at that point, so a conditional render would leave the ref unattached).
+        */}
+        <div style={{ display: status === 'done' ? 'block' : 'none' }}>
+          <div
+            onClick={() => setIsFullscreen(true)}
+            style={{
+              position: 'relative',
+              cursor: 'zoom-in',
+            }}
+          >
+            <div style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: 'rgba(0,255,255,0.1)',
+              border: '1px solid rgba(0,255,255,0.3)',
+              borderRadius: '4px',
+              padding: '2px 8px',
+              fontSize: '10px',
+              color: '#00ffff99',
+              letterSpacing: '1px',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}>
+              CLICK TO EXPAND
+            </div>
+            <div
+              ref={containerRef}
+              style={{
+                maxWidth: '100%',
+                overflowX: 'auto',
+                background: '#0d1117',
+                borderRadius: '8px',
+                padding: '12px',
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {isFullscreen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.95)',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsFullscreen(false)
+          }}
+        >
+          {/* TOP BAR */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 20px',
+            borderBottom: '1px solid #00ffff22',
+            background: '#0a0a1a',
+          }}>
+            <span style={{
+              color: '#00ffff',
+              fontSize: '12px',
+              letterSpacing: '2px',
+            }}>
+              {title || 'DIAGRAM'} — FULLSCREEN
+            </span>
+
+            {/* ZOOM CONTROLS */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <button
+                onClick={() => setZoom(z => Math.max(25, z - 25))}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #00ffff44',
+                  color: '#00ffff',
+                  borderRadius: '4px',
+                  width: '28px',
+                  height: '28px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                }}
+              >−</button>
+
+              <span style={{
+                color: '#00ffff',
+                fontSize: '12px',
+                minWidth: '45px',
+                textAlign: 'center',
+              }}>
+                {zoom}%
+              </span>
+
+              <button
+                onClick={() => setZoom(z => Math.min(300, z + 25))}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #00ffff44',
+                  color: '#00ffff',
+                  borderRadius: '4px',
+                  width: '28px',
+                  height: '28px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                }}
+              >+</button>
+
+              <button
+                onClick={() => setZoom(100)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #00ffff44',
+                  color: '#00ffff',
+                  borderRadius: '4px',
+                  padding: '4px 10px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                }}
+              >RESET</button>
+
+              {/* CLOSE BUTTON */}
+              <button
+                onClick={() => {
+                  setIsFullscreen(false)
+                  setZoom(100)
+                }}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #ff444444',
+                  color: '#ff4444',
+                  borderRadius: '4px',
+                  width: '28px',
+                  height: '28px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  marginLeft: '8px',
+                }}
+              >✕</button>
+            </div>
+          </div>
+
+          {/* DIAGRAM CONTENT */}
+          <div style={{
+            flex: 1,
+            overflow: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}>
+            <div
+              style={{
+                transform: `scale(${zoom / 100})`,
+                transformOrigin: 'center center',
+                transition: 'transform 0.2s ease',
+              }}
+              dangerouslySetInnerHTML={{
+                __html: containerRef.current?.innerHTML || ''
+              }}
+            />
+          </div>
+
+          {/* BOTTOM HINT */}
+          <div style={{
+            padding: '8px 20px',
+            borderTop: '1px solid #00ffff22',
+            background: '#0a0a1a',
+            display: 'flex',
+            gap: '20px',
+            fontSize: '10px',
+            color: '#00ffff44',
+            letterSpacing: '1px',
+          }}>
+            <span>ESC — CLOSE</span>
+            <span>+ / − — ZOOM</span>
+            <span>CLICK OUTSIDE — CLOSE</span>
+            <span>CURRENT: {zoom}%</span>
+          </div>
         </div>
       )}
-
-      {/*
-        containerRef div is ALWAYS in the DOM (display:none when not 'done').
-        This ensures containerRef.current is non-null when tryRender's .then()
-        callback fires and writes innerHTML — status is still 'loading' at that
-        point, so a conditional render would leave the ref unattached.
-      */}
-      <div
-        ref={containerRef}
-        style={{
-          display: status === 'done' ? 'block' : 'none',
-          maxWidth: '100%',
-          overflowX: 'auto',
-          background: '#0d1117',
-          borderRadius: '8px',
-          padding: '12px',
-        }}
-      />
-    </div>
+    </>
   )
 }
